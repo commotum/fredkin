@@ -34,14 +34,35 @@ example (n : Nat) : Reversible n := Equiv.refl _
 
 example (n : Nat) : Equiv.Perm (FunctionWord n) := Equiv.refl _
 
+example (n : Nat) (e : Reversible n) : Reversible n := e.symm
+
+example (n : Nat) (e f : Reversible n) : Reversible n := e.trans f
+
+example (n : Nat) (e f : Reversible n) (x : FunctionWord n) :
+    e.trans f x = f (e x) := rfl
+
 example (n : Nat) : WirePerm n := Equiv.refl _
 
 example (m n : Nat) : (Fin m ⊕ Fin n) ≃ Fin (m + n) := finSumFinEquiv
+
+example (m n : Nat) (left : FunctionWord m) (right : FunctionWord n) :
+    FunctionWord (m + n) :=
+  Fin.addCases left right
 
 example (n : Nat) (x : FunctionWord n) : Nat := functionWeight x
 
 example (n : Nat) (x : VectorWord n) : VectorWord n := x
 
+example (n : Nat) : DecidableEq (VectorWord n) := inferInstance
+
+#guard_msgs (drop info) in
+#check_failure (inferInstance : Fintype (VectorWord 3))
+
 example (n : Nat) (x : PackedWord n) : PackedWord n := x
+
+example (n : Nat) : DecidableEq (PackedWord n) := inferInstance
+
+#guard_msgs (drop info) in
+#check_failure (inferInstance : Fintype (PackedWord 3))
 
 end ConservativeLogic.Audit.Guardrails
