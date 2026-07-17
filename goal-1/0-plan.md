@@ -92,6 +92,13 @@ Lean results as the work proceeds.
 - A conservative gate is described as an invertible Boolean function that
   preserves the number of ones. The paper explicitly notes that reversibility
   and conservation are independent.
+- P7 motivates at least one unspecified additive conserved quantity; only the
+  later Boolean circuit model in §2.5 specializes this to `N₁`, the number of
+  one-valued wires. Its `N₀ = N - N₁` is derived and explicitly not independent.
+- Footnote 3 defines reversibility as backward determinism/retrodictability and
+  explicitly says it does not imply invariance under time reversal. A Lean
+  equivalence, an involution, and a time-reversal theorem are therefore distinct
+  claims.
 - Composition forbids implicit fan-out. Source constants and discarded sink
   outputs are used to realize noninvertible Boolean functions.
 - When discussing realizability from a set of conservative primitives, §2.5
@@ -175,7 +182,9 @@ The eventual goal is complete only when all of the following hold:
 
 | Paper location | Reconstructed formal target | Planned stage | Current disposition |
 |---|---|---:|---|
-| §2.2, P4–P7 | Separate delayed identity, reversible maps, one-to-one composition, and additive Hamming-weight conservation | 2–5, 10 | Formalize the discrete content separately; the paper's physical motivations are not consequences of these definitions |
+| §2.2, P4–P6 | Separate delayed identity, reversible maps, and one-to-one composition | 2–5, 10 | Formalize the discrete content separately; the paper's physical motivations are not consequences of these definitions |
+| §2.2, P7 | The abstract model should have at least one additive conserved quantity | — | Generic physical/mathematical motivation only; P7 itself does not select Hamming weight |
+| §§2.3–2.5 | In the Boolean model, `N₁`/Hamming weight is additive across wire portions and preserved by unit wires, gates, and closed transitions | 2–4, 10 | Stage 2 proves only static block additivity; gate and trajectory preservation require their later semantics |
 | §2.2, P8 | Local-Euclidean/layout constraint on circuit connectivity | 11 or — | The paper explicitly does not develop P8; require an actual geometry model or keep the claim out of scope |
 | §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4 | Precise after choosing time semantics |
 | §2.4, Table (2) | Paper-convention Fredkin semantics, involution, bijection, weight preservation | 3 | Truth table checked; proof pending |
@@ -215,8 +224,8 @@ disposition.
 | ID | Issue | Required disposition |
 |---|---|---|
 | CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Name the convention, prove the table row-by-row, and provide an explicit conjugacy theorem if an alternate convention is exposed. |
-| CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation. | Separate value semantics, delay, and oriented network reversal. |
-| CL-003 | Reversibility and conservation are independent, but the prose supplies no small formal witnesses. | Give finite counterexamples in both directions. |
+| CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Keep `Equiv`, involutivity/self-inverse behavior, value semantics, delay, oriented network reversal, and time-reversal symmetry as distinct notions and theorems. |
+| CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Give finite semantic endomap witnesses in both directions; do not mislabel the noninvertible weight-preserving witness as a conservative-logic gate or literal circuit realization. |
 | CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | State a constrained ancilla interface and account for every output. |
 | CL-005 | Figure 7 states equal delay only from argument to result, whereas §7.1 defines a combinational network using equal delay from any input to any output. | Decide whether all-path equal latency is intrinsic syntax, a well-formedness predicate, or a retiming theorem; do not promote Figure 7's narrower statement to source/sink paths without checking them. |
 | CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Formalize source transition, initialization, scheduling, and noninterference semantics before the sequential theorem; state slowdown/time-multiplexing bounds separately from semantic simulation. |
