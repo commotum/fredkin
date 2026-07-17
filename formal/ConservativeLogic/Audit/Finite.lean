@@ -29,6 +29,14 @@ example : (Conservative.identity 0 : Conservative 0) (fun i => Fin.elim0 i) =
 example : hammingWeight (BitState.append (singleton true) (singleton false)) = 1 := by
   decide
 
+example : BitState.split 1 1 (pair true false) =
+    (singleton true, singleton false) := by
+  decide
+
+example : BitState.append (BitState.split 1 1 (pair false true)).1
+    (BitState.split 1 1 (pair false true)).2 = pair false true := by
+  simp
+
 example : Independence.flipOne (singleton false) = singleton true := by
   decide
 

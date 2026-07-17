@@ -2,6 +2,8 @@ import ConservativeLogic.State.Core
 import ConservativeLogic.Reversible.Core
 import ConservativeLogic.Reversible.Independence
 
+set_option linter.style.header false
+
 /-!
 # Public conservative-logic API
 
@@ -11,3 +13,6 @@ their bundled forms, wire permutations, and the semantic independence
 witnesses. Circuit syntax and execution semantics belong to later stages.
 -/
 
+namespace ConservativeLogic
+
+end ConservativeLogic
