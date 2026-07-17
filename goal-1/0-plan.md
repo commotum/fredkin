@@ -67,12 +67,16 @@ Lean results as the work proceeds.
   `fredkin-1982/fredkin-1982.md`, with 26 extracted figures.
 - `fredkin-1982/BUILD-PLAN.md` supplies generic Lean module and verification
   guidance; it is not a proof or paper-specific plan.
-- The repository currently contains only a placeholder Python project
-  (`pyproject.toml`, `main.py`). It has no Lean toolchain pin, Lake manifest,
-  mathlib dependency, Lean modules, or Lean tests.
-- This scaffold creates documentation only. The scaffolding skill requires
-  exactly `0-plan.md`, `0-loop.md`, and `0-prompt.md`; it does not require or
-  authorize a Lean setup file at this stage.
+- The unrelated placeholder Python project (`pyproject.toml`, `main.py`) remains
+  untouched. Stage 1 has added an isolated `formal/` Lake project pinning Lean
+  and mathlib `v4.32.0`, an empty public root, and a private representation
+  probe. The dependency lock and mathlib-backed builds are still pending because
+  the required `lake update` network/materialization approval was denied.
+- Direct invocation under `formal/` selects Lean `v4.32.0` at commit
+  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`; the empty public root parses and
+  compiles without mathlib. The intended mathlib tag resolves upstream to
+  `81a5d257c8e410db227a6665ed08f64fea08e997`, but the local manifest must still
+  verify that revision.
 
 ### Checked Paper Facts
 
@@ -94,6 +98,10 @@ Lean results as the work proceeds.
 - The garbageless construction runs a realization, copies each result bit using
   constants `0` and `1`, and runs the inverse. It returns the argument and
   scratch constants and produces both `y` and `not y`.
+- Under Table (2)'s port order, the copy gadget obtains ordered data outputs
+  `(a, not a)` from data inputs `(1, 0)`. Figures 6(c) and 22 route one `0` and
+  one `1` graphically without making this port ordering locally obvious, so the
+  later circuit must state the wiring permutation explicitly.
 - The strongest fixed-basis claim says every finite invertible conservative
   function is realizable without garbage using Fredkin gates. The paper
   attributes this to B. Silver but does not give the proof or state the ancilla
@@ -101,13 +109,14 @@ Lean results as the work proceeds.
 
 ### Assumptions to Test, Not Yet Facts
 
-- `Fin n -> Bool` is likely the simplest public representation of an `n`-bit
-  word; `Vector Bool n` or a finite-set representation may be preferable at API
-  boundaries after checking mathlib ergonomics.
-- Reversible maps should likely use `Equiv`, with a bundled conservative
-  subtype/structure carrying a weight-preservation proof.
-- Hamming weight can likely be defined by filtering `Finset.univ`, but existing
-  mathlib Boolean-vector/Hamming-weight APIs must be checked first.
+- A read-only compile audit against a separate matching mathlib `v4.32.0`
+  checkout supports `Fin n -> Bool` as the public mathematical representation,
+  `Equiv.Perm` for reversible maps, and filtered `Finset.univ` cardinality for
+  Hamming weight. The in-project private probe must still build before these
+  become checked project facts.
+- The conservative-map API should be a bundled structure carrying an
+  `Equiv.Perm` and a separate pointwise weight-preservation proof; its exact
+  coercions and field names remain for stage 2.
 - A typed circuit syntax indexed by input/output arity, with explicit wire
   permutations and tensor/serial composition, is expected to prevent implicit
   fan-out. The exact syntax is deliberately unsettled until stage 1.
@@ -162,21 +171,30 @@ The eventual goal is complete only when all of the following hold:
 
 | Paper location | Reconstructed formal target | Planned stage | Initial status |
 |---|---|---:|---|
-| §2.3 | Unit wire is delayed identity, reversible, and conservative | 2, 4 | Precise after choosing time semantics |
+| §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4 | Precise after choosing time semantics |
 | §2.4, Table (2) | Paper-convention Fredkin semantics, involution, bijection, weight preservation | 3 | Truth table checked; proof pending |
-| §2.5 | One-to-one circuit composition preserves port balance and global weight | 4 | Graph/timing details underspecified |
+| §2.4 | Fredkin is nonlinear under an explicitly selected coordinatewise-XOR/`F₂` notion | 3 | “Nonlinear” needs a definition and concrete additivity counterexample |
+| §2.5, Fig. 3 | Directed-graph feed-forward semantics and one-to-one composition preserve equal external port counts | 4 | Typed syntax may be a corrected model rather than the literal graph model |
 | §2.5 | Reversibility and conservation are independent | 2 | Needs explicit finite witnesses |
+| §2.5, Fig. 3 | Open/closed circuits have discrete transition semantics and closed trajectories preserve global Hamming weight | 10 | Requires explicit state and feedback semantics separate from stage 4 |
+| §3, Fig. 5 | Realization partitions source/argument and result/sink, fixes constants independently of the argument, and permits argument-dependent garbage | 5 | Central interface definition; every partition must be explicit |
 | §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | Ordering and interfaces must be reconstructed from figures |
-| §3, Figs. 7–8 | Demultiplexer and flip-flop examples | 6, 10 | Deferred; timing/feedback must be explicit |
-| §4 | Conventional finite networks can be translated to conservative networks using constants and garbage | 6 | Need a formal source circuit language and delay normalization |
+| §3, Fig. 7 | Demultiplexer semantics include the complete output, address-echo garbage, and equal path latency | 4, 6 | Diagram must yield an exact function and latency specification |
+| §3, Fig. 8 | The `J-K̄` flip-flop has a stated transition/trace semantics | 10 | Diagram-only feedback claim; record unresolved if reconstruction is unreliable |
+| §4 | Conventional finite combinational networks can be translated to conservative networks using constants and garbage | 6 | Corrected finite feed-forward target; needs a source language and delay normalization |
+| §4 | Arbitrary conventional sequential networks can be simulated by conservative sequential networks | 10 | Paper argument is informal; requires state/feedback semantics and an exact simulation relation |
+| §4, Figs. 9–11 | Serial-adder simulation includes initialization and stream semantics | 10 | Factor-5 slowdown, time multiplexing, and source/sink counts are separate resource obligations |
 | §4 | Turing-machine/cellular-automaton universality | — | Out of verified core unless separately scoped |
-| §6.2 | Interaction gate implements four constrained output rails and is reversible on valid states | 11 | Must use a subtype/relation, not an unconstrained `Bool^4` equivalence |
-| §6.3–6.4 | Mirrors route/delay/cross and collision networks realize switch/Fredkin gates | 11 | Diagram-only; requires a discrete geometry model |
+| §6.2 | `(p,q) ↦ (pq, ¬p q, p ¬q, pq)` is an equivalence onto four valid rail states and preserves ball count | 11 | Heterogeneous constrained interface, not an ordinary equal-width gate |
+| §6.3 | Interaction-gate AND/NOT realization plus universality with constants and valid routing/timing | 11 | Logical realization and geometric implementability are separate |
+| §6.4, Figs. 16–18 | The switch `(c,x) ↦ (c,cx,¬c x)` is an equivalence onto four valid three-rail states, and collision layouts refine switch/Fredkin semantics | 11 | Switch inverse is constrained; diagrams omit some timing/routing details |
 | §7.1 | Reversing gates and wires yields a semantic inverse for combinational networks | 7 | Requires acyclicity and delay/path discipline |
 | §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | Exact copy gadget and partitions must be proved |
-| §7.1(b) | Scratch constants can all be zero without loss of generality | 9 | Attributed but unproved in paper |
+| §7.1, Fig. 24(b) | Scratch constants can all be zero without loss of generality | 9 | Attributed but unproved in paper |
+| §7.2, Fig. 25 | For any `f`, the initialized-slice map `(x,0ⁿ,1ⁿ) ↦ (x,f x,¬f x)` extends to a total conservative permutation | 5, 9 | Requires a finite weight-layer extension theorem; the figure does not define the total map |
 | §7.2 | Arbitrary computation needs scratch for a fixed primitive set; claimed size tradeoffs | 9 | Quantifiers and complexity model unclear |
-| §7.3 | Every invertible conservative finite function is Fredkin-realizable without garbage | 9 | Central, but ancilla/basis scope is ambiguous |
+| §7.3, Fig. 26 | Direct same-register semantic realization is characterized by invertibility plus conservation | 9 | Keep this arbitrary-gate statement separate from fixed-basis synthesis |
+| §7.3 | Every invertible conservative finite function, and its iterates, are Fredkin-realizable without garbage | 9 | Central, but wire-permutation/ancilla/basis scope is ambiguous |
 | §7.3 | Closed general-purpose computers have NAND-comparable gate complexity | 10 | External thesis/complexity model required; not core |
 | §§5, 8–10 | Zero dissipation, entropy, energy, noise, and physical realizability claims | — | Documentation only absent an explicit physical model |
 
@@ -192,31 +210,35 @@ disposition.
 | CL-003 | Reversibility and conservation are independent, but the prose supplies no small formal witnesses. | Give finite counterexamples in both directions. |
 | CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | State a constrained ancilla interface and account for every output. |
 | CL-005 | A feed-forward network is called combinational only when all path delays match. | Decide whether equal latency is intrinsic syntax, a well-formedness predicate, or a retiming theorem. |
-| CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. | Formalize the source language and state exact simulation/slowdown hypotheses. |
-| CL-007 | The interaction gate has only four valid states on four rails. | Model valid states explicitly; never claim an equivalence on all 16 states. |
+| CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Formalize source transition, initialization, scheduling, and noninterference semantics before the sequential theorem; state slowdown/time-multiplexing bounds separately from semantic simulation. |
+| CL-007 | The interaction and switch gates use constrained, unequal-width rail encodings. They preserve balls/ones but not the number of zero-valued physical rails and are exceptions to the ordinary balanced-port gate type. | Model each valid-state subtype explicitly; never claim `Bool² ≃ Bool⁴`, `Bool² ≃ Bool³`, or an ordinary equal-width conservative-gate instance. Qualify port-balance claims accordingly. |
 | CL-008 | The billiard diagrams omit mirrors, unit wires, collision scheduling, and some crossovers. | Treat each as a construction obligation in a discrete geometry model. |
-| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement. | Make the precondition and `2n`-wire result encoding explicit. |
+| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; with Table (2)'s `(u,x1,x2)` order, `(x1,x2)=(1,0)` yields `(y1,y2)=(a,not a)`. | Make the gate-port wiring, any surrounding permutation, and the `2n`-wire result encoding explicit rather than reading vertical order from Figures 6(c) or 22. |
 | CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Define garbage relative to named interfaces; do not mean “no extra outputs whatsoever.” |
 | CL-011 | All-zero scratch sufficiency is attributed to Margolus without proof. | Reconstruct a proof, cite a verifiable source, or leave the stronger version unresolved. |
 | CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model. | Define a circuit family and asymptotic measure before formalizing them. |
 | CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to Silver, but ancilla and wiring conventions are unclear. | Prove the strongest accurate variant and document required ancillas/permutations. |
-| CL-014 | The no-scratch map `F0` is called a gate “by definition,” which does not imply synthesis from a fixed basis. | Keep semantic gatehood and basis realizability as separate predicates. |
+| CL-014 | Figure 25 specifies `F0` only on initialized inputs `(x,0ⁿ,1ⁿ)`; total invertibility and conservation do not follow “by definition,” and arbitrary-gate existence would not imply fixed-basis synthesis. | Prove the slice map injective and weight preserving, extend it independently within each finite Hamming layer to a total permutation, document that the completion is noncanonical, and keep semantic gatehood separate from Fredkin synthesis. |
 | CL-015 | Claims about infinite blank tape/environment supplying constants and garbage space are not finite-circuit theorems. | Exclude or formalize in a separately scoped infinite model. |
 | CL-016 | Physical reversibility, entropy, and zero-dissipation conclusions do not follow from finite bijections alone. | Keep them non-theorem commentary unless physical state and dynamics are formalized. |
+| CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, and structural wire renaming is not automatically a physical wire/permutation circuit with delay. | Either prove a graph normalization/correspondence theorem or label the syntax as a corrected semantic model; expose which wire permutations are free versus synthesized in completeness theorems. |
+| CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Define coordinatewise XOR/`F₂` linearity and prove a concrete failure of additivity, or explicitly exclude the adjective from the formal claim map. |
 
 ## Dependency Notes and Tentative Module Direction
 
-No dependency has yet been pinned. Stage 1 must inspect current stable Lean 4
-and a compatible mathlib release, then record exact versions in the project.
-Likely reusable mathlib surfaces include `Equiv`, `Equiv.Perm`, `Fintype`,
-`Finite`, `Fin`, `Finset`, `Bool`, finite sums/products, and permutation/group
-lemmas. Their actual imports and conventions must be verified before adoption.
+Stage 1 selected matching stable Lean/mathlib release tags `v4.32.0` (published
+2026-07-13). `formal/lean-toolchain` pins Lean, and `formal/lakefile.toml` pins
+mathlib by tag; `lake-manifest.json` must lock and confirm mathlib commit
+`81a5d257c8e410db227a6665ed08f64fea08e997` before the stage completes. The
+private probe uses narrow imports `Mathlib.Data.Fintype.Pi`,
+`Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
+`Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
 Tentative low-to-high dependency layout (names provisional):
 
 ```text
 ConservativeLogic/
-  BitVec/Core.lean          -- fixed-width words and Hamming weight
+  State/Core.lean           -- `Fin n → Bool` states and Hamming weight
   Reversible/Core.lean      -- finite reversible and conservative maps
   Gate/Fredkin.lean         -- exact primitive semantics and audits
   Circuit/Syntax.lean       -- arity-safe linear wiring and composition
@@ -264,8 +286,9 @@ Names are placeholders to refine during stage work; they are not declarations.
   exact constants and garbage.
 - `Circuit.inverse_eval`: evaluation of an inverse feed-forward circuit is the
   inverse equivalence.
-- `copyPair_spec`: initialized `(0,1)` targets become `(a, not a)` while the
-  through-wire retains `a`.
+- `copyPair_spec`: in the paper's exact gate-port order, initialized `(1,0)`
+  data targets become `(a, not a)` while the control/through wire retains `a`;
+  relate this explicitly to the result register's chosen layout.
 - `compute_copy_uncompute_spec`: argument and scratch return unchanged, with
   the result block encoding `(f x, bitwiseNot (f x))`.
 - `compute_copy_uncompute_conservative`: the full construction preserves total
@@ -283,6 +306,9 @@ Names are placeholders to refine during stage work; they are not declarations.
 ## Indexed Stages
 
 ### 1-GUARDRAILS
+
+**Status:** In progress. Project pins and offline guardrails exist; dependency
+locking and mathlib-backed verification await explicit fetch approval.
 
 #### Big Picture Objective
 
@@ -352,8 +378,10 @@ table, ordering, reversibility, and conservation without convention drift.
 - Define Fredkin on an explicitly ordered triple `(u, x1, x2)` using the
   paper's zero-controlled swap.
 - Check all eight table rows and prove control equations, involutivity,
-  bijectivity, nonlinearity only if a useful algebraic definition is selected,
-  and weight preservation.
+  bijectivity, and weight preservation.
+- Define coordinatewise-XOR (equivalently `F₂`) linearity in a theorem/audit
+  leaf and prove the paper's nonlinearity assertion with a concrete failure of
+  additivity; do not impose a heavy Boolean-ring API on the core state module.
 - If useful, define the common one-controlled variant and prove the precise
   control-negation conjugacy; keep it out of the default paper API.
 
@@ -361,6 +389,8 @@ table, ordering, reversibility, and conservation without convention drift.
 
 - All eight paper rows reduce or prove exactly with the documented output order.
 - Separate theorems establish involution/reversibility and conservation.
+- A stated XOR/`F₂` linearity predicate and checked counterexample establish
+  exactly what “nonlinear” means.
 - Unit-wire delay and identity-on-values are not conflated.
 - Regression examples fail if the control convention or data-wire order flips.
 - Focused/full builds, scans, and diff check pass.
@@ -376,6 +406,10 @@ cannot perform implicit fan-out.
 
 - Define primitive gates, identity, serial composition, parallel/tensor
   composition, and bijective wire permutations.
+- Present the arity-indexed syntax as a corrected combinational model. Either
+  prove normalization/correspondence for the paper's directed graphs or qualify
+  graph-level claims; distinguish meta-level port reindexing from a synthesized
+  permutation/wire circuit carrying delay.
 - Encode input/output arity and linear port use so that duplication and dropping
   require explicit gates or realization interfaces.
 - Define evaluation and prove semantic laws and preservation of reversibility
@@ -388,6 +422,9 @@ cannot perform implicit fan-out.
 - Ill-formed arity connections and nonbijective rewiring are unrepresentable or
   rejected by an explicit checker with soundness proof.
 - No constructor provides contraction/fan-out or weakening/drop implicitly.
+- The API and documentation identify whether each permutation is structural or
+  a circuit resource; no unproved equivalence with arbitrary paper graphs is
+  claimed.
 - Evaluation respects identity, serial, tensor, and permutation composition.
 - Well-formed conservative circuits preserve total Hamming weight.
 - Timing tests distinguish acyclic unequal-latency networks from the paper's
@@ -486,8 +523,10 @@ complete ancilla accounting and restoration guarantees.
 
 #### Detailed Implementation Plan
 
-- Prove the Fredkin “spy” gadget on the exact constrained `(0,1)` auxiliary
-  input, including its through output and `(a, not a)` result pair.
+- Prove the Fredkin “spy” gadget with exact gate ports: control `a` and data
+  inputs `(1,0)` produce through output `a` and data outputs `(a,not a)`.
+  Separately prove any permutation from the result register's `(0^n,1^n)`
+  layout to those gate ports.
 - Lift copying componentwise to Boolean vectors without implicit wire reuse.
 - Compose a realization, explicit copy layer, and inverse realization.
 - Prove restoration of arguments, source/scratch constants, and transient
@@ -498,7 +537,9 @@ complete ancilla accounting and restoration guarantees.
 - The final theorem states every input and output block and proves the argument
   and scratch blocks return definitionally or propositionally unchanged.
 - The `2n` result register starts with exactly `n` zeros and `n` ones and ends
-  with `f x` and its bitwise complement in a documented order.
+  with `f x` and its bitwise complement in a documented order; the proof
+  includes the wiring between register order and each Fredkin gate's data-port
+  order.
 - The construction uses no hidden fan-out and works for `n = 0`.
 - “Garbageless” is documented as restored scratch/no argument-dependent garbage,
   not absence of all ancillary wires.

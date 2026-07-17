@@ -97,6 +97,17 @@ Before completing every Lean stage:
 - Files expected to change.
 - New tests or commands required.
 
+## Build Structure
+
+- New or touched Lean modules and why each owns its declarations.
+- High-fanout modules intentionally avoided.
+- Repository-specific focused and adjacent-consumer build commands.
+
+## Boundary Checks
+
+- Runtime/API/proof-side/diagnostic boundaries relevant to this stage.
+- Forbidden structural shortcuts and how inspection or scans detect them.
+
 ## No-Cheating Checks
 
 - Explicit checks proving the implementation does not route through forbidden fallback paths.
