@@ -1,3 +1,8 @@
+import Mathlib.Data.BitVec
+import Mathlib.Data.Fintype.Pi
+import Mathlib.Logic.Equiv.Basic
+import Mathlib.Logic.Equiv.Fin.Basic
+
 /-!
 # Stage 1 representation probes
 
@@ -5,11 +10,6 @@ This diagnostic leaf checks that the candidate finite-word and reversible-map
 surfaces needed by stage 2 are available from a narrow mathlib import. All
 candidate declarations are private so this file creates no public API.
 -/
-
-import Mathlib.Data.BitVec
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Logic.Equiv.Basic
-import Mathlib.Logic.Equiv.Fin.Basic
 
 namespace ConservativeLogic.Audit.Guardrails
 
