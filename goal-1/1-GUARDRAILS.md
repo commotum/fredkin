@@ -12,6 +12,13 @@
 - Official Lean and mathlib GitHub releases both provide matching stable
   `v4.32.0` tags. Mathlib's `v4.32.0/lean-toolchain` names
   `leanprover/lean4:v4.32.0`.
+- `formal/lake-manifest.json` now locks mathlib `v4.32.0` to commit
+  `81a5d257c8e410db227a6665ed08f64fea08e997`, and all inherited dependency
+  checkouts match their manifest revisions.
+- The strengthened private probe and the empty default target both build under
+  the pinned project. The probe checks positive and deliberately absent
+  candidate instances, reversible-map operations, composition order, and the
+  selected block-construction surface.
 - The paper source, extracted figures, generic Lean build plan, scaffold paper
   map, and correction log are present and readable.
 - There is no previous implementation stage or Lean API to preserve.
@@ -20,14 +27,13 @@
 
 - Use a self-contained `formal/` Lake project so the unrelated Python files do
   not become part of Lean's source root.
-- Pin Lean and mathlib to the matching `v4.32.0` release pair; record the exact
-  resolved mathlib commit in `lake-manifest.json`.
-- Compile-check `Fin n -> Bool`, `Vector Bool n`, and `BitVec n` in a private
-  audit leaf before fixing the public bit-word representation.
-- Prefer `Fin n -> Bool` if it supplies finite/decidable equality instances and
-  a direct `Finset.univ` Hamming-weight definition without broad imports.
-- Use `Equiv`/`Equiv.Perm` for reversible semantics if the narrow import and
-  composition/inverse operations compile as expected.
+- Keep Lean and mathlib at the checked matching `v4.32.0` release pair and
+  preserve the exact resolved revisions in `lake-manifest.json`.
+- Use `Fin n → Bool` for the public mathematical bit-word representation; the
+  private probe confirms its finite/decidable-equality instances and a direct
+  `Finset.univ` Hamming-weight expression under narrow imports.
+- Use `Equiv`/`Equiv.Perm` for reversible semantics; the private probe confirms
+  identity, inverse, serial composition, and application order.
 - Plan a bundled conservative equivalence with an explicit weight-preservation
   field in stage 2; do not implement that public structure in this stage.
 - Keep combinational circuit syntax, timing, realization, and physical models
@@ -90,7 +96,8 @@ module exists or is introduced in this stage.
 - Public API boundary: inspect `ConservativeLogic.lean` and confirm it has only
   the empty namespace skeleton and no audit import.
 - Diagnostic boundary: inspect the audit leaf and confirm every candidate
-  declaration is `private` and all remaining commands are `example`s.
+  declaration is `private`; all remaining commands are `example`s or guarded
+  `#check_failure` instance audits.
 - Stage boundary: scan Lean declarations and file paths for Fredkin, circuit,
   realization, uncompute, universality, sequential, or billiard implementation.
 - Dependency boundary: inspect the generated manifest revision and the imports
@@ -101,8 +108,9 @@ module exists or is introduced in this stage.
 
 - The root module must not import the audit probe or expose temporary candidate
   definitions as public API.
-- The audit probe may use only `private` abbreviations/definitions and
-  `example`/`#check`; it must not implement stage-2 structures or theorems.
+- The audit probe may use only `private` abbreviations/definitions,
+  `example`, `#check`, and guarded `#check_failure` diagnostics; it must not
+  implement stage-2 structures or theorems.
 - The dependency manifest must resolve mathlib at the requested matching tag,
   not an unpinned branch.
 - `Fin n -> Bool` is accepted only after compile checks establish the required
@@ -135,25 +143,42 @@ module exists or is introduced in this stage.
 
 ## Stage Results
 
-**Stage status: incomplete.** Offline setup and decisions are recorded, but the
-mathlib dependency has not been materialized and the required focused/full
-builds have not run.
+**Stage status: complete (2026-07-17).** The locked project, strengthened
+private probe, paper/correction map, focused and default builds, clean rebuild,
+boundary scans, and diff checks satisfy every Stage 1 completion requirement.
 
 ### Work completed
 
 - Added an isolated `formal/` Lake project with matching Lean/mathlib
   `v4.32.0` pins and global mathlib-standard lint options.
+- Materialized the dependency graph and committed `formal/lake-manifest.json`,
+  which records mathlib tag `v4.32.0` at
+  `81a5d257c8e410db227a6665ed08f64fea08e997`.
 - Added an empty `ConservativeLogic` public root. It exports no definitions and
   does not import the audit probe.
 - Added the private diagnostic leaf
   `ConservativeLogic.Audit.Guardrails`, containing only private candidate
-  aliases/weight definition and compile examples.
+  aliases/weight definition, compile examples, and guarded expected-failure
+  instance checks. It covers finite/decidable function words, `Equiv` inverse
+  and serial semantics, `Fin.addCases`, and the accepted/rejected candidate
+  container surfaces.
 - Added root documentation for scope, physical-model boundaries, and build
   entry points, and ignored only generated `.lake/` directories.
 - Corrected the main paper map: unit wire begins in stage 3; combinational and
   sequential §4 simulation claims are now separate; closed trajectory
   conservation has a stage-10 target; and §7.2's `F0` requires an initialized
   slice-to-total-permutation extension theorem.
+- Corrected further source-audit errors: the paper's §2.5 graph model includes
+  feedback and memory rather than being feed-forward; Figure 7 states equal
+  delay only from argument to result; and Figure 8 provides no transition or
+  trace specification. Added explicit dispositions for P4–P8, the §6.1
+  discrete billiard state, the strong whole-circuit billiard correspondence,
+  §7 resource headlines, physical claims throughout the paper, and the tacit
+  unit-wire/identity basis convention.
+- Narrowed correction CL-008 to what Figure 18 actually says: steering/timing
+  mirrors and unit wires are omitted, while bridge and trivial crossovers are
+  explicitly distinguished. Clearance and collision scheduling remain inferred
+  formalization obligations, not alleged quotations.
 - Corrected the planned copy theorem. With Table (2)'s exact
   `(u,x1,x2)`/`(v,y1,y2)` order, `(x1,x2)=(1,0)` gives
   `(y1,y2)=(a,not a)`. The later proof must not infer port order from the
@@ -165,7 +190,7 @@ builds have not run.
   non-prerelease releases published 2026-07-13.
 - Lean tag commit:
   `8c9756b28d64dab099da31a4c09229a9e6a2ef35`.
-- Expected mathlib tag/manifest commit:
+- Locked mathlib tag/manifest commit:
   `81a5d257c8e410db227a6665ed08f64fea08e997`.
 - Mathlib's tagged `lean-toolchain` selects exactly
   `leanprover/lean4:v4.32.0`.
@@ -183,8 +208,8 @@ builds have not run.
 
 ### Representation decision record
 
-The following decisions are accepted for stage 2, conditional only on the
-pending in-project build reproducing the compile audit:
+The following decisions are accepted for stage 2 by the in-project compiled
+probe:
 
 - Core state: transparent `abbrev BitState (n : Nat) := Fin n → Bool`.
   This gives coordinate access, function extensionality, finite enumeration,
@@ -259,32 +284,31 @@ Rejected or deferred alternatives:
   optional physical/discrete geometry modules must not become dependencies of
   the finite logical API.
 
-### Verification evidence and remaining action
+### Verification evidence
 
 - `cd formal && lean --version` selected Lean `v4.32.0` at commit
   `8c9756b28d64dab099da31a4c09229a9e6a2ef35`.
-- `cd formal && lean ConservativeLogic.lean` succeeded for the empty public
-  root.
-- The offline Lean-source scan found no `sorry`, `admit`, or `axiom`; the
-  declaration scan found no Fredkin/circuit/realization/uncompute/universality/
-  sequential/billiard implementation; the whitespace scan and
-  `git diff --check` passed.
-- `lake update` inside `formal/` failed in the sandbox because Reservoir's
-  `curl` exited with code 6. The required escalated retry was rejected by the
-  approval gate, which still treated the prior scaffold-only instruction as a
-  prohibition. No indirect dependency-fetch workaround was attempted.
-- Consequently, `lake-manifest.json`, the local mathlib checkout, the focused
-  audit build, cache retrieval, and full build are still missing. The exact next
-  action after explicit approval is:
-
-  ```text
-  cd formal
-  lake update
-  lake exe cache get
-  lake build ConservativeLogic.Audit.Guardrails
-  lake build
-  ```
-
-- After those commands pass, verify the manifest revision, run the Lean-source
-  proof-hole/forbidden-feature scans, `git diff --check`, inspect the diff, and
-  fold final evidence into `0-plan.md`. Do not start stage 2 before that.
+- The first sandboxed `lake update` failed because Reservoir's `curl` exited
+  with code 6. The approved network retry succeeded, checked out mathlib at the
+  exact locked revision, materialized all inherited dependencies, and ran
+  mathlib's cache hook successfully.
+- The first focused build exposed a real compatibility defect:
+  `invalid 'import' command, it must be used in the beginning of the file`.
+  Moving the four imports before the module doc command fixed the probe for
+  Lean 4.32.0.
+- `lake build ConservativeLogic.Audit.Guardrails` then succeeded with 762 jobs.
+  This focused command remains required because the private audit leaf is not
+  imported by the intentionally empty default target.
+- The default `lake build` succeeded with 3 jobs, confirming that the public
+  root remains independently buildable.
+- The strengthened probe rebuild succeeded after adding guarded missing-instance
+  checks for `Vector Bool 3` and `BitVec 3`, `DecidableEq` checks, `Equiv.symm`,
+  `Equiv.trans`, its application order, and `Fin.addCases`.
+- After `lake clean`, both the focused and default builds succeeded again from
+  a clean project build directory against the locked dependencies.
+- Lean-source scans found no `sorry`, `admit`, `axiom`, later-stage
+  implementation declarations, or unsafe/fallback constructs. Stage 1 exports
+  no theorem, so no `#print axioms` target applies yet.
+- The manifest revision/import boundary checks, `git diff --check`, complete
+  diff inspection, and final clean-worktree check passed. Stage 2 is the first
+  incomplete stage and was not started.

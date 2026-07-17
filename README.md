@@ -25,9 +25,13 @@ release pair. To reproduce the build:
 cd formal
 lake update
 lake exe cache get
+lake build ConservativeLogic.Audit.Guardrails
 lake build
 ```
 
-Stage 1 currently contains only the project skeleton and private representation
-probes. Dependency-backed validation is still pending; no paper theorem has yet
-been implemented.
+Stage 1 is complete. It contains only the locked project skeleton and private
+representation probes: the focused audit build and the empty public default
+target both pass under Lean/mathlib `v4.32.0`. The focused command is explicit
+because the diagnostic leaf is intentionally not imported by the public root.
+No paper theorem has yet been implemented; finite-state foundations begin in
+Stage 2.
