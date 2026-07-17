@@ -26,12 +26,15 @@ cd formal
 lake update
 lake exe cache get
 lake build ConservativeLogic.Audit.Guardrails
+lake build ConservativeLogic.Audit.Finite
 lake build
 ```
 
-Stage 1 is complete. It contains only the locked project skeleton and private
-representation probes: the focused audit build and the empty public default
-target both pass under Lean/mathlib `v4.32.0`. The focused command is explicit
-because the diagnostic leaf is intentionally not imported by the public root.
-No paper theorem has yet been implemented; finite-state foundations begin in
-Stage 2.
+Stages 1 and 2 are complete under Lean/mathlib `v4.32.0`. The public import
+`ConservativeLogic` now exports finite Boolean states, Hamming weight and block
+additivity, separate reversibility and weight-preservation predicates, bundled
+reversible/conservative maps, and conservative wire permutations. It also
+contains checked one- and two-bit semantic witnesses showing that reversibility
+and Hamming-weight preservation are independent. The focused audit commands are
+explicit because diagnostic leaves are intentionally not imported by the
+public root. The paper-convention Fredkin gate begins in Stage 3.

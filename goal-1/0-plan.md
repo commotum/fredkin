@@ -68,9 +68,10 @@ Lean results as the work proceeds.
 - `fredkin-1982/BUILD-PLAN.md` supplies generic Lean module and verification
   guidance; it is not a proof or paper-specific plan.
 - The unrelated placeholder Python project (`pyproject.toml`, `main.py`) remains
-  untouched. Stage 1 has added an isolated `formal/` Lake project pinning Lean
-  and mathlib `v4.32.0`, an empty public root, and a private representation
-  probe. `formal/lake-manifest.json` locks the requested mathlib tag to commit
+  untouched. Stage 1 added the isolated `formal/` Lake project and private
+  representation probe. Stage 2 replaced the empty public root with finite
+  state, reversible-map, independence-witness, and thin API modules.
+  `formal/lake-manifest.json` locks mathlib `v4.32.0` to commit
   `81a5d257c8e410db227a6665ed08f64fea08e997`.
 - Direct invocation under `formal/` selects Lean `v4.32.0` at commit
   `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, both
@@ -82,6 +83,17 @@ Lean results as the work proceeds.
   `BitVec` surfaces. Guarded negative checks confirm that root `Vector Bool 3`
   and `BitVec 3` do not supply the required local `Fintype` instances under the
   pinned narrow imports.
+- `BitState n := Fin n → Bool` and project-owned `hammingWeight` now form the
+  stable state representation. `BitState.append`/`split` are mutually inverse,
+  and `hammingWeight_append` proves arbitrary-width block additivity, including
+  width zero.
+- `IsReversible` and `WeightPreserving` are independent predicates.
+  `Reversible` bundles an `Equiv.Perm`; `Conservative` bundles an equivalence
+  with a separate preservation proof. Identity, serial composition, inverse,
+  and active bijective wire-reindexing closure laws are checked.
+- `Independence.flipOne` is reversible but not weight-preserving, while
+  `Independence.sortTwo` is weight-preserving but noninjective. The latter is
+  explicitly only a semantic endomap; it is not a circuit or fan-out claim.
 
 ### Checked Paper Facts
 
@@ -124,9 +136,6 @@ Lean results as the work proceeds.
 
 ### Assumptions to Test, Not Yet Facts
 
-- The conservative-map API should be a bundled structure carrying an
-  `Equiv.Perm` and a separate pointwise weight-preservation proof; its exact
-  coercions and field names remain for stage 2.
 - A typed circuit syntax indexed by input/output arity, with explicit wire
   permutations and tensor/serial composition, is expected to prevent implicit
   fan-out. Stage 1 fixed the boundary constraints, but the exact syntax remains
@@ -191,7 +200,7 @@ The eventual goal is complete only when all of the following hold:
 | §2.4 | Fredkin is nonlinear under an explicitly selected coordinatewise-XOR/`F₂` notion | 3 | “Nonlinear” needs a definition and concrete additivity counterexample |
 | §2.5, Fig. 3 | Literal directed-graph open/closed transition semantics, feedback, memory, balanced external ports, and closed-system weight conservation | 10 | The paper's graph model is not feed-forward; it needs explicit state and feedback semantics |
 | §§2.5, 7.1 | Acyclic/equal-latency combinational fragment and one-to-one composition | 4, 7 | Typed syntax may be a corrected fragment, not the literal graph model, absent a proved correspondence |
-| §2.5 | Reversibility and conservation are independent | 2 | Needs explicit finite witnesses |
+| §2.5 | Reversibility and conservation are independent | 2 | Proved semantically for ordinary Boolean endomaps by `Independence.reversible_not_weightPreserving` and `Independence.weightPreserving_not_reversible`; this does not assert a literal circuit realization |
 | §3, Fig. 5 | Realization partitions source/argument and result/sink, fixes constants independently of the argument, and permits argument-dependent garbage | 5 | Central interface definition; every partition must be explicit |
 | §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | Ordering and interfaces must be reconstructed from figures |
 | §3, Fig. 7 | Demultiplexer semantics include the complete output and address-echo garbage; argument-to-result paths have equal delay | 4, 6 | The paper does not establish equal delay for every source/sink path; reconstruct the exact function and latency scope |
@@ -225,7 +234,7 @@ disposition.
 |---|---|---|
 | CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Name the convention, prove the table row-by-row, and provide an explicit conjugacy theorem if an alternate convention is exposed. |
 | CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Keep `Equiv`, involutivity/self-inverse behavior, value semantics, delay, oriented network reversal, and time-reversal symmetry as distinct notions and theorems. |
-| CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Give finite semantic endomap witnesses in both directions; do not mislabel the noninvertible weight-preserving witness as a conservative-logic gate or literal circuit realization. |
+| CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Resolved for the semantic predicate claim in Stage 2 by one-bit negation and two-bit Boolean sorting. The latter is documented only as an ordinary endomap, not a conservative-logic gate or literal circuit realization. |
 | CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | State a constrained ancilla interface and account for every output. |
 | CL-005 | Figure 7 states equal delay only from argument to result, whereas §7.1 defines a combinational network using equal delay from any input to any output. | Decide whether all-path equal latency is intrinsic syntax, a well-formedness predicate, or a retiming theorem; do not promote Figure 7's narrower statement to source/sink paths without checking them. |
 | CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Formalize source transition, initialization, scheduling, and noninterference semantics before the sequential theorem; state slowdown/time-multiplexing bounds separately from semantic simulation. |
@@ -288,8 +297,9 @@ Names are placeholders to refine during stage work; they are not declarations.
   the expected function properties.
 - `Conservative.comp` and `Conservative.inverse`: conservation is closed under
   composition and inversion of an equivalence.
-- `reversible_not_conservative` and `conservative_not_reversible`: concrete
-  independence witnesses.
+- `Independence.reversible_not_weightPreserving` and
+  `Independence.weightPreserving_not_reversible`: concrete semantic
+  independence witnesses for the two standalone predicates.
 - `fredkin_apply_zero`, `fredkin_apply_one`: exact control behavior.
 - `fredkin_involutive`, `fredkin_equiv`, `fredkin_conservative`: core primitive
   properties.
@@ -361,6 +371,11 @@ later stages.
   `git diff --check` passes.
 
 ### 2-FINITE
+
+**Status:** Complete (2026-07-17). The finite-state API, independent semantic
+predicates, closure laws, wire action, exhaustive small witnesses, focused and
+clean builds, boundary scans, and axiom audit are recorded in
+`goal-1/2-FINITE.md`.
 
 #### Big Picture Objective
 
