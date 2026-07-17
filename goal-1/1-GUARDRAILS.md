@@ -304,8 +304,9 @@ Rejected or deferred alternatives:
 - The strengthened probe rebuild succeeded after adding guarded missing-instance
   checks for `Vector Bool 3` and `BitVec 3`, `DecidableEq` checks, `Equiv.symm`,
   `Equiv.trans`, its application order, and `Fin.addCases`.
-- After `lake clean`, both the focused and default builds succeeded again from
-  a clean project build directory against the locked dependencies.
+- After `lake clean`, the focused build succeeded with 770 jobs and the default
+  build with 3 jobs from a clean project build directory against the locked
+  dependencies.
 - Lean-source scans found no `sorry`, `admit`, `axiom`, later-stage
   implementation declarations, or unsafe/fallback constructs. Stage 1 exports
   no theorem, so no `#print axioms` target applies yet.
