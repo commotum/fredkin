@@ -1,11 +1,14 @@
+import ConservativeLogic.API
+
 /-!
 # Conservative Logic
 
 Public root for the verified finite conservative-logic library.
 
-Stage 1 intentionally exports no definitions. Candidate representations are
-compile-checked privately in `ConservativeLogic.Audit.Guardrails` before the
-stage-2 public API is introduced.
+The current API provides finite Boolean states, Hamming weight, reversible and
+conservative maps, wire permutations, and explicit witnesses that static
+reversibility and weight preservation are independent. It does not yet expose
+circuit syntax or execution semantics.
 -/
 
 namespace ConservativeLogic
