@@ -128,8 +128,9 @@ theorem decode_toValidOutput (value : BitState 2) :
 @[simp]
 theorem encode_decode (value : ValidOutput) : encode (decode value) = value.1 := by
   obtain ⟨inputValue, equality⟩ := value.2
+  change encode (decodeRaw value.1) = value.1
   rw [← equality]
-  exact congrArg encode (decodeRaw_encode inputValue)
+  rw [decodeRaw_encode]
 
 /-- The interaction map is an equivalence onto exactly its four valid outputs. -/
 def equiv : BitState 2 ≃ ValidOutput where
@@ -150,7 +151,7 @@ theorem equiv_symm_apply (value : ValidOutput) : equiv.symm value = decode value
 theorem encode_weightPreserving : WeightPreserving encode := by
   intro value
   rw [← input_eta value]
-  cases value 0 <;> cases value 1 <;> decide
+  cases value 0 <;> cases value 1 <;> rfl
 
 /-- A constructive finite enumeration transported through `equiv`. -/
 instance validOutputFintype : Fintype ValidOutput :=
@@ -160,14 +161,19 @@ instance validOutputFintype : Fintype ValidOutput :=
 @[simp]
 theorem card_validOutput : Fintype.card ValidOutput = 4 := by
   rw [Fintype.card_congr equiv.symm]
-  decide
+  rfl
 
 /-- A raw tuple with both single-ball branches occupied is not an output. -/
 def invalidBothSingles : BitState 4 := output false true true false
 
 /-- The named raw interaction witness lies outside the constrained interface. -/
 theorem invalidBothSingles_not_valid : ¬ IsValidOutput invalidBothSingles := by
-  decide
+  rintro ⟨inputValue, equality⟩
+  have branchB : !inputValue 0 && inputValue 1 = true := by
+    simpa [encode, invalidBothSingles] using congrFun equality (1 : Fin 4)
+  have branchC : inputValue 0 && !inputValue 1 = true := by
+    simpa [encode, invalidBothSingles] using congrFun equality (2 : Fin 4)
+  cases control : inputValue 0 <;> simp [control] at branchB branchC
 
 /-- The interaction encoder is not surjective onto all sixteen raw states. -/
 theorem encode_not_surjective : ¬ Function.Surjective encode := by
@@ -179,8 +185,8 @@ theorem encode_not_surjective : ¬ Function.Surjective encode := by
 theorem no_raw_equiv : ¬ Nonempty (BitState 2 ≃ BitState 4) := by
   rintro ⟨rawEquiv⟩
   have cardinality := Fintype.card_congr rawEquiv
-  have inputCard : Fintype.card (BitState 2) = 4 := by decide
-  have outputCard : Fintype.card (BitState 4) = 16 := by decide
+  have inputCard : Fintype.card (BitState 2) = 4 := by rfl
+  have outputCard : Fintype.card (BitState 4) = 16 := by rfl
   have impossible : (4 : Nat) = 16 := inputCard.symm.trans (cardinality.trans outputCard)
   exact (by decide : (4 : Nat) ≠ 16) impossible
 
@@ -289,8 +295,9 @@ theorem decode_toValidOutput (value : BitState 2) :
 @[simp]
 theorem encode_decode (value : ValidOutput) : encode (decode value) = value.1 := by
   obtain ⟨inputValue, equality⟩ := value.2
+  change encode (decodeRaw value.1) = value.1
   rw [← equality]
-  exact congrArg encode (decodeRaw_encode inputValue)
+  rw [decodeRaw_encode]
 
 /-- The switch map is an equivalence onto exactly its four valid outputs. -/
 def equiv : BitState 2 ≃ ValidOutput where
@@ -311,7 +318,7 @@ theorem equiv_symm_apply (value : ValidOutput) : equiv.symm value = decode value
 theorem encode_weightPreserving : WeightPreserving encode := by
   intro value
   rw [← input_eta value]
-  cases value 0 <;> cases value 1 <;> decide
+  cases value 0 <;> cases value 1 <;> rfl
 
 /-- A constructive finite enumeration transported through `equiv`. -/
 instance validOutputFintype : Fintype ValidOutput :=
@@ -321,7 +328,7 @@ instance validOutputFintype : Fintype ValidOutput :=
 @[simp]
 theorem card_validOutput : Fintype.card ValidOutput = 4 := by
   rw [Fintype.card_congr equiv.symm]
-  decide
+  rfl
 
 /-- With false control, occupation of the `c x` branch is invalid. -/
 def invalidTrueBranch : BitState 3 := output false true false
@@ -331,11 +338,21 @@ def invalidFalseBranch : BitState 3 := output true false true
 
 /-- The false-control/true-branch triple is outside the switch range. -/
 theorem invalidTrueBranch_not_valid : ¬ IsValidOutput invalidTrueBranch := by
-  decide
+  rintro ⟨inputValue, equality⟩
+  have controlFalse : inputValue 0 = false := by
+    simpa [encode, invalidTrueBranch] using congrFun equality (0 : Fin 3)
+  have trueBranch : inputValue 0 && inputValue 1 = true := by
+    simpa [encode, invalidTrueBranch] using congrFun equality (1 : Fin 3)
+  simp [controlFalse] at trueBranch
 
 /-- The true-control/false-branch triple is outside the switch range. -/
 theorem invalidFalseBranch_not_valid : ¬ IsValidOutput invalidFalseBranch := by
-  decide
+  rintro ⟨inputValue, equality⟩
+  have controlTrue : inputValue 0 = true := by
+    simpa [encode, invalidFalseBranch] using congrFun equality (0 : Fin 3)
+  have falseBranch : !inputValue 0 && inputValue 1 = true := by
+    simpa [encode, invalidFalseBranch] using congrFun equality (2 : Fin 3)
+  simp [controlTrue] at falseBranch
 
 /-- The switch encoder is not surjective onto all eight raw states. -/
 theorem encode_not_surjective : ¬ Function.Surjective encode := by
@@ -347,8 +364,8 @@ theorem encode_not_surjective : ¬ Function.Surjective encode := by
 theorem no_raw_equiv : ¬ Nonempty (BitState 2 ≃ BitState 3) := by
   rintro ⟨rawEquiv⟩
   have cardinality := Fintype.card_congr rawEquiv
-  have inputCard : Fintype.card (BitState 2) = 4 := by decide
-  have outputCard : Fintype.card (BitState 3) = 8 := by decide
+  have inputCard : Fintype.card (BitState 2) = 4 := by rfl
+  have outputCard : Fintype.card (BitState 3) = 8 := by rfl
   have impossible : (4 : Nat) = 8 := inputCard.symm.trans (cardinality.trans outputCard)
   exact (by decide : (4 : Nat) ≠ 8) impossible
 
