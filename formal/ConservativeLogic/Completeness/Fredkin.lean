@@ -8,7 +8,7 @@ import ConservativeLogic.Circuit.Structural
 This module proves the fixed-basis half of finite conservative completeness.
 The permitted syntax is the paper's zero-controlled Fredkin gate together with
 identity, serial/tensor composition, and explicit structural wire
-reindexing.  Structural reindexing is an admitted routing convention; it is
+reindexing.  Structural reindexing is an abstract routing convention; it is
 not claimed to be a physical Fredkin network.
 
 Ancillas are explicit, may contain both zeroes and ones, and are returned
@@ -240,6 +240,41 @@ def inverse {width : Nat} {gate : Reversible width}
       simpa using forward
     rw [← forward']
     exact Circuit.eval_inverse_eval realization.circuit _
+
+/-- Conjugate a clean realization by an explicit structural data-wire route. -/
+def wireConjugate {width : Nat} {gate : Reversible width}
+    (realization : CleanFredkinRealization gate) (wiring : WirePerm width) :
+    CleanFredkinRealization
+      ((WirePerm.onState wiring).trans gate |>.trans
+        (WirePerm.onState wiring).symm) where
+  ancillaWidth := realization.ancillaWidth
+  ancillaInit := realization.ancillaInit
+  circuit := .seq
+    (.tensor (.identity realization.ancillaWidth) (.permute wiring))
+    (.seq realization.circuit
+      (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)))
+  structural := by simp [realization.structural]
+  latencyZero := by
+    have inputRoute : Circuit.HasLatency
+        (.tensor (.identity realization.ancillaWidth) (.permute wiring)) 0 :=
+      Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
+        (Circuit.hasLatency_permute wiring)
+    have outputRoute : Circuit.HasLatency
+        (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)) 0 :=
+      Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
+        (Circuit.hasLatency_permute wiring.symm)
+    intro input output actual path
+    simpa using
+      (Circuit.HasLatency.seq inputRoute
+        (Circuit.HasLatency.seq realization.latencyZero outputRoute) path)
+  realizes state := by
+    simp only [Circuit.eval_seq, Circuit.eval_tensor_append,
+      Circuit.eval_identity, Circuit.eval_permute]
+    rw [realization.realizes]
+    rw [Circuit.eval_tensor_append, Circuit.eval_identity,
+      Circuit.eval_permute]
+    rw [WirePerm.onState_inverse]
+    rfl
 
 private def emptyState : BitState 0 := fun index => Fin.elim0 index
 

@@ -40,6 +40,11 @@ inductive Circuit : Nat → Type where
   /-- Parallel composition on ordered, disjoint left and right wire blocks. -/
   | tensor {m n : Nat} (left : Circuit m) (right : Circuit n) : Circuit (m + n)
 
+/-- Transport a circuit along an equality of widths without changing its syntax. -/
+def Circuit.cast {leftWidth rightWidth : Nat} (width : leftWidth = rightWidth)
+    (circuit : Circuit leftWidth) : Circuit rightWidth :=
+  width ▸ circuit
+
 /--
 A one-bit wire of any discrete length, built by serially composing exactly that
 many unit-wire constructors.  Length zero is the structural identity.

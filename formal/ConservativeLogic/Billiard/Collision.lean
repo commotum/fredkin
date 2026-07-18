@@ -111,15 +111,15 @@ selected two-ball event patterns.  All other simultaneous masks are excluded.
 def AllowedLocal (state : BitState 4) : Prop :=
   hammingWeight state ≤ 1 ∨ state = straightPair ∨ state = deflectedPair
 
-/-- Both selected two-ball masks are admitted local states. -/
+/-- Both selected two-ball masks are legal local states. -/
 theorem straightPair_allowed : AllowedLocal straightPair :=
   Or.inr (Or.inl rfl)
 
-/-- Both selected two-ball masks are admitted local states. -/
+/-- Both selected two-ball masks are legal local states. -/
 theorem deflectedPair_allowed : AllowedLocal deflectedPair :=
   Or.inr (Or.inr rfl)
 
-/-- The collision permutation preserves and reflects the admitted-state condition. -/
+/-- The collision permutation preserves and reflects the legal-state condition. -/
 theorem map_allowed_iff (state : BitState 4) :
     AllowedLocal (map state) ↔ AllowedLocal state := by
   by_cases straight : state = straightPair
@@ -132,7 +132,7 @@ theorem map_allowed_iff (state : BitState 4) :
       exact ⟨fun _ => deflectedPair_allowed, fun _ => straightPair_allowed⟩
     · rw [map_of_ne straight deflected]
 
-/-- Forward closure of the admitted local-state predicate. -/
+/-- Forward closure of the legal local-state predicate. -/
 theorem map_preserves_allowed {state : BitState 4}
     (allowed : AllowedLocal state) : AllowedLocal (map state) :=
   (map_allowed_iff state).2 allowed
@@ -140,7 +140,7 @@ theorem map_preserves_allowed {state : BitState 4}
 /-- A raw mask equipped with the selected local-event legality proof. -/
 def AllowedState := {state : BitState 4 // AllowedLocal state}
 
-/-- The completed collision permutation restricted to its admitted local states. -/
+/-- The completed collision permutation restricted to its selected legal local states. -/
 def allowedEquiv : AllowedState ≃ AllowedState where
   toFun state := ⟨map state.1, map_preserves_allowed state.2⟩
   invFun state := ⟨map state.1, map_preserves_allowed state.2⟩
@@ -153,7 +153,7 @@ theorem allowedEquiv_weight (state : AllowedState) :
   map_weightPreserving state.1
 
 /--
-Outside the admitted subtype the total map is identity.  This theorem records
+Outside the legal subtype the total map is identity.  This theorem records
 the algebraic fallback explicitly; it does not assign those masks a physical
 collision interpretation.
 -/
@@ -197,12 +197,12 @@ private theorem embed_input_allowed (p q : Bool) :
   · exact Or.inl (by decide)
   · exact Or.inr (Or.inl rfl)
 
-/-- Every initialized two-input slice is an admitted local collision state. -/
+/-- Every initialized two-input slice is a legal local collision state. -/
 theorem embed_allowed (value : BitState 2) : AllowedLocal (embed value) := by
   rw [← Interaction.input_eta value]
   exact embed_input_allowed (value 0) (value 1)
 
-/-- Package an initialized interaction input in the admitted local-state subtype. -/
+/-- Package an initialized interaction input in the legal local-state subtype. -/
 def embedAllowed (value : BitState 2) : AllowedState :=
   ⟨embed value, embed_allowed value⟩
 
@@ -212,7 +212,7 @@ theorem embed_weightPreserving : WeightPreserving embed := by
   rw [← Interaction.input_eta value]
   cases value 0 <;> cases value 1 <;> rfl
 
-/-- The scattered initialized slice remains within the admitted local subtype. -/
+/-- The scattered initialized slice remains within the legal local subtype. -/
 theorem map_embed_allowed (value : BitState 2) :
     AllowedLocal (map (embed value)) :=
   map_preserves_allowed (embed_allowed value)

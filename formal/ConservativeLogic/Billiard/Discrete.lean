@@ -20,12 +20,12 @@ necessary scheduling condition without pretending it is sufficient geometry.
 
 namespace ConservativeLogic.Billiard.ScatteringLayer
 
-/-- An admitted local collision mask at every independent site. -/
+/-- A legal local collision mask at every independent site. -/
 abbrev Configuration (sites : Type) := sites → Collision.AllowedState
 
 namespace Configuration
 
-/-- Simultaneously advance every independent admitted collision site. -/
+/-- Simultaneously advance every independent legal collision site. -/
 def step {sites : Type} (configuration : Configuration sites) : Configuration sites :=
   fun site => Collision.allowedEquiv (configuration site)
 
@@ -82,7 +82,7 @@ end Configuration
 def illegalThreeBallMask : BitState 4 :=
   Interaction.output true true true false
 
-/-- The admitted local-state predicate rejects the named three-ball event. -/
+/-- The legal local-state predicate rejects the named three-ball event. -/
 theorem illegalThreeBallMask_not_allowed :
     ¬ Collision.AllowedLocal illegalThreeBallMask := by
   intro allowed

@@ -5,7 +5,7 @@ import ConservativeLogic.Sequential.Conservative
 /-!
 # Zero-latency circuit-backed sequential networks
 
-This module admits an existing feed-forward `Circuit` as the body of one
+This module accepts an existing feed-forward `Circuit` as the body of one
 sequential tick only when every grammar-induced boundary path has latency
 zero.  Stored values live in the explicit memory block of the sequential
 machine; positive-delay circuit syntax is intentionally excluded because

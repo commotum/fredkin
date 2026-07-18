@@ -4,7 +4,7 @@ import ConservativeLogic.Billiard
 # Adversarial audit of the constrained billiard abstraction
 
 This non-public leaf checks every interaction and switch row, constrained
-inverse use, unequal-width vacancy changes, the admitted collision masks,
+inverse use, unequal-width vacancy changes, the selected legal collision masks,
 independent simultaneous sites, event-support overlap, sampled routing and
 clearance distinctions, and every Figure 14 endpoint case.
 

@@ -388,7 +388,7 @@ Lean results as the work proceeds.
   jobs with only standard Lean/mathlib axioms.
 - Stage 11 is complete from baseline `898bfe5`.  It adds the separate opt-in
   `ConservativeLogic.Billiard` umbrella with exact constrained interaction and
-  switch interfaces, a selected admitted collision-site involution,
+  switch interfaces, a selected legal collision-site involution,
   independent-site scattering, directed sampled routes, and a four-tick
   Figure 14 trace.  The finite and sequential APIs do not import it.  The
   uncontended clean default build passed 995 jobs and the explicit post-clean
@@ -585,7 +585,7 @@ ConservativeLogic/
   Sequential.lean           -- opt-in sequential umbrella, outside finite API
   Audit/Sequential.lean     -- non-public Stage 10 regressions and axiom audit
   Billiard/Interface.lean   -- constrained interaction/switch rail equivalences
-  Billiard/Collision.lean   -- selected local collision and admitted subtype
+  Billiard/Collision.lean   -- selected local collision and legal subtype
   Billiard/Discrete.lean    -- independent simultaneous scattering layers
   Billiard/Geometry.lean    -- directed sampled routes, mirrors, timing conflicts
   Billiard/Figure14.lean    -- exact four-tick sampled interaction trace
@@ -793,7 +793,7 @@ they disambiguate ownership.
   `card_validOutput`, `encode_vacancies`, and `no_raw_equiv` theorems: exact
   unequal-width constrained rail interfaces with their resource distinction.
 - `Collision.conservative`, `AllowedState`, `allowedEquiv`, and `map_embed`:
-  the selected local `0110 <-> 1001` scattering permutation, admitted event
+  the selected local `0110 <-> 1001` scattering permutation, legal event
   subset, and exact initialized interaction slice.  The raw-map fallback is
   algebraic only.
 - `ScatteringLayer.Configuration.stepEquiv`, `stepAt_commute`, and
@@ -1184,7 +1184,7 @@ Current contract decisions:
   not preservation of memory weight alone.
 - Feedback is register-separated.  Delayed closure stores the former output
   and consumes it at the next tick; no simultaneous fixed-point constructor is
-  admitted.
+  provided.
 - A feed-forward `Circuit` can serve as a within-tick core only with a proved
   zero-latency certificate.  Static evaluation of `Circuit.unitWire` must not
   be mistaken for execution of its stored value.
@@ -1218,7 +1218,7 @@ then determine exactly which paper simulation and inverse claims extend to it.
   occupies the loop-register block consumed on the next tick.  Closed orbits
   preserve complete weight at all natural times; explicit finite iterates are
   equivalences with both cancellation directions.
-- `Network` admits an existing acyclic `Circuit` only with `HasLatency core 0`.
+- `Network` accepts an existing acyclic `Circuit` only with `HasLatency core 0`.
   The structural-swap `DelayCell` proves explicit initialization and the exact
   one-tick offset, while `unitWire_not_instantaneous` rejects the static
   positive-delay constructor at this bridge.

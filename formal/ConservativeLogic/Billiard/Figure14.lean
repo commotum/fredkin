@@ -160,7 +160,7 @@ theorem output_refines (p q : Bool) :
     observeOutput (frame p q 4) = Interaction.encode (Interaction.input p q) := by
   cases p <;> cases q <;> decide
 
-/-- The same endpoint theorem factored through the admitted local collision rule. -/
+/-- The same endpoint theorem factored through the selected legal local collision rule. -/
 theorem output_refines_collision (p q : Bool) :
     observeOutput (frame p q 4) =
       Collision.map (Collision.embed (Interaction.input p q)) := by

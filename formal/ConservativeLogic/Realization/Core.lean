@@ -23,30 +23,6 @@ network, or claim timing, physical routing, entropy, or energy results.
 
 namespace ConservativeLogic.Realization
 
-/-- Transport a Boolean state along an equality of widths, without changing any value. -/
-def castState {m n : Nat} (width : m = n) (state : BitState m) : BitState n :=
-  width ▸ state
-
-/-- Pointwise form of width transport, with the index transported in the reverse direction. -/
-theorem castState_apply {m n : Nat} (width : m = n) (state : BitState m)
-    (index : Fin n) :
-    castState width state index = state (Fin.cast width.symm index) := by
-  cases width
-  rfl
-
-/-- Width transport does not alter Hamming weight. -/
-@[simp]
-theorem hammingWeight_castState {m n : Nat} (width : m = n) (state : BitState m) :
-    hammingWeight (castState width state) = hammingWeight state := by
-  cases width
-  rfl
-
-/-- Width transport is injective. -/
-theorem castState_injective {m n : Nat} (width : m = n) :
-    Function.Injective (castState width) := by
-  cases width
-  exact Function.injective_id
-
 /-- There are exactly `2 ^ n` width-`n` Boolean states. -/
 @[simp]
 theorem card_bitState (n : Nat) : Fintype.card (BitState n) = 2 ^ n := by

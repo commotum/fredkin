@@ -1,4 +1,4 @@
-import ConservativeLogic.Realization.Core
+import ConservativeLogic.Circuit.Semantics
 
 /-!
 # Structural circuit transport and block routing
@@ -13,11 +13,6 @@ physical routing claim.
 namespace ConservativeLogic.Circuit
 
 open Realization
-
-/-- Transport a circuit along an equality of widths without changing its syntax. -/
-def cast {leftWidth rightWidth : Nat} (width : leftWidth = rightWidth)
-    (circuit : Circuit leftWidth) : Circuit rightWidth :=
-  width ▸ circuit
 
 /-- Circuit evaluation commutes exactly with width transport. -/
 theorem eval_cast {leftWidth rightWidth : Nat}

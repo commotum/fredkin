@@ -108,7 +108,7 @@ the exact fixed source, complete argument-dependent garbage, zero scratch, full
 initialized-slice equality, exact Fredkin count, and abstract latency zero.
 Serial composition carries earlier garbage unchanged; tensor uses proved
 four-block permutations and never duplicates an input implicitly. Because the
-target still admits zero-delay structural `WirePerm` nodes, this is a
+target still includes zero-delay structural `WirePerm` nodes, this is a
 Fredkin-plus-reindexing construction for the named grammar—not a pure physical
 routing theorem, a proof that every Boolean function has a source term, or the
 paper's sequential universality claim.
@@ -166,7 +166,7 @@ compiler and does not claim a global linear or optimal width bound.  Finally,
 every width-four circuit is proved even as a
 permutation of all states, while the conservative swap `1100 ↔ 1010` is odd,
 so the same-width/no-ancilla reading is formally false.  Structural wire
-reindexing remains an admitted routing convention, not a synthesized physical
+reindexing remains an abstract routing convention, not a synthesized physical
 network; all-zero scratch, the paper's asymptotic scratch assertions, feedback,
 and sequential universality remain unresolved in the finite public API.
 
@@ -220,8 +220,8 @@ The naked crossing conflicts when simultaneous.  A one-tick stagger avoids an
 equal sampled center but fails the radius-derived squared-distance threshold;
 a two-tick stagger satisfies that sampled threshold.  Figure 14 has a complete
 coordinate trace: every active ball makes four unit lattice moves, all integral
-frames preserve ball
-count and meet the sampled squared-distance threshold, the right-angle turn
+frames preserve ball count and meet the sampled squared-distance threshold,
+the right-angle turn
 occurs exactly on input `11`, and the full final frame observes
 `(pq,!p q,p !q,pq)`.  These are discrete sampled certificates, not continuous
 hard-ball, swept-clearance, elastic, mirror-mechanics, or physical-energy
@@ -230,11 +230,16 @@ theorems.
 Figures 15 and 17 provide no coordinates or numerical latency, while Figure
 18 says steering/timing mirrors and unit wires are not explicitly indicated
 and leaves its bridge/trivial crossover obligations unproved.  Accordingly,
-the library does
-not claim Figure 17/18 physical refinement, arbitrary mirror delay, a general
+the library does not claim Figure 17/18 physical refinement, arbitrary mirror delay, a general
 billiard layout compiler, P8 packing bounds, physical time reversal, or any
 thermodynamic conclusion.  The billiard umbrella is not imported by the finite
 or sequential APIs.
+
+Stage 12 stabilizes declaration ownership and namespaces, adds the derived
+`N₀` view and arbitrary finite one-bit wire chains requested by the paper map,
+and supplies a finite-root consumer plus an aggregate axiom audit.  These are
+API and correspondence repairs; they add no physical routing, continuous
+mechanics, hidden resource, or stronger universality claim.
 
 The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.

@@ -24,17 +24,22 @@ import ConservativeLogic.Completeness.Adjacent
 import ConservativeLogic.Completeness.Synthesis
 import ConservativeLogic.Completeness.NoAncilla
 
+-- This import-only umbrella intentionally uses a module overview, not a copyright header.
+set_option linter.style.header false
+
 /-!
 # Public conservative-logic API
 
 This module is the stable public import for the finite-state foundations and
-primitive value semantics. It re-exports Boolean states, static reversibility
+primitive value semantics. It re-exports Boolean states, Hamming weight and
+its derived fixed-width false-wire count, static reversibility
 and conservation predicates, their bundled forms, wire permutations, the
 semantic independence witnesses, the unit-wire value/delay distinction, and
 the paper-convention Fredkin gate with its selected XOR-nonlinearity result.
 It also exports the balanced feed-forward circuit grammar with a fixed
 value-processing basis plus explicit structural reindexing, static conservative
-evaluation, and uniform-path-latency certificates. The certificate surface
+evaluation, arbitrary finite one-bit wire chains, and uniform-path-latency
+certificates. The certificate surface
 does not define ticks, traces, feedback, or sequential execution. The API also
 exports exhaustive source/clean-scratch/argument/result/garbage layouts,
 full-state realization constraints, and the exact one-Fredkin AND, OR, NOT,

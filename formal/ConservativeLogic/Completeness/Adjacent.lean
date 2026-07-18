@@ -751,47 +751,6 @@ theorem adjacentTranspositionClean {m : Nat} (pattern : BitState m) :
     realizes := adjacentTranspositionCircuit_spec pattern
   }⟩
 
-end Completeness.Adjacent
-namespace CleanFredkinRealization
-
-/-- Conjugate a clean realization by an explicit structural data-wire route. -/
-def wireConjugate {width : Nat} {gate : Reversible width}
-    (realization : CleanFredkinRealization gate) (wiring : WirePerm width) :
-    CleanFredkinRealization
-      ((WirePerm.onState wiring).trans gate |>.trans
-        (WirePerm.onState wiring).symm) where
-  ancillaWidth := realization.ancillaWidth
-  ancillaInit := realization.ancillaInit
-  circuit := .seq
-    (.tensor (.identity realization.ancillaWidth) (.permute wiring))
-    (.seq realization.circuit
-      (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)))
-  structural := by simp [realization.structural]
-  latencyZero := by
-    have inputRoute : Circuit.HasLatency
-        (.tensor (.identity realization.ancillaWidth) (.permute wiring)) 0 :=
-      Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
-        (Circuit.hasLatency_permute wiring)
-    have outputRoute : Circuit.HasLatency
-        (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)) 0 :=
-      Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
-        (Circuit.hasLatency_permute wiring.symm)
-    intro input output actual path
-    simpa using
-      (Circuit.HasLatency.seq inputRoute
-        (Circuit.HasLatency.seq realization.latencyZero outputRoute) path)
-  realizes state := by
-    simp only [Circuit.eval_seq, Circuit.eval_tensor_append,
-      Circuit.eval_identity, Circuit.eval_permute]
-    rw [realization.realizes]
-    rw [Circuit.eval_tensor_append, Circuit.eval_identity,
-      Circuit.eval_permute]
-    rw [WirePerm.onState_inverse]
-    rfl
-
-end CleanFredkinRealization
-namespace Completeness.Adjacent
-
 private def finalDataSwap (m : Nat) : WirePerm (m + 2) :=
   Equiv.swap (Fin.natAdd m (0 : Fin 2)) (Fin.natAdd m (1 : Fin 2))
 

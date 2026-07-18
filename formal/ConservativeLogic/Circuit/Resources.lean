@@ -1,4 +1,4 @@
-import ConservativeLogic.Circuit.Structural
+import ConservativeLogic.Circuit.Syntax
 
 /-!
 # Static circuit syntax resources

@@ -113,4 +113,38 @@ theorem hammingWeight_append {m n : Nat} (left : BitState m) (right : BitState n
     _ = hammingWeight left + hammingWeight right := by
       simp only [Fintype.card_subtype, hammingWeight]
 
+namespace Realization
+
+/-!
+Width transport is defined at the state layer because circuit structure and
+realization layouts both need it.  The historical `Realization` namespace is
+retained as the stable public name; no realization-specific data is involved.
+-/
+
+/-- Transport a Boolean state along an equality of widths, without changing any value. -/
+def castState {m n : Nat} (width : m = n) (state : BitState m) : BitState n :=
+  width ▸ state
+
+/-- Pointwise form of width transport, with the index transported in the reverse direction. -/
+theorem castState_apply {m n : Nat} (width : m = n) (state : BitState m)
+    (index : Fin n) :
+    castState width state index = state (Fin.cast width.symm index) := by
+  cases width
+  rfl
+
+/-- Width transport does not alter Hamming weight. -/
+@[simp]
+theorem hammingWeight_castState {m n : Nat} (width : m = n) (state : BitState m) :
+    hammingWeight (castState width state) = hammingWeight state := by
+  cases width
+  rfl
+
+/-- Width transport is injective. -/
+theorem castState_injective {m n : Nat} (width : m = n) :
+    Function.Injective (castState width) := by
+  cases width
+  exact Function.injective_id
+
+end Realization
+
 end ConservativeLogic
