@@ -174,6 +174,107 @@ private theorem castState_apply {leftWidth rightWidth : Nat}
   cases width
   rfl
 
+@[simp]
+private theorem castState_trans {left middle right : Nat}
+    (first : left = middle) (second : middle = right)
+    (state : BitState left) :
+    castState second (castState first state) =
+      castState (first.trans second) state := by
+  cases first
+  cases second
+  rfl
+
+private theorem castState_proof_irrel {left right : Nat}
+    (first second : left = right) (state : BitState left) :
+    castState first state = castState second state := by
+  have equality : first = second := Subsingleton.elim _ _
+  cases equality
+  rfl
+
+private theorem castState_append_left {a b c : Nat} (width : a = b)
+    (left : BitState a) (right : BitState c) :
+    castState (congrArg (fun n => n + c) width)
+        (BitState.append left right) =
+      BitState.append (castState width left) right := by
+  cases width
+  rfl
+
+private theorem castState_append_right {a b c : Nat} (width : b = c)
+    (left : BitState a) (right : BitState b) :
+    castState (congrArg (fun n => a + n) width)
+        (BitState.append left right) =
+      BitState.append left (castState width right) := by
+  cases width
+  rfl
+
+private theorem castState_append_assoc {a b c : Nat}
+    (first : BitState a) (second : BitState b) (third : BitState c) :
+    castState (Nat.add_assoc a b c)
+        (BitState.append (BitState.append first second) third) =
+      BitState.append first (BitState.append second third) := by
+  funext index
+  refine Fin.addCases ?_ ?_ index
+  · intro firstIndex
+    rw [castState_apply]
+    rw [show Fin.cast (Nat.add_assoc a b c).symm
+          (Fin.castAdd (b + c) firstIndex) =
+        Fin.castAdd c (Fin.castAdd b firstIndex) by
+      apply Fin.ext
+      rfl]
+    simp
+  · intro remaining
+    refine Fin.addCases ?_ ?_ remaining
+    · intro secondIndex
+      rw [castState_apply]
+      rw [show Fin.cast (Nat.add_assoc a b c).symm
+            (Fin.natAdd a (Fin.castAdd c secondIndex)) =
+          Fin.castAdd c (Fin.natAdd a secondIndex) by
+        apply Fin.ext
+        rfl]
+      simp
+    · intro thirdIndex
+      rw [castState_apply]
+      rw [show Fin.cast (Nat.add_assoc a b c).symm
+            (Fin.natAdd a (Fin.natAdd b thirdIndex)) =
+          Fin.natAdd (a + b) thirdIndex by
+        apply Fin.ext
+        simp [Nat.add_assoc]]
+      simp
+
+private theorem castState_append_assoc_symm {a b c : Nat}
+    (first : BitState a) (second : BitState b) (third : BitState c) :
+    castState (Nat.add_assoc a b c).symm
+        (BitState.append first (BitState.append second third)) =
+      BitState.append (BitState.append first second) third := by
+  funext index
+  refine Fin.addCases ?_ ?_ index
+  · intro firstSecond
+    refine Fin.addCases ?_ ?_ firstSecond
+    · intro firstIndex
+      rw [castState_apply]
+      rw [show Fin.cast (Nat.add_assoc a b c)
+            (Fin.castAdd c (Fin.castAdd b firstIndex)) =
+          Fin.castAdd (b + c) firstIndex by
+        apply Fin.ext
+        rfl]
+      simp
+    · intro secondIndex
+      rw [castState_apply]
+      rw [show Fin.cast (Nat.add_assoc a b c)
+            (Fin.castAdd c (Fin.natAdd a secondIndex)) =
+          Fin.natAdd a (Fin.castAdd c secondIndex) by
+        apply Fin.ext
+        rfl]
+      simp
+  · intro thirdIndex
+    rw [castState_apply]
+    rw [show Fin.cast (Nat.add_assoc a b c)
+          (Fin.natAdd (a + b) thirdIndex) =
+        Fin.natAdd a (Fin.natAdd b thirdIndex) by
+      apply Fin.ext
+      simp [Nat.add_assoc]]
+    simp
+
 private def stateTail {n : Nat} (state : BitState (n + 1)) : BitState n :=
   fun index => state index.succ
 
@@ -230,9 +331,21 @@ private theorem copyPairBank_spec {n : Nat} (value : BitState n) :
       rw [interleaveThree_succ]
       simp only [copyPairBank]
       rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append]
+      change castState _
+        (BitState.append
+          (Circuit.eval copyPair (PaperFredkin.state (value 0) false true))
+          (Circuit.eval (copyPairBank n)
+            (interleaveThree (stateTail value) (zeroRegister n)
+              (oneRegister n)))) = _
       rw [copyPair_spec]
       rw [inductionHypothesis (value := stateTail value)]
-      rw [← interleaveThree_succ]
+      change castState _
+        (BitState.append
+          (PaperFredkin.state (value 0) (value 0) ((bitwiseNot value) 0))
+          (interleaveThree (stateTail value) (stateTail value)
+            (stateTail (bitwiseNot value)))) =
+        interleaveThree value value (bitwiseNot value)
+      exact (interleaveThree_succ value value (bitwiseNot value)).symm
 
 /--
 The all-width copy layer.  Its external order is grouped
@@ -242,5 +355,39 @@ interleaved disjoint tensor bank.
 def copyRegisterCircuit (n : Nat) : Circuit (copyRegisterWidth n) :=
   .seq (.permute (copyRegisterInputWiring n))
     (.seq (copyPairBank n) (.permute (copyRegisterOutputWiring n)))
+
+/--
+Complete all-width initialized-slice equation.  The through register is
+retained, while the explicit `(0ⁿ,1ⁿ)` target becomes `(value,¬value)`.
+-/
+@[simp]
+theorem copyRegister_spec {n : Nat} (value : BitState n) :
+    Circuit.eval (copyRegisterCircuit n)
+        (BitState.append value (resultRegisterInput n)) =
+      BitState.append value (resultRegisterOutput value) := by
+  change WirePerm.onState (copyRegisterOutputWiring n)
+      (Circuit.eval (copyPairBank n)
+        (interleaveThree value (zeroRegister n) (oneRegister n))) = _
+  rw [copyPairBank_spec]
+  change WirePerm.onState (copyRegisterInputWiring n).symm
+      (WirePerm.onState (copyRegisterInputWiring n)
+        (BitState.append value
+          (BitState.append value (bitwiseNot value)))) = _
+  exact (WirePerm.onState (copyRegisterInputWiring n)).symm_apply_apply _
+
+/-- A register and its pointwise complement contain exactly `n` true bits. -/
+theorem hammingWeight_add_bitwiseNot {n : Nat} (state : BitState n) :
+    hammingWeight state + hammingWeight (bitwiseNot state) = n := by
+  unfold hammingWeight bitwiseNot
+  simpa using
+    (Finset.card_filter_add_card_filter_not
+      (s := Finset.univ) (p := fun index : Fin n => state index = true))
+
+/-- Every ordered output pair `(value,¬value)` has exactly `n` true bits. -/
+@[simp]
+theorem hammingWeight_resultRegisterOutput {n : Nat} (value : BitState n) :
+    hammingWeight (resultRegisterOutput value) = n := by
+  rw [resultRegisterOutput, hammingWeight_append,
+    hammingWeight_add_bitwiseNot]
 
 end ConservativeLogic.Ancilla
