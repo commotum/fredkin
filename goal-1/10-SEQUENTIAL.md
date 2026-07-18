@@ -2,9 +2,10 @@
 
 ## Status
 
-In progress on 2026-07-18 from clean synchronized baseline `29723da`.
-This report fixes the semantic contract before implementation.  No Stage 11
-work is in scope.
+Complete on 2026-07-18 from clean synchronized baseline `29723da`.  The
+corrected registered semantics, open/closed conservation laws, finite
+retrodiction, delay cell, Figures 8, 9, and 11, opt-in boundary, adversarial
+audit, and clean rebuild are checked.  No Stage 11 work was started.
 
 ## Re-Audited Paper Claims
 
@@ -59,9 +60,9 @@ trace, or feedback execution.  Consequently an arbitrary `Circuit.eval` may
 not be reused as a tick body: doing so would erase the state carried by every
 positive-delay unit wire.
 
-The finite public import `ConservativeLogic` must remain independent of the
-optional sequential layer.  Sequential declarations will have their own
-opt-in umbrella and explicit focused build.
+The finite public import `ConservativeLogic` remains independent of the
+optional sequential layer.  Sequential declarations have their own opt-in
+umbrella and explicit focused build.
 
 ## Corrected Formal Contract
 
@@ -76,10 +77,10 @@ The time convention is fixed as follows:
 - the tick returns `state (t+1)`.
 
 Initialization is always explicit.  Recursive execution supplies a canonical
-run; a relational `IsTrace` characterization and uniqueness theorem will show
-that the equations determine the whole trace.  Prefix-agreement theorems will
-state causality directly: state at time `t` depends only on inputs before `t`,
-and output at `t` depends only on inputs through `t`.
+run; a relational `IsTrace` characterization and uniqueness theorem show that
+the equations determine the whole trace.  Prefix-agreement theorems state
+causality directly: state at time `t` depends only on inputs before `t`, and
+output at `t` depends only on inputs through `t`.
 
 ### Conservative open machines
 
@@ -133,9 +134,9 @@ as its within-tick core only with a proof `Circuit.HasLatency core 0`.
 Positive-delay syntax is rejected at this boundary.  All stored values are
 instead explicit in the machine's memory or loop-register state.
 
-A one-bit delay cell will use an instantaneous structural swap on
-`memory ++ input`; its trace theorem will prove output at tick zero is the
-explicit initial bit and `output (t+1) = input t`.  This supplies the missing
+A one-bit delay cell uses an instantaneous structural swap on
+`memory ++ input`; its trace theorem proves output at tick zero is the explicit
+initial bit and `output (t+1) = input t`.  This supplies the missing
 execution meaning of a one-tick wire without pretending that static
 `Circuit.eval .unitWire` remembers a value.
 
@@ -150,26 +151,92 @@ output-coordinate swap, its canonical complete tick is
 ```
 
 where triples are respectively `(q,Kbar,J)` and
-`(nextQ,Q,garbage)`.  The trace API must expose arbitrary initial `q`, visible
-`Q(t) = q(t)`, the next-state equation, all eight complete rows, and a toggle
-trace for constant `(Kbar,J) = (0,1)`.
+`(nextQ,Q,garbage)`.  The checked trace API exposes arbitrary initial `q`,
+visible `Q(t) = q(t)`, the next-state equation, all eight complete rows, and a
+toggle trace for constant `(Kbar,J) = (0,1)`.
 
-Figure 9 will be checked separately as the conventional accumulator recurrence
-with explicit initialization.  A concrete failed flux equation will prevent
-it from being mislabeled a conservative implementation.  Figure 11 will then
-check the conservative realization against the literal straight `(x,0,1)`
-source routing, three explicit stored bits, all three external outputs, and
-the printed two-tick-input recurrence.  Figure 10's factor-five/time-
-multiplexing result and the general Section 4 compiler remain unresolved unless
-a schedule, stream-level simulation relation, and resource measure are actually
-supplied.
+Figure 9 is checked separately as the conventional accumulator recurrence with
+explicit initialization.  A concrete failed flux equation and
+`no_conservative_machine` prevent it from being mislabeled a conservative
+implementation.  Figure 11 checks the conservative realization against the
+literal straight `(x,0,1)` source routing, three explicit stored bits, all three
+external outputs, and the printed two-tick-input recurrence.  Figure 10's
+factor-five/time-multiplexing result and the general Section 4 compiler remain
+unresolved absent a schedule, stream-level simulation relation, and resource
+measure.
 
-## Planned Module Boundary
+## Implemented Public Surface
+
+The principal declarations are:
 
 ```text
-Sequential/Core.lean          deterministic machines, runs, causality, delay
+Signal
+Signal.AgreeBefore
+Signal.AgreeThrough
+Machine
+Run
+Machine.runState
+Machine.run
+Machine.IsTrace
+Machine.existsUnique_trace
+Machine.run_state_eq_of_input_eq_before
+Machine.run_output_eq_of_input_eq_through
+
+ConservativeMachine
+ConservativeMachine.tick_full
+ConservativeMachine.tick_weight_balance
+ConservativeMachine.run_prefix_weight_balance
+ConservativeMachine.tickEquiv
+ConservativeMachine.executeList
+ConservativeMachine.retrodictList
+ConservativeMachine.retrodictList_executeList
+ConservativeMachine.closeFeedback
+ConservativeMachine.closeFeedback_step
+ConservativeMachine.closedOrbit
+ConservativeMachine.closedOrbit_weight
+ConservativeMachine.closedIterateEquiv
+ConservativeMachine.closedIterate_reversible
+ConservativeMachine.closedIterate_inverse_cancel
+
+Network
+DelayCell.network
+DelayCell.tick
+DelayCell.output_zero
+DelayCell.output_succ
+DelayCell.unitWire_not_instantaneous
+
+Figure8.tick
+Figure8.characteristic
+Figure8.visibleGarbage
+Figure8.tick_hold
+Figure8.tick_set
+Figure8.tick_reset
+Figure8.tick_toggle
+
+SerialAdder.paper_recurrence
+SerialAdder.state_eq_prefixParity
+SerialAdder.completeTickEquiv
+SerialAdder.concrete_weight_balance_failure
+SerialAdder.no_conservative_machine
+
+Figure11.tick_initialized
+Figure11.state_spec
+Figure11.output_spec
+Figure11.paper_recurrence
+```
+
+The finite-list retrodiction theorem uses terminal memory and every complete
+chronological output to recover the original memory and input list.  Its
+reverse-list wrapper states the equivalent reverse-chronological interface.
+This is semantic backward determinism, not a literal graph compiler or
+negative-time execution.
+
+## Implemented Module Boundary
+
+```text
+Sequential/Core.lean          deterministic machines, runs, and causality
 Sequential/Conservative.lean  full-boundary conservation and delayed closure
-Sequential/Circuit.lean       zero-latency circuit-backed networks
+Sequential/Circuit.lean       zero-latency circuit bridge and delay cell
 Sequential/Figure8.lean       complete J-Kbar reconstruction and trace
 Sequential/SerialAdder.lean   conventional Figure 9 recurrence and boundary
 Sequential/Figure11.lean      two-Fredkin conservative serial-adder trace
@@ -177,12 +244,32 @@ Sequential.lean               opt-in sequential umbrella
 Audit/Sequential.lean         non-public edge cases and axiom audit
 ```
 
-None of these modules will be imported by `ConservativeLogic/API.lean` or the
-finite public root.
+None of these modules is imported by `ConservativeLogic/API.lean` or the finite
+public root.
+
+## Resource and Claim Decisions
+
+- `Network` accepts a feed-forward circuit only with `HasLatency core 0`; its
+  structural permutations are still the library's free routing convention,
+  not synthesized physical wires.
+- Figure 8 has no constants, one stored bit, two external inputs, and two
+  explicit outputs.  Its paper `?` wire is data, not a hidden discard.
+- Figure 11 consumes fresh `(0,1)` sources and emits three complete outputs at
+  every tick.  Those are streams, not one reusable finite ancilla and an
+  invisible sink.
+- Figure 9 is a conventional reference recurrence, not a conservative gate
+  network.  Its full tick is bijective but demonstrably changes total Hamming
+  weight on a checked row.
+- Finite retrodiction and closed finite-iterate inversion do not establish
+  Figure 19 graph reversal, physical time reversal, or infinite-stream
+  inversion without a terminal state.
+- Figure 10 scheduling, factor-five slowdown, multiplexed phase initialization,
+  arbitrary sequential compilation, NAND-comparable complexity, physical
+  routing, and thermodynamic conclusions remain documentary.
 
 ## Adversarial Matrix
 
-The implementation and audit must cover:
+The implementation and audit cover:
 
 - zero-width combinations `(state,port) = (0,0), (0,1), (1,0)`;
 - explicit initialization and distinguishable runs from different initial
@@ -207,8 +294,25 @@ The implementation and audit must cover:
 
 ## Verification Results
 
-Pending implementation.  Completion requires focused builds of every
-sequential leaf and audit, a default finite build, a post-`lake clean` rebuild
-of both the finite root and the opt-in sequential/audit targets, proof-hole and
-project-axiom scans, `#print axioms` for the central results, adversarial claim
-boundary scans, and `git diff --check`.
+Verification on 2026-07-18 completed as follows:
+
+- Focused builds of `Sequential.Core`, `Sequential.Conservative`,
+  `Sequential.Circuit`, `Sequential.Figure8`, `Sequential.SerialAdder`,
+  `Sequential.Figure11`, the opt-in `ConservativeLogic.Sequential` umbrella,
+  and `ConservativeLogic.Audit.Sequential` passed.
+- The ordinary default build passed before cleaning.  After `lake clean`, the
+  finite default `lake build` passed all 1,003 jobs without building a
+  sequential leaf, confirming the dependency boundary.  The explicit
+  post-clean sequential umbrella and audit then passed all 722 jobs.
+- The audit checks zero-width `(0,0)`, `(0,1)`, and `(1,0)` machines, trace
+  uniqueness and causality, initialization sensitivity, the delay offset,
+  memory-only weight failure, fixed-input noninjectivity, same-time loop
+  obstructions, a delayed-NOT oscillator, a closed two-cycle, all-time weight,
+  inverse cancellation, finite retrodiction, all eight Figure 8 rows and four
+  modes, Figure 9's nonconservation, and Figure 11's complete trace.
+- Central `#print axioms` reports only the standard Lean/mathlib `propext`,
+  `Classical.choice`, and `Quot.sound` axioms where applicable.  Several
+  causality and Boolean-loop results use no axioms.
+- No project `axiom`, `sorry`, `admit`, `unsafe` declaration, `native_decide`,
+  or `Lean.ofReduceBool` occurs in the Stage 10 Lean sources.  Claim-boundary
+  scans, the independent adversarial review, and `git diff --check` pass.

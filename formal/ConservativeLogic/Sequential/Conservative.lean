@@ -210,6 +210,20 @@ def closeFeedback {memoryWidth portWidth : Nat}
     Conservative (memoryWidth + portWidth) :=
   openMachine.transition
 
+/--
+One delayed-closure step splits into the same next memory and output as the
+open tick.  On the following closed step, that output block is consumed as the
+loop-register input.
+-/
+@[simp]
+theorem closeFeedback_step {memoryWidth portWidth : Nat}
+    (openMachine : ConservativeMachine memoryWidth portWidth)
+    (memory : BitState memoryWidth) (loopRegister : BitState portWidth) :
+    BitState.split memoryWidth portWidth
+        (openMachine.closeFeedback (BitState.append memory loopRegister)) =
+      openMachine.machine.tick memory loopRegister :=
+  rfl
+
 /-- The complete delayed-closure step is reversible. -/
 theorem closeFeedback_reversible {memoryWidth portWidth : Nat}
     (openMachine : ConservativeMachine memoryWidth portWidth) :

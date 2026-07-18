@@ -130,6 +130,16 @@ def closeFeedback {memoryWidth portWidth : Nat}
     Conservative (memoryWidth + portWidth) :=
   network.semantics.closeFeedback
 
+/-- Splitting one closed step exposes the open tick's next memory and output. -/
+@[simp]
+theorem closeFeedback_step {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth)
+    (memory : BitState memoryWidth) (loopRegister : BitState portWidth) :
+    BitState.split memoryWidth portWidth
+        (network.closeFeedback (BitState.append memory loopRegister)) =
+      network.machine.tick memory loopRegister :=
+  rfl
+
 /-- The `time`-fold closed transition as an explicit equivalence. -/
 def closedIterateEquiv {memoryWidth portWidth : Nat}
     (network : Network memoryWidth portWidth) (time : Nat) :

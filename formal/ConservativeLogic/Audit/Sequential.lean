@@ -408,6 +408,7 @@ example (initialDelayedX initialY : Bool) (x : Nat → Bool) (time : Nat) :
 #check ConservativeMachine.tickEquiv
 #check ConservativeMachine.retrodictList_executeList
 #check ConservativeMachine.closeFeedback
+#check ConservativeMachine.closeFeedback_step
 #check ConservativeMachine.closedOrbit_weight
 #check ConservativeMachine.closedIterate_inverse_cancel
 #check Network
@@ -432,6 +433,7 @@ example (initialDelayedX initialY : Bool) (x : Nat → Bool) (time : Nat) :
 #print axioms ConservativeMachine.tick_weight_balance
 #print axioms ConservativeMachine.run_prefix_weight_balance
 #print axioms ConservativeMachine.retrodictList_executeList
+#print axioms ConservativeMachine.closeFeedback_step
 #print axioms ConservativeMachine.closedOrbit_weight
 #print axioms ConservativeMachine.closedIterate_inverse_cancel
 #print axioms DelayCell.output_succ
