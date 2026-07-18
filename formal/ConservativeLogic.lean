@@ -28,9 +28,17 @@ compute-copy-uncompute construction.  From a supplied full-state realization,
 the exact original scratch/source/argument register is restored and the
 separate initialized register becomes `(target, bitwiseNot target)`.  This is a
 static finite theorem with exact Fredkin accounting and a zero-latency-only
-timing corollary.  No arbitrary-function synthesis, delay padding,
-graph/feedback inversion, oriented time-reversal semantics, traces, sequential
-execution, physical routing, or thermodynamic conclusion is claimed.
+timing corollary.  The public root now also exports finite Hamming-layer
+completion, Figure 25's noncanonical semantic extension, and a fixed-basis
+theorem: every finite conservative permutation has a paper-Fredkin circuit
+with explicit structural reindexing and an exactly returned clean ancillary
+prefix.  The witness records its concrete finite width and mixed Boolean
+initialization, excludes unit wires syntactically, and has zero path latency.
+A proved odd width-four conservative transposition rules out a no-ancilla
+interpretation.  No all-zero-scratch conversion, global linear scratch bound,
+delay padding, graph/feedback inversion, oriented time-reversal semantics,
+traces, sequential execution, physical routing, or thermodynamic conclusion
+is claimed.
 -/
 
 namespace ConservativeLogic

@@ -1,5 +1,20 @@
 import ConservativeLogic.Completeness.Fredkin
 
+/-!
+# Clean realization of one Hamming-layer exchange
+
+An explicit equality predicate is compiled to the paper Fredkin basis, copied
+into a returned dual-rail marker, used to exchange one data pair, and
+uncomputed.  The canonical circuit swaps exactly `(pattern,0,1)` with
+`(pattern,1,0)`.  Structural wire conjugation then realizes the transposition
+associated with any exchange of oppositely valued coordinates.
+
+All constants, compiler garbage, and marker wires belong to the named clean
+ancillary prefix and are restored exactly.  The construction uses no
+`unitWire`; its routing nodes are the library's explicit zero-delay structural
+reindexings, not synthesized physical permutation networks.
+-/
+
 namespace ConservativeLogic
 
 open ConservativeLogic.Ancilla

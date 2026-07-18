@@ -89,7 +89,7 @@ private theorem circuit_even_aux {width : Nat} (circuit : Circuit width)
           simpa using intUnit_even_pow
             (Equiv.Perm.sign (Circuit.eval left).toEquiv) 4
         have rightEven : Equiv.Perm.sign (Circuit.eval right).toEquiv ^ 2 = 1 := by
-          simpa using intUnit_even_pow
+          exact intUnit_even_pow
             (Equiv.Perm.sign (Circuit.eval right).toEquiv) 1
         simp [leftEven, rightEven]
       · rcases h with ⟨rfl, rfl⟩
@@ -102,7 +102,7 @@ private theorem circuit_even_aux {width : Nat} (circuit : Circuit width)
         simp [leftEven, rightEven]
       · rcases h with ⟨rfl, rfl⟩
         have leftEven : Equiv.Perm.sign (Circuit.eval left).toEquiv ^ 2 = 1 := by
-          simpa using intUnit_even_pow
+          exact intUnit_even_pow
             (Equiv.Perm.sign (Circuit.eval left).toEquiv) 1
         have rightEven : Equiv.Perm.sign (Circuit.eval right).toEquiv ^ 8 = 1 := by
           simpa using intUnit_even_pow

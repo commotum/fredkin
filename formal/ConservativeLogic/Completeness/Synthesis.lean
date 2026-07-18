@@ -83,4 +83,73 @@ private theorem conservative_clean_of_exchange_clean {width : Nat}
     exact edgeClean weight left right exchange
   exact closure_le_clean generated
 
+/--
+Every finite conservative permutation has a clean realization using paper
+Fredkin gates and explicit structural wire reindexing.
+
+The witness exposes its finite ancillary width, exact mixed Boolean
+initialization, complete circuit, exact restoration equation, no-`unitWire`
+syntax certificate, and zero-latency certificate through the fields of
+`CleanFredkinRealization`.
+-/
+theorem fredkin_complete_conservative {width : Nat}
+    (gate : Conservative width) :
+    CleanFredkinRealizable gate.toEquiv := by
+  apply conservative_clean_of_exchange_clean
+  · intro weight left right exchange
+    rcases exchange with ⟨first, second, distinct, different, rfl⟩
+    simpa [Conservative.reindexLayer] using
+      (singleExchangeClean left.1
+        (WirePerm.onState (Equiv.swap first second) left.1)
+        first second distinct different rfl)
+
+/-- Pointwise functions admitting some reversible clean Fredkin realization. -/
+def CleanFredkinRealizableFunction {width : Nat}
+    (function : BitState width → BitState width) : Prop :=
+  ∃ gate : Reversible width,
+    (∀ state, gate state = function state) ∧ CleanFredkinRealizable gate
+
+/--
+Fixed-basis clean realizability has the same finite semantic boundary as a
+monolithic conservative gate, but supplies a circuit and returned workspace.
+-/
+theorem clean_fredkin_realizable_iff {width : Nat}
+    (function : BitState width → BitState width) :
+    CleanFredkinRealizableFunction function ↔
+      IsReversible function ∧ WeightPreserving function := by
+  constructor
+  · rintro ⟨gate, realizes, clean⟩
+    have functionEquality : (fun state => gate state) = function :=
+      funext realizes
+    constructor
+    · rw [← functionEquality]
+      exact gate.isReversible
+    · rw [← functionEquality]
+      exact clean.weightPreserving
+  · rintro ⟨reversible, conservative⟩
+    let gateEquiv : Reversible width := Equiv.ofBijective function reversible
+    let gate : Conservative width := {
+      toEquiv := gateEquiv
+      weight_preserving := conservative
+    }
+    exact ⟨gateEquiv, fun _ => rfl, fredkin_complete_conservative gate⟩
+
+/--
+Figure 25's noncanonical total completion also has a fixed-basis clean
+realization.  The visible `argument ++ (0^n,1^n)` block is separate from the
+returned completeness workspace stored in `realization.ancillaInit`.
+-/
+theorem figure25_fredkin_complete {argumentWidth resultWidth : Nat}
+    (function : BitState argumentWidth → BitState resultWidth) :
+    ∃ gate : Conservative (argumentWidth + (resultWidth + resultWidth)),
+      ∃ _realization : CleanFredkinRealization gate.toEquiv,
+        ∀ argument,
+          gate (BitState.append argument
+              (Ancilla.resultRegisterInput resultWidth)) =
+            BitState.append argument
+              (Ancilla.resultRegisterOutput (function argument)) := by
+  obtain ⟨gate, gateSpec⟩ := exists_figure25_conservative function
+  obtain ⟨realization⟩ := fredkin_complete_conservative gate
+  exact ⟨gate, realization, gateSpec⟩
+
 end ConservativeLogic

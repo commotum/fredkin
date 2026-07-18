@@ -33,10 +33,11 @@ lake build ConservativeLogic.Audit.Realization
 lake build ConservativeLogic.Audit.Simulation
 lake build ConservativeLogic.Audit.Inverse
 lake build ConservativeLogic.Audit.Uncompute
+lake build ConservativeLogic.Audit.Completeness
 lake build
 ```
 
-Stages 1 through 8 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 9 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -109,6 +110,25 @@ is deliberately limited to zero-latency supplied circuits: a checked unit-wire
 example has both delay-two and delay-zero boundary paths. No arbitrary-function
 synthesis, all-zero-scratch conversion, delay padding, feedback, traces,
 physical routing, or thermodynamic conclusion follows from this stage.
+
+Stage 9 separates semantic completeness from fixed-basis synthesis.  A
+classical Hamming-layer construction supplies Figure 25's suppressed total
+conservative extension and proves that direct same-register realization by an
+arbitrary conservative gate is exactly bijectivity plus Hamming-weight
+preservation.  Independently, an explicit pattern-controlled last-pair swap is
+compiled to paper Fredkin gates, uses a visible mixed clean ancillary prefix,
+returns that prefix exactly, excludes every `unitWire`, and has zero path
+latency.  Structural conjugation realizes every one-true/one-false coordinate
+exchange; Johnson-graph connectivity and finite permutation-group closure then
+give `fredkin_complete_conservative` for every finite conservative
+permutation.  The witness exposes its selected finite ancilla width and exact
+initialization, but the final group proof does not claim a global linear or
+optimal width bound.  Finally, every width-four circuit is proved even as a
+permutation of all states, while the conservative swap `1100 ↔ 1010` is odd,
+so the same-width/no-ancilla reading is formally false.  Structural wire
+reindexing remains an admitted routing convention, not a synthesized physical
+network; all-zero scratch, the paper's asymptotic scratch assertions, feedback,
+and sequential universality remain unresolved.
 
 The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.
