@@ -135,6 +135,10 @@ Lean results as the work proceeds.
   direction, rejects an unrestricted same-width copy map, distinguishes static
   value equality from delay, and proves both unequal-path rejection and
   compensated-path acceptance. It is not imported by the public root.
+- Stage 5 began from clean synchronized commit `16562ab`; the cached default
+  build succeeds with 710 jobs. No realization layout, full-output realization
+  relation, source/scratch/garbage constraint theorem, or realization audit
+  exists at that baseline.
 
 ### Checked Paper Facts
 
@@ -195,12 +199,34 @@ Lean results as the work proceeds.
   `(a, not a)` from data inputs `(1, 0)`. Figures 6(c) and 22 route one `0` and
   one `1` graphically without making this port ordering locally obvious, so the
   later circuit must state the wiring permutation explicitly.
+- Direct inspection of PDF pp. 229–230 and Figures 4–6 fixes the complete
+  primitive slices. AND uses `(a,b,0) ↦ (a,a∧b,¬a∧b)` and selects `y₁`;
+  OR uses `(a,1,b) ↦ (a,a∨b,¬a∨b)` and selects `y₁`; NOT and FAN-OUT both use
+  `(a,1,0) ↦ (a,a,¬a)`, with NOT selecting `y₂` and FAN-OUT selecting
+  `(v,y₁)`. Every remaining port is sink/garbage, not discarded.
+- Figure 5's `(c,x) ↦ (y,g)` is a schematic partition, not a claim that those
+  blocks are contiguous physical Fredkin ports. In Figures 4 and 6 the source
+  constant and selected result occupy different gate coordinates, so a formal
+  canonical block order requires explicit structural input/output reindexing.
+- Section 3 source constants are prescribed inputs that may be consumed; its
+  sink values generally depend on the argument and are not reusable constants.
+  A returned-clean scratch register appears only in the later inverse/uncompute
+  construction and must be distinguished from both source and garbage.
 - The strongest fixed-basis claim says every finite invertible conservative
   function is realizable without garbage using Fredkin gates. The paper
   attributes this to B. Silver but does not give the proof or state the ancilla
   convention with enough precision in the immediate claim.
 
 ### Assumptions to Test, Not Yet Facts
+- Stage 5 will test a five-block interface with fixed source, returned-clean
+  scratch, argument, result, and explicit argument-indexed garbage. Its input
+  and output width equation must account for every circuit wire; primitive
+  Figure 5 realizations use scratch width zero.
+- `Realizes` should be a full boundary-state equation with an explicit garbage
+  function, not a result projection or existential witness. General theorems
+  should derive injectivity and cardinality of `(target,garbage)`, target
+  injectivity when garbage is argument-independent, and source/result/garbage
+  Hamming-weight balance after cancelling restored scratch.
 - Fredkin completeness for all weight-preserving permutations may require
   clean ancillas that are returned, arbitrary wire permutations, or both. The
   no-ancilla fixed-width interpretation must not be assumed.
@@ -565,7 +591,7 @@ cannot perform implicit fan-out.
 
 ### 5-REALIZATION
 
-**Status:** Next; not started.
+**Status:** In progress (2026-07-17), from clean baseline `16562ab`.
 
 #### Big Picture Objective
 
