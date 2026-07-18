@@ -166,8 +166,39 @@ lake build
 lake clean
 lake build
 lake build ConservativeLogic.Audit.Fredkin
-rg -n "sorry|admit|axiom|unsafe|opaque|partial|noncomputable" \
+rg -n --glob '*.lean' '\bsorry\b|\badmit\b|^[[:space:]]*axiom\b' \
   ConservativeLogic ConservativeLogic.lean
+rg -n --glob '*.lean' \
+  '^[[:space:]]*(unsafe|opaque|partial|noncomputable)\b' \
+  ConservativeLogic ConservativeLogic.lean
+rg -n '^import ' ConservativeLogic/Gate/UnitWire.lean \
+  ConservativeLogic/Gate/Fredkin.lean \
+  ConservativeLogic/Gate/Fredkin/Nonlinear.lean
+rg -n '^import ConservativeLogic$|^import ConservativeLogic\.(API|Audit)(\.|$)|^import Mathlib($|\.Tactic)' \
+  ConservativeLogic/Gate/UnitWire.lean \
+  ConservativeLogic/Gate/Fredkin.lean \
+  ConservativeLogic/Gate/Fredkin/Nonlinear.lean
+rg -n '\bdecide\b' ConservativeLogic/Gate/UnitWire.lean \
+  ConservativeLogic/Gate/Fredkin.lean \
+  ConservativeLogic/Gate/Fredkin/Nonlinear.lean \
+  ConservativeLogic/Audit/Fredkin.lean
+rg -ni --glob '*.lean' \
+  'fallback|reference implementation|one-controlled|one controlled|modern Fredkin|alternate control|control-negation|control negation' \
+  ConservativeLogic/Gate/UnitWire.lean \
+  ConservativeLogic/Gate/Fredkin.lean \
+  ConservativeLogic/Gate/Fredkin/Nonlinear.lean \
+  ConservativeLogic/Audit/Fredkin.lean
+rg -ni --glob '*.lean' 'fan.?out|copy|duplicat' \
+  ConservativeLogic/Gate/UnitWire.lean \
+  ConservativeLogic/Gate/Fredkin.lean \
+  ConservativeLogic/Gate/Fredkin/Nonlinear.lean \
+  ConservativeLogic/Audit/Fredkin.lean
+rg -n \
+  '^[[:space:]]*(namespace|structure|inductive|def|abbrev|theorem)[[:space:]]+(Circuit|Timed|Trajectory|Billiard|Realiz|Universal|Ancilla|Garbage|Feedback)' \
+  ConservativeLogic/Gate/UnitWire.lean \
+  ConservativeLogic/Gate/Fredkin.lean \
+  ConservativeLogic/Gate/Fredkin/Nonlinear.lean \
+  ConservativeLogic/Audit/Fredkin.lean
 git diff --check
 ```
 
@@ -213,11 +244,13 @@ git diff --check
 - Inspect imports and every bounded `decide` occurrence. Run `#print axioms` on
   `UnitWire.value_apply`, `UnitWire.delay_eq_one`,
   `UnitWire.value_isReversible`, `UnitWire.value_weightPreserving`,
-  `PaperFredkin.state_ext`, both tuple control laws, `PaperFredkin.table`,
+  `PaperFredkin.state_ext`, all three coordinate laws, both branch laws, both
+  explicitly constructed-state laws, `PaperFredkin.table`,
   `PaperFredkin.map_involutive`, `PaperFredkin.map_isReversible`,
   `PaperFredkin.map_weightPreserving`, both bundles' application laws, both
-  counterexample intermediate equations, `PaperFredkin.map_xor_counterexample`,
-  and `PaperFredkin.map_not_xorLinear`.
+  counterexample intermediate equations, their unequal-output fact,
+  `PaperFredkin.map_xor_counterexample`, and
+  `PaperFredkin.map_not_xorLinear`.
 
 ## Completion Requirements
 
@@ -240,12 +273,96 @@ git diff --check
 
 ## Stage Results
 
-**Stage status: in progress.** No Stage 3 Lean declaration has yet been added.
+**Stage status: complete (2026-07-17).** Stage 3 adds the paper-convention
+Fredkin gate and the unit wire's deliberately separated value/delay surface,
+with no circuit or timed-transition semantics imported from later stages.
 
-### Remaining work
+### Implemented surface
 
-- Implement and compile the planned leaves without widening into Stage 4.
-- Replace any declaration/proof assumption contradicted by Lean with a checked
-  fact in this report and `0-plan.md`.
-- Run and record the complete verification matrix before marking this stage
-  complete.
+- `ConservativeLogic.Gate.UnitWire` defines the conservative identity value
+  map and `delay = 1`, then proves the application, reversibility,
+  weight-preservation, and exact-delay laws named above.
+- `ConservativeLogic.Gate.Fredkin` fixes coordinates `(u,x₁,x₂)`, exposes the
+  semantic data swap, implements the paper's zero-controlled Table (2), proves
+  general coordinate and branch laws, and proves involution and conservation
+  structurally before constructing the `Reversible` and `Conservative`
+  bundles.
+- `ConservativeLogic.Gate.Fredkin.Nonlinear` states the selected all-false/XOR
+  predicate and proves a direct additivity failure using inputs `100` and
+  `010`: mapping their XOR gives `110`, whereas XORing their images gives
+  `101`.
+- `ConservativeLogic.API` and the public root re-export the three stable leaves.
+  `ConservativeLogic.Audit.Fredkin` remains diagnostic-only.
+
+### Paper and boundary results
+
+- The audit independently reduces the unit wire's two Boolean rows and all
+  eight Table (2) rows in their printed order. The asymmetric rows confirm that
+  paper `0`/Lean `false` swaps and paper `1`/Lean `true` is the identity branch.
+- `UnitWire.value` is only the aligned value relation. `UnitWire.delay` is
+  one-step metadata; the stage proves no same-time equality, forward
+  delay-composition involution, oriented inverse, trace, feedback, or physical
+  time-reversal theorem.
+- `PaperFredkin.dataSwap` is used only as semantic reindexing. No circuit
+  realization, free-routing assumption, copying, constant, ancilla, garbage,
+  or fan-out theorem is introduced.
+- `XorLinear` is explicitly a Stage 3 algebraic reconstruction. The paper's
+  adjective “nonlinear” is not silently promoted to a Boolean-ring definition
+  or a physical claim.
+
+### Verification evidence
+
+All commands below ran from `formal/` unless stated otherwise.
+
+- Focused cached builds succeeded: `lake build
+  ConservativeLogic.Gate.UnitWire` (701 jobs), `lake build
+  ConservativeLogic.Gate.Fredkin` (701 jobs), `lake build
+  ConservativeLogic.Gate.Fredkin.Nonlinear` (702 jobs), and `lake build
+  ConservativeLogic.API ConservativeLogic` (707 jobs).
+- A pre-clean `lake build` succeeded with 707 jobs. With no subagent or other
+  build process active, `lake clean` followed by `lake build` rebuilt the
+  locked tree successfully with 715 jobs; the Stage 3 leaves were jobs
+  709–712 and the API/root were jobs 713–714.
+- After that clean build, `lake build ConservativeLogic.Audit.Fredkin`
+  succeeded with 706 jobs. Its fixed examples cover the two unit values, three
+  data-swap coordinates, eight raw table rows, bundle agreement, and the XOR
+  witness.
+- The proof-hole/project-axiom scan and the
+  `unsafe|opaque|partial|noncomputable` declaration scan printed no matches
+  (the expected `rg` exit status was 1). The exact commands are recorded in
+  **Build Structure**.
+- The import listing was exactly `Reversible.Core` for `UnitWire` and
+  `Fredkin`, and `Gate.Fredkin` for `Fredkin.Nonlinear`. The separate forbidden
+  import scan found no public root, API, audit, umbrella `Mathlib`, or
+  `Mathlib.Tactic` import in a stable Stage 3 leaf. The public API imports all
+  three stable leaves and no audit module.
+- Every `decide` occurrence was inspected. The gate leaf has only the three
+  literal `Fin 3` data-swap coordinate reductions; the nonlinear leaf has only
+  the two concrete output equations and their inequality; the diagnostic has
+  the two unit rows, three coordinate regressions, and eight raw table rows.
+  Neither structural involution nor structural weight preservation uses
+  `decide` or the row audit.
+- The fallback/reference/alternate-control scan and later-stage declaration
+  scan printed no matches. The copy/fan-out scan found only the Fredkin module
+  comment explicitly disclaiming fan-out, not a declaration or implementation.
+- `#print axioms` reports no project axioms or `sorryAx`. `delay_eq_one` is
+  axiom-free; `state_ext` uses only `propext` and `Quot.sound`; the remaining
+  audited functional/equivalence results use only `propext`,
+  `Classical.choice`, and `Quot.sound`, the standard Lean/mathlib footprint for
+  these finite function/equivalence proofs.
+- From the repository root, `git diff --check` passed. The complete Stage 3
+  diff from baseline `1aa271a` was inspected, including every stable leaf,
+  diagnostic, public import, README change, plan foldback, and this report.
+
+### Facts carried to Stage 4
+
+- `PaperFredkin.map` is a reusable static primitive with exact paper ordering,
+  `PaperFredkin.conservative` is its conservative bundle, and
+  `PaperFredkin.dataSwap` remains semantic coordinate reindexing rather than a
+  licensed physical routing primitive.
+- Stage 4 may build arity-safe one-to-one circuit syntax over these value maps,
+  but it must not turn `UnitWire.delay` metadata into timed semantics, silently
+  introduce copying, or expose an unnamed one-controlled Fredkin convention.
+- CL-001 and the selected reconstruction in CL-018 are resolved. CL-002 is
+  only partially resolved: oriented network reversal and physical
+  time-reversal symmetry remain open later obligations.
