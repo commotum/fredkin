@@ -1,4 +1,5 @@
 import Mathlib.Logic.Function.Iterate
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import ConservativeLogic.Reversible.Core
 import ConservativeLogic.Sequential.Core
 
@@ -69,6 +70,34 @@ theorem tick_weight_balance {memoryWidth portWidth : Nat}
   rw [← hammingWeight_append]
   rw [BitState.append_split]
   exact openMachine.transition.weight_preserving _
+
+/--
+Finite-prefix open flux balance: final memory plus all emitted weight equals
+initial memory plus all input weight.  This is not an invariant of memory by
+itself.
+-/
+theorem run_prefix_weight_balance {memoryWidth portWidth : Nat}
+    (openMachine : ConservativeMachine memoryWidth portWidth)
+    (initialMemory : BitState memoryWidth) (input : Signal portWidth)
+    (ticks : Nat) :
+    hammingWeight ((openMachine.machine.run initialMemory input).state ticks) +
+        Finset.sum (Finset.range ticks) (fun time =>
+          hammingWeight ((openMachine.machine.run initialMemory input).output time)) =
+      hammingWeight initialMemory +
+        Finset.sum (Finset.range ticks) (fun time => hammingWeight (input time)) := by
+  induction ticks with
+  | zero => simp
+  | succ time ih =>
+      rw [Finset.sum_range_succ, Finset.sum_range_succ]
+      have flux := openMachine.tick_weight_balance
+        ((openMachine.machine.run initialMemory input).state time) (input time)
+      rw [openMachine.machine.run_tick initialMemory input time] at flux
+      change
+        hammingWeight ((openMachine.machine.run initialMemory input).state (time + 1)) +
+            hammingWeight ((openMachine.machine.run initialMemory input).output time) =
+          hammingWeight ((openMachine.machine.run initialMemory input).state time) +
+            hammingWeight (input time) at flux
+      omega
 
 /-- The joint memory/input to next-memory/output tick is an equivalence. -/
 def tickEquiv {memoryWidth portWidth : Nat}
@@ -147,9 +176,11 @@ theorem retrodictList_executeList {memoryWidth portWidth : Nat}
   induction inputs generalizing initialMemory with
   | nil => rfl
   | cons input inputs ih =>
-      simp only [executeList]
+      simp only [executeList, retrodictList]
       rw [ih]
-      simp only [retrodictList, tickEquiv_symm_apply_tick]
+      have inverse := openMachine.tickEquiv_symm_apply_tick initialMemory input
+      rw [← Prod.eta (openMachine.machine.tick initialMemory input)] at inverse
+      rw [inverse]
 
 /--
 An explicit reverse-list interface: reverse-ordered outputs and terminal memory
@@ -188,8 +219,11 @@ theorem closeFeedback_reversible {memoryWidth portWidth : Nat}
 /-- The `time`-fold delayed-closure transition as an explicit equivalence. -/
 def closedIterateEquiv {memoryWidth portWidth : Nat}
     (openMachine : ConservativeMachine memoryWidth portWidth) (time : Nat) :
-    Reversible (memoryWidth + portWidth) :=
-  openMachine.closeFeedback.toEquiv ^ time
+    Reversible (memoryWidth + portWidth) := by
+  induction time with
+  | zero => exact Reversible.identity _
+  | succ time iterate =>
+      exact Reversible.comp iterate openMachine.closeFeedback.toEquiv
 
 /-- The finite equivalence power acts as ordinary function iteration. -/
 theorem closedIterateEquiv_apply {memoryWidth portWidth : Nat}
@@ -197,7 +231,13 @@ theorem closedIterateEquiv_apply {memoryWidth portWidth : Nat}
     (state : BitState (memoryWidth + portWidth)) :
     openMachine.closedIterateEquiv time state =
       (openMachine.closeFeedback.toEquiv ^[time]) state := by
-  simp only [closedIterateEquiv, Equiv.Perm.coe_pow]
+  induction time with
+  | zero => rfl
+  | succ time ih =>
+      change openMachine.closeFeedback
+          (openMachine.closedIterateEquiv time state) = _
+      rw [ih]
+      rw [Function.iterate_succ_apply']
 
 /--
 Closed execution with an explicit initial loop register.  The former output is

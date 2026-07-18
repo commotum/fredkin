@@ -72,6 +72,18 @@ theorem tick_weight_balance {memoryWidth portWidth : Nat}
       hammingWeight memory + hammingWeight input :=
   network.semantics.tick_weight_balance memory input
 
+/-- Finite-prefix flux balance for execution of a circuit-backed network. -/
+theorem run_prefix_weight_balance {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth)
+    (initialMemory : BitState memoryWidth) (input : Signal portWidth)
+    (ticks : Nat) :
+    hammingWeight ((network.machine.run initialMemory input).state ticks) +
+        Finset.sum (Finset.range ticks) (fun time =>
+          hammingWeight ((network.machine.run initialMemory input).output time)) =
+      hammingWeight initialMemory +
+        Finset.sum (Finset.range ticks) (fun time => hammingWeight (input time)) :=
+  network.semantics.run_prefix_weight_balance initialMemory input ticks
+
 /-- Joint memory/input to next-memory/output execution is an equivalence. -/
 def tickEquiv {memoryWidth portWidth : Nat}
     (network : Network memoryWidth portWidth) :
@@ -86,6 +98,29 @@ theorem tickEquiv_apply {memoryWidth portWidth : Nat}
     network.tickEquiv (memory, input) = network.machine.tick memory input :=
   rfl
 
+/-- Execute a finite chronological input list while retaining every output. -/
+def executeList {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) :
+    BitState memoryWidth → List (BitState portWidth) →
+      BitState memoryWidth × List (BitState portWidth) :=
+  network.semantics.executeList
+
+/-- Recover a finite execution from terminal memory and chronological outputs. -/
+def retrodictList {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) :
+    BitState memoryWidth → List (BitState portWidth) →
+      BitState memoryWidth × List (BitState portWidth) :=
+  network.semantics.retrodictList
+
+/-- Complete outputs and terminal memory recover a finite network execution. -/
+theorem retrodictList_executeList {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth)
+    (initialMemory : BitState memoryWidth) (inputs : List (BitState portWidth)) :
+    let execution := network.executeList initialMemory inputs
+    network.retrodictList execution.1 execution.2 =
+      (initialMemory, inputs) :=
+  network.semantics.retrodictList_executeList initialMemory inputs
+
 /--
 Register-separated closure stores the external output as the next external
 input.  The complete closed state is `memory ++ loopRegister`.
@@ -94,6 +129,20 @@ def closeFeedback {memoryWidth portWidth : Nat}
     (network : Network memoryWidth portWidth) :
     Conservative (memoryWidth + portWidth) :=
   network.semantics.closeFeedback
+
+/-- The `time`-fold closed transition as an explicit equivalence. -/
+def closedIterateEquiv {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) (time : Nat) :
+    Reversible (memoryWidth + portWidth) :=
+  network.semantics.closedIterateEquiv time
+
+/-- The explicit closed equivalence agrees with ordinary function iteration. -/
+theorem closedIterateEquiv_apply {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) (time : Nat)
+    (state : BitState (memoryWidth + portWidth)) :
+    network.closedIterateEquiv time state =
+      (network.closeFeedback.toEquiv ^[time]) state :=
+  network.semantics.closedIterateEquiv_apply time state
 
 /-- The closed trajectory starts from an explicit memory and loop register. -/
 def closedOrbit {memoryWidth portWidth : Nat}
@@ -131,6 +180,38 @@ theorem closeFeedback_reversible {memoryWidth portWidth : Nat}
     (network : Network memoryWidth portWidth) :
     IsReversible network.closeFeedback :=
   network.closeFeedback.isReversible
+
+/-- Every finite register-separated closed iterate is reversible. -/
+theorem closedIterate_reversible {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) (time : Nat) :
+    IsReversible (network.closeFeedback.toEquiv ^[time]) :=
+  network.semantics.closedIterate_reversible time
+
+/-- The explicit inverse of a finite closed iterate recovers its input. -/
+theorem closedIterate_inverse_cancel {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) (time : Nat)
+    (state : BitState (memoryWidth + portWidth)) :
+    (network.closedIterateEquiv time).symm
+        ((network.closeFeedback.toEquiv ^[time]) state) = state :=
+  network.semantics.closedIterate_inverse_cancel time state
+
+/-- A finite closed iterate cancels its explicit inverse. -/
+theorem closedIterate_forward_cancel {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth) (time : Nat)
+    (state : BitState (memoryWidth + portWidth)) :
+    (network.closeFeedback.toEquiv ^[time])
+        ((network.closedIterateEquiv time).symm state) = state :=
+  network.semantics.closedIterate_forward_cancel time state
+
+/-- Retrodicting any finite closed orbit recovers its explicit initial state. -/
+theorem closedOrbit_inverse_cancel {memoryWidth portWidth : Nat}
+    (network : Network memoryWidth portWidth)
+    (initialMemory : BitState memoryWidth) (initialLoop : BitState portWidth)
+    (time : Nat) :
+    (network.closedIterateEquiv time).symm
+        (network.closedOrbit initialMemory initialLoop time) =
+      BitState.append initialMemory initialLoop :=
+  network.semantics.closedOrbit_inverse_cancel initialMemory initialLoop time
 
 end Network
 
