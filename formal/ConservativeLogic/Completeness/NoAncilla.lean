@@ -44,6 +44,10 @@ private theorem sign_tensor {m n : Nat}
   rw [← Equiv.trans_assoc, Equiv.Perm.sign_symm_trans_trans, sign_prodCongr]
   simp only [Realization.card_bitState]
 
+private theorem intUnit_even_pow (unit : ℤˣ) (exponent : Nat) :
+    unit ^ (2 * exponent) = 1 := by
+  rcases Int.units_eq_one_or unit with rfl | rfl <;> simp [pow_mul]
+
 set_option maxRecDepth 100000 in
 private theorem wirePerm_four_even : ∀ wiring : WirePerm 4,
     Equiv.Perm.sign (WirePerm.onState wiring) = 1 := by
@@ -76,18 +80,40 @@ private theorem circuit_even_aux {width : Nat} (circuit : Circuit width)
       rcases widths with h | h | h | h | h
       · rcases h with ⟨rfl, rfl⟩
         rw [rightIH (by omega)]
-        simp
+        have leftEven : Equiv.Perm.sign (Circuit.eval left).toEquiv ^ 16 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval left).toEquiv) 8
+        simpa using leftEven
       · rcases h with ⟨rfl, rfl⟩
-        simp [show (2 ^ 3 : Nat) = 4 * 2 by decide,
-          show (2 ^ 1 : Nat) = 2 by decide, pow_mul]
+        have leftEven : Equiv.Perm.sign (Circuit.eval left).toEquiv ^ 8 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval left).toEquiv) 4
+        have rightEven : Equiv.Perm.sign (Circuit.eval right).toEquiv ^ 2 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval right).toEquiv) 1
+        simp [leftEven, rightEven]
       · rcases h with ⟨rfl, rfl⟩
-        simp [show (2 ^ 2 : Nat) = 2 * 2 by decide, pow_mul]
+        have leftEven : Equiv.Perm.sign (Circuit.eval left).toEquiv ^ 4 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval left).toEquiv) 2
+        have rightEven : Equiv.Perm.sign (Circuit.eval right).toEquiv ^ 4 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval right).toEquiv) 2
+        simp [leftEven, rightEven]
       · rcases h with ⟨rfl, rfl⟩
-        simp [show (2 ^ 3 : Nat) = 4 * 2 by decide,
-          show (2 ^ 1 : Nat) = 2 by decide, pow_mul]
+        have leftEven : Equiv.Perm.sign (Circuit.eval left).toEquiv ^ 2 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval left).toEquiv) 1
+        have rightEven : Equiv.Perm.sign (Circuit.eval right).toEquiv ^ 8 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval right).toEquiv) 4
+        simp [leftEven, rightEven]
       · rcases h with ⟨rfl, rfl⟩
         rw [leftIH (by omega)]
-        simp
+        have rightEven : Equiv.Perm.sign (Circuit.eval right).toEquiv ^ 16 = 1 := by
+          simpa using intUnit_even_pow
+            (Equiv.Perm.sign (Circuit.eval right).toEquiv) 8
+        simpa using rightEven
 
 /-- Every complete four-wire circuit semantics is an even state permutation. -/
 theorem circuit_four_even (circuit : Circuit 4) :
