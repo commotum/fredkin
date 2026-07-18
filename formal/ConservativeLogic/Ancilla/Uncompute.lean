@@ -207,6 +207,33 @@ private theorem castState_append_right {a b c : Nat} (width : b = c)
   cases width
   rfl
 
+private theorem castState_append_both {a b c d : Nat}
+    (leftWidth : a = b) (rightWidth : c = d)
+    (left : BitState a) (right : BitState c) :
+    castState (congrArg₂ Nat.add leftWidth rightWidth)
+        (BitState.append left right) =
+      BitState.append (castState leftWidth left)
+        (castState rightWidth right) := by
+  cases leftWidth
+  cases rightWidth
+  rfl
+
+private theorem append_noBits_right {width : Nat} (state : BitState width) :
+    BitState.append state Realization.Primitive.noBits =
+      castState (Nat.add_zero width).symm state := by
+  funext index
+  refine Fin.addCases ?_ (fun impossible => Fin.elim0 impossible) index
+  intro inner
+  rw [BitState.append_castAdd, castState_apply]
+  congr 1
+
+private theorem castState_append_noBits_right {width : Nat}
+    (state : BitState width) :
+    castState (Nat.add_zero width)
+        (BitState.append state Realization.Primitive.noBits) = state := by
+  rw [append_noBits_right, castState_trans]
+  rfl
+
 private theorem castState_append_assoc {a b c : Nat}
     (first : BitState a) (second : BitState b) (third : BitState c) :
     castState (Nat.add_assoc a b c)
@@ -389,5 +416,229 @@ theorem hammingWeight_resultRegisterOutput {n : Nat} (value : BitState n) :
     hammingWeight (resultRegisterOutput value) = n := by
   rw [resultRegisterOutput, hammingWeight_append,
     hammingWeight_add_bitwiseNot]
+
+/-! ## Copying the selected result block of a complete realization output -/
+
+private abbrev copyResultCoreWidth (scratchWidth resultWidth garbageWidth : Nat) :
+    Nat :=
+  ((scratchWidth + resultWidth) + garbageWidth) +
+    ((resultWidth + resultWidth) + 0)
+
+private theorem copyResultRouteOutputWidth
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    ((scratchWidth + resultWidth) + (resultWidth + resultWidth)) +
+        (garbageWidth + 0) =
+      copyResultCoreWidth scratchWidth resultWidth garbageWidth := by
+  simp only [copyResultCoreWidth]
+  omega
+
+private def copyResultRouteWiring
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    WirePerm (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
+  Simulation.middleSwapWiring
+    (scratchWidth + resultWidth) garbageWidth
+    (resultWidth + resultWidth) 0
+
+private def copyResultRoute
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
+  .permute (copyResultRouteWiring scratchWidth resultWidth garbageWidth)
+
+private def copyResultBody
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
+  Simulation.castCircuit
+    (copyResultRouteOutputWidth scratchWidth resultWidth garbageWidth)
+    (.tensor
+      (Simulation.castCircuit
+        (Nat.add_assoc scratchWidth resultWidth
+          (resultWidth + resultWidth)).symm
+        (.tensor (.identity scratchWidth)
+          (copyRegisterCircuit resultWidth)))
+      (.identity (garbageWidth + 0)))
+
+private def copyResultCore
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
+  .seq (copyResultRoute scratchWidth resultWidth garbageWidth)
+    (.seq (copyResultBody scratchWidth resultWidth garbageWidth)
+      (Circuit.inverse
+        (copyResultRoute scratchWidth resultWidth garbageWidth)))
+
+private def copyResultCoreState
+    {scratchWidth resultWidth garbageWidth : Nat}
+    (scratch : BitState scratchWidth) (result : BitState resultWidth)
+    (garbage : BitState garbageWidth)
+    (register : BitState (resultWidth + resultWidth)) :
+    BitState (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
+  BitState.append
+    (BitState.append (BitState.append scratch result) garbage)
+    (BitState.append register Realization.Primitive.noBits)
+
+private def copyResultRoutedState
+    {scratchWidth resultWidth garbageWidth : Nat}
+    (scratch : BitState scratchWidth) (result : BitState resultWidth)
+    (garbage : BitState garbageWidth)
+    (register : BitState (resultWidth + resultWidth)) :
+    BitState (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
+  castState
+    (copyResultRouteOutputWidth scratchWidth resultWidth garbageWidth)
+    (BitState.append
+      (BitState.append (BitState.append scratch result) register)
+      (BitState.append garbage Realization.Primitive.noBits))
+
+private theorem copyResultRoute_spec
+    {scratchWidth resultWidth garbageWidth : Nat}
+    (scratch : BitState scratchWidth) (result : BitState resultWidth)
+    (garbage : BitState garbageWidth)
+    (register : BitState (resultWidth + resultWidth)) :
+    Circuit.eval (copyResultRoute scratchWidth resultWidth garbageWidth)
+        (copyResultCoreState scratch result garbage register) =
+      copyResultRoutedState scratch result garbage register := by
+  simpa [copyResultRoute, copyResultRouteWiring, copyResultCoreState,
+    copyResultRoutedState] using
+    (Simulation.middleSwapWiring_on_append
+      (BitState.append scratch result) garbage register
+      Realization.Primitive.noBits)
+
+private theorem copyResultBody_spec
+    {scratchWidth resultWidth garbageWidth : Nat}
+    (scratch : BitState scratchWidth) (result : BitState resultWidth)
+    (garbage : BitState garbageWidth) :
+    Circuit.eval (copyResultBody scratchWidth resultWidth garbageWidth)
+        (copyResultRoutedState scratch result garbage
+          (resultRegisterInput resultWidth)) =
+      copyResultRoutedState scratch result garbage
+        (resultRegisterOutput result) := by
+  unfold copyResultRoutedState copyResultBody
+  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+    Circuit.eval_identity]
+  rw [← castState_append_assoc_symm scratch result
+    (resultRegisterInput resultWidth)]
+  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+    Circuit.eval_identity, copyRegister_spec]
+  apply congrArg (castState
+    (copyResultRouteOutputWidth scratchWidth resultWidth garbageWidth))
+  apply congrArg (fun state =>
+    BitState.append state
+      (BitState.append garbage Realization.Primitive.noBits))
+  exact castState_append_assoc_symm scratch result
+    (resultRegisterOutput result)
+
+private theorem copyResultCore_spec
+    {scratchWidth resultWidth garbageWidth : Nat}
+    (scratch : BitState scratchWidth) (result : BitState resultWidth)
+    (garbage : BitState garbageWidth) :
+    Circuit.eval (copyResultCore scratchWidth resultWidth garbageWidth)
+        (copyResultCoreState scratch result garbage
+          (resultRegisterInput resultWidth)) =
+      copyResultCoreState scratch result garbage
+        (resultRegisterOutput result) := by
+  simp only [copyResultCore, Circuit.eval_seq]
+  rw [copyResultRoute_spec, copyResultBody_spec]
+  rw [← copyResultRoute_spec scratch result garbage
+    (resultRegisterOutput result)]
+  exact Circuit.eval_inverse_eval
+    (copyResultRoute scratchWidth resultWidth garbageWidth) _
+
+/-- Total width of a computation register plus its explicit `2n` result register. -/
+abbrev computeCopyUncomputeWidth (layout : Layout) : Nat :=
+  layout.width + (layout.resultWidth + layout.resultWidth)
+
+private theorem layoutOutputWidth (layout : Layout) :
+    layout.scratchWidth +
+        (layout.resultWidth + layout.garbageWidth) = layout.width :=
+  (congrArg (fun width => layout.scratchWidth + width)
+    layout.balanced).symm
+
+private theorem copyResultCoreNormalizedWidth (layout : Layout) :
+    copyResultCoreWidth layout.scratchWidth layout.resultWidth
+        layout.garbageWidth =
+      (layout.scratchWidth +
+          (layout.resultWidth + layout.garbageWidth)) +
+        (layout.resultWidth + layout.resultWidth) := by
+  simp only [copyResultCoreWidth]
+  omega
+
+private theorem copyResultCoreToLayoutWidth (layout : Layout) :
+    copyResultCoreWidth layout.scratchWidth layout.resultWidth
+        layout.garbageWidth = computeCopyUncomputeWidth layout :=
+  (copyResultCoreNormalizedWidth layout).trans
+    (congrArg
+      (fun width => width + (layout.resultWidth + layout.resultWidth))
+      (layoutOutputWidth layout))
+
+private theorem copyResultCoreState_to_layout
+    (layout : Layout) (scratch : BitState layout.scratchWidth)
+    (result : BitState layout.resultWidth)
+    (garbage : BitState layout.garbageWidth)
+    (register : BitState (layout.resultWidth + layout.resultWidth)) :
+    castState (copyResultCoreToLayoutWidth layout)
+        (copyResultCoreState scratch result garbage register) =
+      BitState.append (layout.packOutput scratch result garbage) register := by
+  let mainAssoc := Nat.add_assoc layout.scratchWidth layout.resultWidth
+    layout.garbageWidth
+  let registerZero := Nat.add_zero (layout.resultWidth + layout.resultWidth)
+  let normalize := congrArg₂ Nat.add mainAssoc registerZero
+  let liftOutput := congrArg
+    (fun width => width + (layout.resultWidth + layout.resultWidth))
+    (layoutOutputWidth layout)
+  calc
+    castState (copyResultCoreToLayoutWidth layout)
+        (copyResultCoreState scratch result garbage register) =
+      castState liftOutput
+        (castState normalize
+          (copyResultCoreState scratch result garbage register)) := by
+        rw [castState_trans]
+        exact castState_proof_irrel _ _ _
+    _ = castState liftOutput
+        (BitState.append
+          (castState mainAssoc
+            (BitState.append (BitState.append scratch result) garbage))
+          (castState registerZero
+            (BitState.append register Realization.Primitive.noBits))) := by
+        apply congrArg (castState liftOutput)
+        exact castState_append_both mainAssoc registerZero _ _
+    _ = castState liftOutput
+        (BitState.append
+          (BitState.append scratch (BitState.append result garbage))
+          register) := by
+        rw [castState_append_assoc, castState_append_noBits_right]
+    _ = BitState.append
+        (castState (layoutOutputWidth layout)
+          (BitState.append scratch (BitState.append result garbage)))
+        register := castState_append_left _ _ _
+    _ = BitState.append (layout.packOutput scratch result garbage) register := by
+        unfold Layout.packOutput
+        apply congrArg (fun state => BitState.append state register)
+        exact castState_proof_irrel _ _ _
+
+/--
+Copy only the selected result block of a complete packed realization output.
+Scratch, the through result, and every transient garbage wire remain available
+for the subsequent inverse.
+-/
+def copyResultCircuit (layout : Layout) :
+    Circuit (computeCopyUncomputeWidth layout) :=
+  Simulation.castCircuit (copyResultCoreToLayoutWidth layout)
+    (copyResultCore layout.scratchWidth layout.resultWidth
+      layout.garbageWidth)
+
+/-- Exact embedded copy equation on an arbitrary complete packed midpoint. -/
+@[simp]
+theorem copyResult_spec (layout : Layout)
+    (scratch : BitState layout.scratchWidth)
+    (result : BitState layout.resultWidth)
+    (garbage : BitState layout.garbageWidth) :
+    Circuit.eval (copyResultCircuit layout)
+        (BitState.append (layout.packOutput scratch result garbage)
+          (resultRegisterInput layout.resultWidth)) =
+      BitState.append (layout.packOutput scratch result garbage)
+        (resultRegisterOutput result) := by
+  rw [← copyResultCoreState_to_layout layout scratch result garbage
+    (resultRegisterInput layout.resultWidth)]
+  rw [copyResultCircuit, Simulation.eval_castCircuit, copyResultCore_spec]
+  exact copyResultCoreState_to_layout layout scratch result garbage
+    (resultRegisterOutput result)
 
 end ConservativeLogic.Ancilla

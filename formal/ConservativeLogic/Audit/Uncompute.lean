@@ -44,19 +44,19 @@ private theorem oneBit_eta (input : BitState 1) : oneBit (input 0) = input := by
 
 example : Circuit.eval Circuit.fredkin (threeBits false true false) =
     threeBits false false true := by
-  simpa using copyPair_physical_spec false
+  simpa only [threeBits] using copyPair_physical_spec false
 
 example : Circuit.eval Circuit.fredkin (threeBits true true false) =
     threeBits true true false := by
-  simpa using copyPair_physical_spec true
+  simpa only [threeBits] using copyPair_physical_spec true
 
 example : Circuit.eval copyPair (threeBits false false true) =
     threeBits false false true := by
-  simpa using copyPair_spec false
+  simpa only [threeBits] using copyPair_spec false
 
 example : Circuit.eval copyPair (threeBits true false true) =
     threeBits true true false := by
-  simpa using copyPair_spec true
+  simpa only [threeBits] using copyPair_spec true
 
 /-- Static copying on the initialized slice is not a syntactic identity term. -/
 theorem copyPair_ne_identity : copyPair ≠ Circuit.identity 3 := by
@@ -127,8 +127,18 @@ example : Circuit.eval (copyRegisterCircuit 2)
         (BitState.append (twoBits false false) (twoBits true true))) =
     BitState.append (twoBits true false)
       (BitState.append (twoBits true false) (twoBits false true)) := by
-  simpa [asymmetricValue, resultRegisterInput, resultRegisterOutput,
-    zeroRegister, oneRegister, bitwiseNot] using copyRegister_spec asymmetricValue
+  have inputEquality :
+      BitState.append (twoBits true false)
+          (BitState.append (twoBits false false) (twoBits true true)) =
+        BitState.append asymmetricValue (resultRegisterInput 2) := by
+    decide
+  have outputEquality :
+      BitState.append (twoBits true false)
+          (BitState.append (twoBits true false) (twoBits false true)) =
+        BitState.append asymmetricValue (resultRegisterOutput asymmetricValue) := by
+    decide
+  rw [inputEquality, outputEquality]
+  exact copyRegister_spec asymmetricValue
 
 /-! ## Explicit realization witnesses used by the final-boundary audit -/
 
@@ -160,6 +170,7 @@ private theorem scratchOr_realizes :
     Realizes scratchOrLayout scratchOrCircuit scratchOrScratch orSource
       orTarget orGarbage := by
   intro argument
+  change BitState 2 at argument
   rw [← twoBits_eta argument]
   exact scratchOr_complete (argument 0) (argument 1)
 
@@ -192,7 +203,31 @@ private theorem emptyResult_realizes :
     Realizes emptyResultLayout (Circuit.identity 1) noBits noBits
       emptyResultTarget emptyResultGarbage := by
   intro argument
+  change BitState 1 at argument
   rw [← oneBit_eta argument]
   exact emptyResult_complete (argument 0)
+
+/- A static identity realization with one positive-delay unit wire. -/
+private def unitWireLayout : Layout where
+  sourceWidth := 0
+  scratchWidth := 0
+  argumentWidth := 1
+  resultWidth := 1
+  garbageWidth := 0
+  balanced := rfl
+
+private def unitWireTarget (argument : BitState 1) : BitState 1 := argument
+
+private def unitWireGarbage (_ : BitState 1) : BitState 0 := noBits
+
+private theorem unitWire_realizes :
+    Realizes unitWireLayout Circuit.unitWire noBits noBits unitWireTarget
+      unitWireGarbage := by
+  intro argument
+  funext index
+  refine Fin.cases ?_ ?_ index
+  · rfl
+  · intro impossible
+    exact Fin.elim0 impossible
 
 end ConservativeLogic.Audit.Uncompute

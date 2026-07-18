@@ -13,6 +13,7 @@ import ConservativeLogic.Realization.Primitive
 import ConservativeLogic.Simulation.Source
 import ConservativeLogic.Simulation.Fredkin
 import ConservativeLogic.Simulation.Demultiplexer
+import ConservativeLogic.Ancilla.Uncompute
 
 set_option linter.style.header false
 
