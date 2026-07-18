@@ -4,9 +4,9 @@
 
 - Stage 1 is complete at commit `c510ce1`; the worktree was clean when this
   stage began.
-- The pinned project uses Lean/mathlib `v4.32.0`. The public root currently
-  exports no declarations, and the only Lean implementation file is the private
-  Stage 1 representation probe.
+- At the start of this stage, the pinned project used Lean/mathlib `v4.32.0`,
+  the public root exported no declarations, and the only Lean implementation
+  file was the private Stage 1 representation probe.
 - The probe compile-checks `Fin n → Bool`, filtered-`Finset.univ` Hamming
   weight, `Equiv.Perm`, `Fin.addCases`, and the rejected `Vector`/`BitVec`
   alternatives.
@@ -73,7 +73,7 @@ zero and provide the exact static lemmas later gate and circuit stages need.
 Expected stable declarations include:
 
 - `BitState`, `hammingWeight`, `BitState.append`, `BitState.split`,
-  `BitState.appendEquiv`, and `BitState.hammingWeight_append`.
+  `BitState.appendEquiv`, and `hammingWeight_append`.
 - `IsReversible`, `WeightPreserving`, their identity/composition theorems, and
   inverse preservation under a `Reversible` equivalence.
 - `Reversible`, `Reversible.injective`, `Reversible.surjective`, and the
@@ -175,12 +175,88 @@ lake build
 
 ## Stage Results
 
-**Stage status: in progress.** No Stage 2 Lean declaration has yet been added.
+**Stage status: complete (2026-07-17).** Stage 2 stops at the finite static-map
+boundary; no Stage 3 gate or circuit semantics were introduced.
 
-### Remaining work
+### Implemented surface
 
-- Implement the modules and compile every stated theorem signature.
-- Replace any proof/API assumption contradicted by Lean with a checked fact in
-  this report and `0-plan.md`.
-- Run and record the complete verification matrix before marking the stage
-  complete. Stage 3 must not begin in this stage.
+- `ConservativeLogic.State.Core` defines transparent `BitState`, filtered-card
+  `hammingWeight`, ordered `append`/`split`, both round trips,
+  `BitState.appendEquiv`, `hammingWeight_zero`, and the arbitrary-width theorem
+  `hammingWeight_append`.
+- `ConservativeLogic.Reversible.Core` defines independent `IsReversible` and
+  `WeightPreserving` predicates; `Reversible`; the explicitly two-field
+  `Conservative` bundle; valid identity, serial-composition, and inverse laws;
+  and the active `WirePerm.onState` action with
+  `onState_apply_image : onState σ x (σ i) = x i` and a general weight proof.
+- `ConservativeLogic.Reversible.Independence` proves one-bit negation reversible
+  but not weight-preserving and proves two-bit Boolean sorting weight-preserving
+  but noninjective using the named `leftHot`/`rightHot` collision. The module
+  calls sorting only an ordinary semantic endomap, never a circuit or gate.
+- `ConservativeLogic.API` and `ConservativeLogic` re-export the stable leaves.
+  `ConservativeLogic.Audit.Finite` remains non-public and checks widths zero,
+  nonzero append/split order, both negation rows, all four sorting rows, and both
+  directions of a nontrivial two-wire swap. A three-wire non-self-inverse cycle
+  distinguishes the active action from its inverse, and width-zero append,
+  `appendEquiv`, state action, and conservative wire action are explicit.
+
+The proposed name `BitState.hammingWeight_append` was corrected to the actual
+root-namespace theorem `ConservativeLogic.hammingWeight_append`. No theorem was
+moved merely to preserve a provisional report name.
+
+### Verification evidence
+
+From `formal/`, the focused builds passed:
+
+```text
+lake build ConservativeLogic.State.Core
+  ✔ [699/699] Built ConservativeLogic.State.Core
+lake build ConservativeLogic.Reversible.Core
+  ✔ [700/700] Built ConservativeLogic.Reversible.Core
+lake build ConservativeLogic.Reversible.Independence
+  ✔ [701/701] Built ConservativeLogic.Reversible.Independence
+lake build ConservativeLogic.API ConservativeLogic
+  ✔ Built ConservativeLogic.API
+  ✔ Built ConservativeLogic
+lake build ConservativeLogic.Audit.Finite
+  ℹ [703/703] Built ConservativeLogic.Audit.Finite
+```
+
+An uncontended `lake clean` followed by `lake build` rebuilt the dependency
+slice and all public project modules successfully (`712 jobs`); rebuilding the
+diagnostic audit afterward also succeeded (`703 jobs`). An earlier clean retry
+overlapped a delegated audit process that had independently invoked Lake and
+failed transiently while both processes emitted dependency `.olean` files. No
+project declaration failed, and that concurrent attempt is not counted as the
+clean-build evidence.
+
+The audit's `#print axioms` commands cover append/split reconstruction,
+`hammingWeight_append`, standalone and bundled composition/inverse preservation,
+wire-action composition/inverse/preservation, and both independence directions.
+Every result was axiom-free or depended on a subset of:
+
+```text
+[propext, Classical.choice, Quot.sound]
+```
+
+`IsReversible.comp` was axiom-free; structural extensionality results used
+`[propext, Quot.sound]`; cardinality/preservation results used the full listed
+set. These are ordinary Lean/mathlib foundational axioms; no `sorryAx` or
+project-specific axiom occurs. Stable-source scans found no `sorry`, `admit`,
+project `axiom`, `unsafe`, `opaque`, `partial`, `noncomputable`, umbrella
+`Mathlib`/`Mathlib.Tactic` import, foundational import of the public/audit
+layers, fallback implementation, or later-stage declaration. Every `decide`
+occurrence is confined to the fixed one-/two-bit witness module or the finite
+audit; arbitrary-width additivity and closure theorems use general proofs.
+
+### Facts carried to Stage 3
+
+- Stage 2 proves only static Hamming-weight additivity and preservation. Unit
+  wire, Fredkin-gate, circuit, and trajectory conservation remain later proof
+  obligations.
+- `Reversible` means an explicitly invertible equivalence, not involutivity or
+  physical time-reversal invariance.
+- Semantic predicate independence is now closed, but no circuit-language
+  interpretation of either witness has been claimed.
+- The active physical-wire convention is fixed as `output (σ i) = input i` and
+  should be reused explicitly when Stage 3 chooses triple coordinates.

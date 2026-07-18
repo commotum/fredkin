@@ -11,19 +11,30 @@ the public API.
 
 namespace ConservativeLogic.Audit.Finite
 
+private def emptyState : BitState 0 := fun i => Fin.elim0 i
+
 private def singleton (b : Bool) : BitState 1 := fun _ => b
 
 private def pair (a b : Bool) : BitState 2 :=
   BitState.append (singleton a) (singleton b)
 
+private def triple (a b c : Bool) : BitState 3 :=
+  BitState.append (singleton a) (pair b c)
+
 example (x : BitState 0) : hammingWeight x = 0 := by simp
 
-example : BitState.split 0 0 (fun i => Fin.elim0 i) =
-    ((fun i => Fin.elim0 i), (fun i => Fin.elim0 i)) := by
+example : BitState.split 0 0 emptyState = (emptyState, emptyState) := by
   apply Prod.ext <;> funext i <;> exact Fin.elim0 i
 
-example : (Conservative.identity 0 : Conservative 0) (fun i => Fin.elim0 i) =
-    (fun i => Fin.elim0 i) := by
+example : BitState.append emptyState emptyState = emptyState := by
+  funext i
+  exact Fin.elim0 i
+
+example : BitState.appendEquiv 0 0 (emptyState, emptyState) = emptyState := by
+  funext i
+  exact Fin.elim0 i
+
+example : (Conservative.identity 0 : Conservative 0) emptyState = emptyState := by
   simp
 
 example : hammingWeight (BitState.append (singleton true) (singleton false)) = 1 := by
@@ -66,17 +77,48 @@ example : WirePerm.onState swapTwo (pair false true) = pair true false := by
 example : WeightPreserving (WirePerm.onState swapTwo) :=
   WirePerm.onState_weightPreserving swapTwo
 
+private def cycleThree : WirePerm 3 :=
+  (Equiv.swap (0 : Fin 3) 1).trans (Equiv.swap (1 : Fin 3) 2)
+
+/-- A non-self-inverse row that distinguishes the active action from its inverse. -/
+example : WirePerm.onState cycleThree (triple true false false) =
+    triple false false true := by
+  decide
+
+private def emptyWirePerm : WirePerm 0 := Equiv.refl _
+
+example : WirePerm.onState emptyWirePerm emptyState = emptyState := by
+  funext i
+  exact Fin.elim0 i
+
+example : (WirePerm.conservative emptyWirePerm) emptyState = emptyState := by
+  funext i
+  exact Fin.elim0 i
+
 #check IsReversible
 #check WeightPreserving
 #check Reversible
 #check Conservative
+#check BitState.appendEquiv
+#check Reversible.identity
+#check Reversible.comp
+#check Reversible.inverse
+#check Reversible.injective
+#check Reversible.surjective
+#check Reversible.isReversible
 #check WirePerm.onState_apply_image
+#check WirePerm.conservative
 
+#print axioms BitState.split_append
+#print axioms BitState.append_split
 #print axioms hammingWeight_append
+#print axioms IsReversible.comp
 #print axioms WeightPreserving.comp
 #print axioms WeightPreserving.inverse
 #print axioms Conservative.comp
 #print axioms Conservative.inverse
+#print axioms WirePerm.onState_comp
+#print axioms WirePerm.onState_inverse
 #print axioms WirePerm.onState_weightPreserving
 #print axioms Independence.flipOne_not_weightPreserving
 #print axioms Independence.sortTwo_weightPreserving

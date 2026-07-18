@@ -74,9 +74,9 @@ Lean results as the work proceeds.
   `formal/lake-manifest.json` locks mathlib `v4.32.0` to commit
   `81a5d257c8e410db227a6665ed08f64fea08e997`.
 - Direct invocation under `formal/` selects Lean `v4.32.0` at commit
-  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, both
-  `lake build ConservativeLogic.Audit.Guardrails` and the default `lake build`
-  succeeded against the locked dependency tree.
+  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, the guardrail and
+  finite audit targets, every Stage 2 leaf, and an uncontended clean default
+  `lake build` succeeded against the locked dependency tree.
 - The in-project private probe compile-checks `Fin n → Bool`, filtered
   `Finset.univ` cardinality, `Equiv.Perm` identity/inverse/serial composition,
   serial application order, `Fin.addCases`, and the candidate `Vector` and
@@ -290,7 +290,8 @@ discipline once Lean code exists.
 
 ## Proposed Theorem Outline
 
-Names are placeholders to refine during stage work; they are not declarations.
+Names from completed stages are exact declarations; later-stage names remain
+placeholders to refine during stage work.
 
 - `hammingWeight_append`: weight is additive across explicit wire blocks.
 - `Reversible.injective` / `Reversible.surjective`: finite reversible maps have
