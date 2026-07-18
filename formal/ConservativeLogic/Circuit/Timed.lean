@@ -156,10 +156,12 @@ theorem HasLatency.seq {n firstLatency secondLatency : Nat}
 theorem wireOfLength_hasLatency (length : Nat) :
     HasLatency (wireOfLength length) length := by
   induction length with
-  | zero => simpa [wireOfLength] using hasLatency_identity 1
+  | zero =>
+      change HasLatency (.identity 1) 0
+      exact hasLatency_identity 1
   | succ length inductionHypothesis =>
-      simpa [wireOfLength] using
-        HasLatency.seq inductionHypothesis hasLatency_unitWire_one
+      change HasLatency (.seq (wireOfLength length) .unitWire) (length + 1)
+      exact HasLatency.seq inductionHypothesis hasLatency_unitWire_one
 
 /-- Tensor has a uniform latency when both disjoint blocks have that latency. -/
 theorem HasLatency.tensor {m n latency : Nat} {left : Circuit m} {right : Circuit n}

@@ -27,6 +27,13 @@ namespace ConservativeLogic.Realization
 def castState {m n : Nat} (width : m = n) (state : BitState m) : BitState n :=
   width ▸ state
 
+/-- Pointwise form of width transport, with the index transported in the reverse direction. -/
+theorem castState_apply {m n : Nat} (width : m = n) (state : BitState m)
+    (index : Fin n) :
+    castState width state index = state (Fin.cast width.symm index) := by
+  cases width
+  rfl
+
 /-- Width transport does not alter Hamming weight. -/
 @[simp]
 theorem hammingWeight_castState {m n : Nat} (width : m = n) (state : BitState m) :

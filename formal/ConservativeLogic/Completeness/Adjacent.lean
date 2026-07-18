@@ -1,3 +1,4 @@
+import Mathlib.Logic.Equiv.Fintype
 import ConservativeLogic.Completeness.Fredkin
 import ConservativeLogic.Simulation.Fredkin
 import ConservativeLogic.Ancilla.Uncompute
@@ -750,6 +751,7 @@ theorem adjacentTranspositionClean {m : Nat} (pattern : BitState m) :
     realizes := adjacentTranspositionCircuit_spec pattern
   }⟩
 
+end Completeness.Adjacent
 namespace CleanFredkinRealization
 
 /-- Conjugate a clean realization by an explicit structural data-wire route. -/
@@ -766,13 +768,18 @@ def wireConjugate {width : Nat} {gate : Reversible width}
       (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)))
   structural := by simp [realization.structural]
   latencyZero := by
-    apply hasLatency_seq_zero
-    · exact hasLatency_tensor_zero (Circuit.hasLatency_identity _)
+    have inputRoute : Circuit.HasLatency
+        (.tensor (.identity realization.ancillaWidth) (.permute wiring)) 0 :=
+      Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
         (Circuit.hasLatency_permute wiring)
-    · apply hasLatency_seq_zero
-      · exact realization.latencyZero
-      · exact hasLatency_tensor_zero (Circuit.hasLatency_identity _)
-          (Circuit.hasLatency_permute wiring.symm)
+    have outputRoute : Circuit.HasLatency
+        (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)) 0 :=
+      Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
+        (Circuit.hasLatency_permute wiring.symm)
+    intro input output actual path
+    simpa using
+      (Circuit.HasLatency.seq inputRoute
+        (Circuit.HasLatency.seq realization.latencyZero outputRoute) path)
   realizes state := by
     simp only [Circuit.eval_seq, Circuit.eval_tensor_append,
       Circuit.eval_identity, Circuit.eval_permute]
@@ -783,6 +790,7 @@ def wireConjugate {width : Nat} {gate : Reversible width}
     rfl
 
 end CleanFredkinRealization
+namespace Completeness.Adjacent
 
 private def finalDataSwap (m : Nat) : WirePerm (m + 2) :=
   Equiv.swap (Fin.natAdd m (0 : Fin 2)) (Fin.natAdd m (1 : Fin 2))
@@ -855,7 +863,7 @@ private theorem exists_wiring_to_final {m : Nat} (first second : Fin (m + 2))
   have targetInjective : Function.Injective target := by
     intro left right equality
     cases left <;> cases right <;> simp [target] at equality ⊢
-  obtain ⟨wiring, wiringSpec⟩ := Equiv.Perm.exists_extending_pair
+  obtain ⟨wiring, wiringSpec⟩ := _root_.Equiv.Perm.exists_extending_pair
     source target sourceInjective targetInjective
   refine ⟨wiring, ?_, ?_⟩
   · simpa [source, target] using wiringSpec false

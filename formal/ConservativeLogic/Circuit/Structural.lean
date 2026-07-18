@@ -44,13 +44,6 @@ def middleSwapWiring (a b c d : Nat) : WirePerm ((a + b) + (c + d)) :=
       (fourCompose a c b d).trans <|
         finCongr (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d))
 
-private theorem castState_apply {leftWidth rightWidth : Nat}
-    (width : leftWidth = rightWidth) (state : BitState leftWidth)
-    (index : Fin rightWidth) :
-    castState width state index = state (Fin.cast width.symm index) := by
-  cases width
-  rfl
-
 /-- The active middle-block permutation has the stated four-block action. -/
 theorem middleSwapWiring_on_append {a b c d : Nat}
     (as : BitState a) (bs : BitState b) (cs : BitState c) (ds : BitState d) :
