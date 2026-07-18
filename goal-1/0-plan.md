@@ -369,6 +369,12 @@ Lean results as the work proceeds.
   universal same-width/no-ancilla completeness at width four.  A separate
   dependency-free exact closure audit checks the generated group is full at
   widths one through three and has index two at width four.
+- Stage 10 begins from clean synchronized commit `29723da`.  The clean Stage 9
+  default build passed 1,003 jobs and the post-clean completeness audit passed
+  with only standard Lean classical/quotient axioms.  There is no
+  `Sequential` module, tick/state-machine semantics, stream/trace definition,
+  explicit delayed-feedback constructor, closed trajectory, or sequential
+  audit at this baseline.
 
 ### Assumptions to Test, Not Yet Facts
 
