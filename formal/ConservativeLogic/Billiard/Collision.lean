@@ -105,7 +105,7 @@ def conservative : Conservative 4 where
 theorem conservative_apply (state : BitState 4) : conservative state = map state := rfl
 
 /--
-Admitted local masks contain at most one ball, or exactly one of the two
+Selected legal local masks contain at most one ball, or exactly one of the two
 selected two-ball event patterns.  All other simultaneous masks are excluded.
 -/
 def AllowedLocal (state : BitState 4) : Prop :=
