@@ -76,11 +76,11 @@ Lean results as the work proceeds.
   `formal/lake-manifest.json` locks mathlib `v4.32.0` to commit
   `81a5d257c8e410db227a6665ed08f64fea08e997`.
 - Direct invocation under `formal/` selects Lean `v4.32.0` at commit
-  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, the guardrail,
-  finite, Fredkin, and circuit audit targets, every stable leaf through Stage 4,
-  and an uncontended clean default `lake build` succeeded against the locked
-  dependency tree. The Stage 4 clean build completed all 718 jobs; its
-  post-clean circuit audit completed all 709 jobs.
+  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, every stable leaf
+  through Stage 5 and the guardrail, finite, Fredkin, circuit, and realization
+  audit targets succeeded against the locked dependency tree. The Stage 5
+  uncontended clean default build completed all 781 jobs; its post-clean
+  realization audit completed all 772 jobs.
 - The in-project private probe compile-checks `Fin n → Bool`, filtered
   `Finset.univ` cardinality, `Equiv.Perm` identity/inverse/serial composition,
   serial application order, `Fin.addCases`, and the candidate `Vector` and
@@ -135,10 +135,28 @@ Lean results as the work proceeds.
   direction, rejects an unrestricted same-width copy map, distinguishes static
   value equality from delay, and proves both unequal-path rejection and
   compensated-path acceptance. It is not imported by the public root.
-- Stage 5 began from clean synchronized commit `16562ab`; the cached default
-  build succeeds with 710 jobs. No realization layout, full-output realization
-  relation, source/scratch/garbage constraint theorem, or realization audit
-  exists at that baseline.
+- Stage 5 began from clean synchronized commit `16562ab`. `Realization.Layout`
+  now names source, returned-clean scratch, argument, result, and garbage
+  widths, with canonical boundaries `(scratch,source,argument)` and
+  `(scratch,result,garbage)`. Its balance proof accounts for every non-scratch
+  wire; `Layout.packInput` and `Layout.packOutput` construct the complete
+  boundary states.
+- `Realization.Realizes` universally quantifies the argument while keeping
+  source and scratch fixed and equates `Circuit.eval` with the entire packed
+  output. Its proved consequences include injectivity of `(target,garbage)`,
+  collision separation, injectivity and a `2^garbageWidth` bound within each
+  target fiber, the total result/garbage capacity bound, target injectivity
+  when results determine garbage, and exact scratch-cancelled Hamming-weight
+  balance.
+- `Realization.Primitive` supplies actual routed `Circuit 3` terms and complete
+  equations for AND, OR, NOT, and constrained FAN-OUT. FAN-OUT consumes fixed
+  canonical source `(0,1)`, returns selected result `(a,a)`, and exposes
+  complement `¬a` as garbage; its full circuit is globally reversible and
+  Hamming-weight preserving.
+- `ConservativeLogic.Audit.Realization` checks the full signatures and axiom
+  footprints, parametric port routing, every primitive row, zero-width and
+  arbitrary restored-scratch cases, and negative capacity/conservation
+  boundaries. It is not imported by the public root.
 
 ### Checked Paper Facts
 
@@ -218,19 +236,7 @@ Lean results as the work proceeds.
   convention with enough precision in the immediate claim.
 
 ### Assumptions to Test, Not Yet Facts
-- Stage 5 will test a five-block interface with fixed source, returned-clean
-  scratch, argument, result, and explicit argument-indexed garbage. Canonical
-  boundaries use `(scratch,source,argument)` and `(scratch,result,garbage)`;
-  `source + argument = result + garbage` accounts for every non-scratch wire,
-  and scratch is the same explicit state on both sides. Primitive Figure 5
-  realizations use scratch width zero.
-- `Realizes` should be a full boundary-state equation with an explicit garbage
-  function, not a result projection or existential witness. General theorems
-  should derive injectivity of `(target,garbage)`, a garbage-cardinality bound
-  on every target fiber, target injectivity when result determines garbage (in
-  particular for argument-independent or zero-width garbage), and exact
-  source/result/garbage Hamming-weight balance after cancelling restored
-  scratch.
+
 - Fredkin completeness for all weight-preserving permutations may require
   clean ancillas that are returned, arbitrary wire permutations, or both. The
   no-ancilla fixed-width interpretation must not be assumed.
@@ -289,8 +295,8 @@ The eventual goal is complete only when all of the following hold:
 | §2.5, Fig. 3 | Literal directed-graph open/closed transition semantics, feedback, memory, balanced external ports, and closed-system weight conservation | 10 | The paper's graph model is not feed-forward; it needs explicit state and feedback semantics |
 | §§2.5, 7.1 | Acyclic/equal-latency combinational fragment and one-to-one composition | 4, 7 | `Circuit` is a corrected one-to-one feed-forward grammar; `PathDelay`, `HasLatency`, and `MeetsPaperCombinationalTiming` formalize the equal-unit-wire-path clause. No graph correspondence, feedback semantics, or physical routing result is claimed |
 | §2.5 | Reversibility and conservation are independent | 2 | Proved semantically for ordinary Boolean endomaps by `Independence.reversible_not_weightPreserving` and `Independence.weightPreserving_not_reversible`; this does not assert a literal circuit realization |
-| §3, Fig. 5 | Realization partitions source/argument and result/sink, fixes constants independently of the argument, and permits argument-dependent garbage | 5 | Central interface definition; every partition must be explicit |
-| §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | Ordering and interfaces must be reconstructed from figures |
+| §3, Fig. 5 | Realization partitions source/argument and result/sink, fixes constants independently of the argument, and permits argument-dependent garbage | 5 | `Layout` and `Realizes` give a stronger explicit five-block specialization: fixed source and returned-clean scratch, universal argument, selected result, explicit argument-indexed garbage, and equality of the complete boundary state |
+| §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | `fredkin_realizes_and`, `fredkin_realizes_or`, `fredkin_realizes_not`, and `fredkin_realizes_fanout` prove the exact complete tuples using named active port permutations; FAN-OUT is constrained by source `(0,1)` and retains `¬a` as garbage |
 | §3, Fig. 7 | Demultiplexer semantics include the complete output and address-echo garbage; argument-to-result paths have equal delay | 4, 6 | Stage 4 deliberately does not certify Figure 7: the paper does not establish equal delay for every external source/sink path. Reconstruct its complete function and latency scope in Stage 6 |
 | §3, Fig. 8 | Reconstruct a transition/trace specification for the asserted `J-K̄` flip-flop realization | 10 | The paper supplies only the assertion and diagram, not a transition equation or trace |
 | §4 | Conventional finite combinational networks can be translated to conservative networks using constants and garbage | 6 | Corrected finite feed-forward target; needs a source language and delay normalization |
@@ -306,7 +312,7 @@ The eventual goal is complete only when all of the following hold:
 | §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | Exact copy gadget and partitions must be proved |
 | §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Separate restoration semantics from scratch/garbage size and complexity bounds; the latter need a cost model |
 | §7.1, Fig. 24(b) | Scratch constants can all be zero without loss of generality | 9 | Attributed but unproved in paper |
-| §7.2, Fig. 25 | For any `f`, the initialized-slice map `(x,0ⁿ,1ⁿ) ↦ (x,f x,¬f x)` extends to a total conservative permutation | 5, 9 | Requires a finite weight-layer extension theorem; the figure does not define the total map |
+| §7.2, Fig. 25 | For any `f`, the initialized-slice map `(x,0ⁿ,1ⁿ) ↦ (x,f x,¬f x)` extends to a total conservative permutation | 5, 9 | Stage 5 proves necessary initialized-slice injectivity, fiber-capacity, and weight constraints for any supplied realization. The finite weight-layer extension, its noncanonical choices, and fixed-basis synthesis remain Stage 9/CL-014 obligations |
 | §7.2 | Arbitrary computation needs scratch for a fixed primitive set; claimed size tradeoffs | 9 | Quantifiers and complexity model unclear |
 | §7.3, Fig. 26 | Direct same-register semantic realization is characterized by invertibility plus conservation | 9 | Keep this arbitrary-gate statement separate from fixed-basis synthesis |
 | §§2.5, 7.3 | Every invertible conservative finite function, and its iterates, are Fredkin-realizable without garbage | 9 | Central, but wire-permutation/ancilla scope is ambiguous; the paper tacitly includes unit wires and identity gates in realizability claims |
@@ -323,13 +329,13 @@ disposition.
 | CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Resolved for the Stage 3 default by the explicit `PaperFredkin` namespace, public coordinate laws, `PaperFredkin.table`, and all eight audited rows. No one-controlled alternate is exposed; any future alternate still requires a separately named control-negation conjugacy theorem. |
 | CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Advanced but still partial through Stage 4: `UnitWire.value` and `UnitWire.delay` separate value identity from one-step metadata, and `PathDelay` composes that metadata along static feed-forward paths. `PaperFredkin.map_involutive` remains only a static gate fact. Oriented network reversal, execution, and physical time-reversal symmetry remain explicit later obligations. |
 | CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Resolved for the semantic predicate claim in Stage 2 by one-bit negation and two-bit Boolean sorting. The latter is documented only as an ordinary endomap, not a conservative-logic gate or literal circuit realization. |
-| CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | State a constrained ancilla interface and account for every output. |
+| CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | Resolved for the one-bit Stage 5 example: `fredkin_realizes_fanout` is a width-three circuit with fixed source `(0,1)`, selected result `(a,a)`, and explicit garbage `¬a`; `fredkinFanoutCircuit_isReversible` and `fredkinFanoutCircuit_weightPreserving` concern the complete map. Guarded failures reject a source-free unequal-width copier and an equal-width reversible interpretation of the selected target. |
 | CL-005 | Figure 7 states equal delay only from argument to result, whereas §7.1 defines a combinational network using equal delay from any input to any output. | Partially resolved in Stage 4 by the separate global predicate `MeetsPaperCombinationalTiming`, defined through one latency shared by every existing boundary path. It is not intrinsic to `Circuit`, so compensated terms are allowed. Figure 7 remains uncertified until every external source/sink path is reconstructed. |
 | CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Formalize source transition, initialization, scheduling, and noninterference semantics before the sequential theorem; state slowdown/time-multiplexing bounds separately from semantic simulation. |
 | CL-007 | The interaction and switch gates use constrained, unequal-width rail encodings. They preserve balls/ones but not the number of zero-valued physical rails and are exceptions to the ordinary balanced-port gate type. | Model each valid-state subtype explicitly; never claim `Bool² ≃ Bool⁴`, `Bool² ≃ Bool³`, or an ordinary equal-width conservative-gate instance. Qualify port-balance claims accordingly. |
 | CL-008 | Figure 18 explicitly omits steering/timing mirrors and unit wires, but identifies bridge crossovers and calls the others trivial; clearance and simultaneous collision scheduling are additional formalization obligations rather than quoted omissions. | Model the stated omissions, crossover cases, clearance, and event scheduling explicitly in a discrete geometry semantics. |
-| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; with Table (2)'s `(u,x1,x2)` order, `(x1,x2)=(1,0)` yields `(y1,y2)=(a,not a)`. | Make the gate-port wiring, any surrounding permutation, and the `2n`-wire result encoding explicit rather than reading vertical order from Figures 6(c) or 22. |
-| CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Define garbage relative to named interfaces; do not mean “no extra outputs whatsoever.” |
+| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; with Table (2)'s `(u,x1,x2)` order, `(x1,x2)=(1,0)` yields `(y1,y2)=(a,not a)`. | Advanced in Stage 5: `notFanoutInputWiring` explicitly maps canonical `(0,1,a)` to physical `(a,1,0)`, and the one-bit complete equation returns `(a,a,¬a)`. The multi-bit §7 copy layer and chosen `2n`-wire result encoding remain Stage 8 obligations. |
+| CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Advanced at the interface level in Stage 5: `Realizes` distinguishes consumed source, identically returned scratch, selected result, and explicit garbage. No uncomputation or garbage-recycling construction is claimed before Stages 7–8. |
 | CL-011 | All-zero scratch sufficiency is attributed to Margolus without proof. | Reconstruct a proof, cite a verifiable source, or leave the stronger version unresolved. |
 | CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model. | Define a circuit family and asymptotic measure before formalizing them. |
 | CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to Silver, but ancilla and wiring conventions are unclear; §2.5 also tacitly includes unit wires and identity gates in every realizability basis. | Prove the strongest accurate variant and document required ancillas/permutations and whether unit wires/identity are free basis elements. |
@@ -350,7 +356,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 4; later names remain provisional:
+Checked low-to-high layout through Stage 5; later names remain provisional:
 
 ```text
 ConservativeLogic/
@@ -363,8 +369,9 @@ ConservativeLogic/
   Circuit/Semantics.lean    -- evaluation and preservation theorems
   Circuit/Timed.lean        -- delays/equal-latency feed-forward networks
   Audit/Circuit.lean        -- non-public Stage 4 regressions and axiom audit
-  Realization/Core.lean     -- constants/arguments/results/garbage partitions
-  Realization/Primitive.lean
+  Realization/Core.lean     -- exhaustive source/clean-scratch/result/garbage interface
+  Realization/Primitive.lean -- exact routed Section 3 Fredkin realizations
+  Audit/Realization.lean    -- non-public Stage 5 boundary and axiom audit
   Circuit/Inverse.lean
   Ancilla/Uncompute.lean
   Universality/Fredkin.lean
@@ -422,11 +429,27 @@ placeholders to refine during stage work.
   closure plus blockwise compensation across nonuniform intermediate tensors.
 - `Circuit.UniformLatencyCircuit`: a certificate-only wrapper with checked
   identity, unit-wire, Fredkin, permutation, serial, and tensor constructors.
-- `Realizes`: an explicit relation partitioning constant/argument inputs and
-  result/garbage outputs.
-- `fredkin_realizes_and`, `fredkin_realizes_or`,
-  `fredkin_realizes_not`, `fredkin_realizes_copy`: primitive embeddings with
-  exact constants and garbage.
+- `Realization.Layout`, `Layout.width`, `Layout.packInput`, and
+  `Layout.packOutput`: the exhaustive source/returned-scratch/argument and
+  returned-scratch/result/garbage boundaries.
+- `Layout.packInput_argument_injective`,
+  `Layout.packOutput_resultGarbage_injective`,
+  `Layout.hammingWeight_packInput`, and `Layout.hammingWeight_packOutput`:
+  packing loses no named data and preserves exact block-weight accounting.
+- `Realizes.targetGarbage_injective`, `garbage_separates_collisions`,
+  `garbage_injectiveOn_fiber`, `fiber_card_le`,
+  `card_argument_le_resultGarbage`,
+  `target_injective_of_resultDeterminesGarbage`,
+  `target_injective_of_argumentIndependentGarbage`,
+  `target_injective_of_noGarbage`, and `weight_balance`: necessary information
+  and conservation constraints on a full-state initialized-slice realization.
+- `fredkin_and_complete`, `fredkin_or_complete`, `fredkin_not_complete`, and
+  `fredkin_fanout_complete`: exact complete Section 3 boundary equations.
+- `fredkin_realizes_and`, `fredkin_realizes_or`, `fredkin_realizes_not`, and
+  `fredkin_realizes_fanout`: primitive embeddings with exact sources, routing,
+  selected results, and garbage; the last is additionally backed by
+  `fredkinFanoutCircuit_isReversible` and
+  `fredkinFanoutCircuit_weightPreserving` for the complete width-three map.
 - `Circuit.inverse_eval`: evaluation of an inverse feed-forward circuit is the
   inverse equivalence.
 - `copyPair_spec`: in the paper's exact gate-port order, initialized `(1,0)`
@@ -595,7 +618,10 @@ cannot perform implicit fan-out.
 
 ### 5-REALIZATION
 
-**Status:** In progress (2026-07-17), from clean baseline `16562ab`.
+**Status:** Complete (2026-07-17), from clean baseline `16562ab`. The exhaustive
+interface, general constraints, exact routed Fredkin examples, negative
+boundaries, focused/public/clean builds, source scans, and axiom audits are
+recorded in `goal-1/5-REALIZATION.md`. Stage 6 has not started.
 
 #### Big Picture Objective
 

@@ -41,7 +41,7 @@
   scratch-cancelled Hamming-weight balance, and the four routed primitive
   equations. This probe is not a repository declaration or verification result.
 
-## Updated Assumptions
+## Checked Design Decisions
 
 - Use one explicit `Layout` with widths for source, clean scratch, argument,
   result, and garbage. Canonical input order is
@@ -85,8 +85,7 @@ garbage output made explicit—especially the constrained nature of FAN-OUT.
 
   ```text
   Realization.Layout
-  Layout.inputWidth
-  Layout.outputWidth
+  Layout.width
   Layout.packInput
   Layout.packOutput
   Realization.ArgumentIndependent
@@ -100,6 +99,7 @@ garbage output made explicit—especially the constrained nature of FAN-OUT.
 
   ```text
   Layout.packInput_argument_injective
+  Layout.packOutput_resultGarbage_injective
   Layout.hammingWeight_packInput
   Layout.hammingWeight_packOutput
   Realizes.targetGarbage_injective
@@ -193,7 +193,7 @@ whitespace.
   argument. Ignoring it observationally is not a circuit-level discard, and it
   cannot be reused as a constant unless argument independence is separately
   proved.
-- Fan-out boundary: `fanoutFunction : BitState 1 → BitState 2` is only the
+- Fan-out boundary: `fanoutTarget : BitState 1 → BitState 2` is only the
   selected result of a width-three conservative circuit initialized with two
   source bits. It is not a `Circuit 1`, `Circuit 2`, `Reversible 1`, or
   unrestricted equal-width copy primitive.
@@ -273,13 +273,60 @@ whitespace.
 
 ## Stage Results
 
-**Stage status: in progress.** The paper/interface contract and compile probe
-are complete; no Stage 5 repository Lean declaration has yet been added.
+**Stage status: complete (2026-07-17).** Stage 5 was implemented from clean
+synchronized baseline `16562ab`; Stage 6 was not started.
 
-### Remaining work
+### Implemented surface
 
-- Implement the two stable leaves and diagnostic with the checked signatures.
-- Run the complete verification matrix and independently inspect all primitive
-  rows, constraint proofs, axiom footprints, imports, and stage-boundary scans.
-- Replace this section with exact results and fold only verified facts into
-  `0-plan.md` and the README.
+- `ConservativeLogic.Realization.Core` defines the five-width `Layout`, its one
+  derived total `Layout.width`, complete canonical input/output packing, the
+  full-state `Realizes` relation, and the general information-capacity and
+  Hamming-weight constraints listed above. Source and scratch are fixed outside
+  the universally quantified argument; the same explicit scratch state occurs
+  on both sides, and garbage is a supplied total function rather than an
+  existential witness.
+- `ConservativeLogic.Realization.Primitive` defines fixed sources, targets,
+  complete garbage functions, layouts, named active `WirePerm 3` routings, and
+  actual `Circuit 3` witnesses for all four Section 3 examples. The complete
+  equations and `fredkin_realizes_and`, `fredkin_realizes_or`,
+  `fredkin_realizes_not`, and `fredkin_realizes_fanout` cover every Boolean
+  argument. The FAN-OUT witness consumes canonical source `(0,1)`, selects
+  `(a,a)`, and retains `¬a` as garbage; its complete map is also proved
+  reversible and Hamming-weight preserving.
+- `ConservativeLogic.API` and the public root re-export only the two stable
+  realization leaves. `ConservativeLogic.Audit.Realization` remains non-public.
+
+### Verification evidence
+
+- Initial focused builds completed `ConservativeLogic.Realization.Core` (766
+  jobs), `ConservativeLogic.Realization.Primitive` (767 jobs), and the API/root
+  consumer build (773 jobs). After `lake clean`, the default public build
+  completed all 781 jobs from zero artifacts. The final post-clean realization
+  audit completed all 772 jobs.
+- The diagnostic checks guarded impossible source-free width expansion,
+  argument-dependent source misuse, a `Circuit 1` two-bit result, and an
+  equal-width reversible interpretation of `fanoutTarget`. It also checks a
+  width-zero realization, arbitrary returned scratch, parametric physical input
+  routing, every complete primitive row, direct critical Fredkin rows, and
+  argument dependence of every primitive garbage function.
+- Negative theorems prove that AND's three-element false fiber cannot fit in
+  one garbage bit, argument-independent garbage cannot conceal AND's
+  collisions, and all-zero FAN-OUT sources cannot supply the conserved token
+  needed for result `(1,1)`.
+- Source scans found no executable `sorry`, `admit`, project `axiom`, `unsafe`,
+  `noncomputable`, choice-based witness, broad/internal import, arbitrary state
+  equivalence in `Layout`, existential garbage, semantic-map injection into
+  `Circuit`, or future-stage declaration. The four stable uses of `decide` are
+  exhausted over fixed Boolean gate inputs; the general core uses none.
+- `#print axioms` on packing, all general constraints, all complete primitive
+  equations and realization theorems, FAN-OUT's global properties, and the
+  negative audit theorems reports only standard `propext`, `Classical.choice`,
+  and `Quot.sound`, never `sorryAx` or a project axiom.
+- The Stage 4 `Circuit` datatype is byte-for-byte unchanged and still has only
+  `identity`, `unitWire`, `fredkin`, `permute`, `seq`, and `tensor`. Diff and
+  whitespace scans pass, the public API does not import diagnostics, and no
+  source-circuit translation, inverse, uncompute, synthesis, sequential, or
+  physical declaration was added.
+
+The authoritative plan and README now record Stage 5 as complete. General
+Boolean-circuit simulation is the next named stage, but remains unimplemented.

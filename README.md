@@ -29,10 +29,11 @@ lake build ConservativeLogic.Audit.Guardrails
 lake build ConservativeLogic.Audit.Finite
 lake build ConservativeLogic.Audit.Fredkin
 lake build ConservativeLogic.Audit.Circuit
+lake build ConservativeLogic.Audit.Realization
 lake build
 ```
 
-Stages 1 through 4 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 5 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -47,7 +48,16 @@ every existing boundary path. Structural permutations are zero-delay
 meta-level port reindexings, not synthesized routing circuits. The grammar is
 not claimed to be the paper's feedback-capable directed-graph model, and its
 timing layer is not a tick, trace, transition, stream, or physical-routing
-semantics. Explicit
-constants, garbage, and initialized auxiliary wires enter next through the
-Stage 5 realization interface. The focused audit commands are explicit because
-diagnostic leaves are intentionally not imported by the public root.
+semantics.
+
+Stage 5 adds an exhaustive five-block realization layout with fixed source,
+returned-clean scratch, argument, result, and explicit garbage. `Realizes`
+states equality of the circuit's complete output, and its constraint theorems
+derive target/garbage injectivity, target-fiber capacity bounds, and exact
+Hamming-weight balance. The public API also includes routed one-Fredkin
+realizations of AND, OR, NOT, and constrained FAN-OUT. FAN-OUT consumes source
+`(0,1)`, selects `(a,a)`, and retains `¬a` as garbage; it is not an
+unrestricted copy gate. General Boolean-circuit simulation, inverse circuits,
+and garbage recycling remain later stages. The focused audit commands are
+explicit because diagnostic leaves are intentionally not imported by the
+public root.

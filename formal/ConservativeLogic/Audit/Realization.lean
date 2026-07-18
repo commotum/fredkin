@@ -85,29 +85,23 @@ theorem arbitrary_scratch_identity_realizes {width : Nat} (scratch : BitState wi
 
 /-! ## Exact physical input routing -/
 
-example :
+example (a b : Bool) :
     Circuit.eval (Circuit.permute andInputWiring)
-        (andLayout.packInput noBits andSource (twoBits true false)) =
-      PaperFredkin.state true false false := by
-  decide
+        (andLayout.packInput noBits andSource (twoBits a b)) =
+      PaperFredkin.state a b false := by
+  cases a <;> cases b <;> decide
 
-example :
+example (a b : Bool) :
     Circuit.eval (Circuit.permute orInputWiring)
-        (orLayout.packInput noBits orSource (twoBits false true)) =
-      PaperFredkin.state false true true := by
-  decide
+        (orLayout.packInput noBits orSource (twoBits a b)) =
+      PaperFredkin.state a true b := by
+  cases a <;> cases b <;> decide
 
-example :
+example (a : Bool) :
     Circuit.eval (Circuit.permute notFanoutInputWiring)
-        (notLayout.packInput noBits notFanoutSource (oneBit false)) =
-      PaperFredkin.state false true false := by
-  decide
-
-example :
-    Circuit.eval (Circuit.permute notFanoutInputWiring)
-        (notLayout.packInput noBits notFanoutSource (oneBit true)) =
-      PaperFredkin.state true true false := by
-  decide
+        (notLayout.packInput noBits notFanoutSource (oneBit a)) =
+      PaperFredkin.state a true false := by
+  cases a <;> decide
 
 /-! ## Complete primitive regressions -/
 
