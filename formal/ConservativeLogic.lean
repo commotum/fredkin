@@ -35,9 +35,10 @@ with explicit structural reindexing and an exactly returned clean ancillary
 prefix.  The witness records its concrete finite width and exact Boolean
 initialization, which need not be all zero, excludes unit wires syntactically,
 and has zero path latency.
-A proved odd width-four conservative transposition rules out a no-ancilla
-interpretation.  No all-zero-scratch conversion, global linear scratch bound,
-delay padding, graph/feedback inversion, oriented time-reversal semantics,
+A proved odd width-four conservative transposition rules out universal
+same-width/no-ancilla completeness.  No all-zero-scratch conversion, global
+linear scratch bound, delay padding, graph/feedback inversion, oriented
+time-reversal semantics,
 traces, sequential execution, physical routing, or thermodynamic conclusion
 is claimed.
 -/

@@ -2,7 +2,7 @@
 
 ## Status
 
-Complete from clean synchronized baseline `5b28ef8` on 2026-07-17.  The
+Complete on 2026-07-18 from clean synchronized baseline `5b28ef8`.  The
 semantic completion, corrected fixed-basis theorem, explicit clean workspace,
 and width-four no-ancilla obstruction are checked.  Stage 10 has not started.
 
@@ -29,9 +29,9 @@ read together.
   `(x,0^n,1^n) -> (x,f(x),not f(x))`
 
   at total width `m + 2n`. Retaining `x` makes the slice injective, and both
-  ancillary pairs have exactly `n` true bits. Calling the displayed box a
-  total invertible conservative gate suppresses a real, noncanonical finite
-  extension within each Hamming layer.
+  the input and output `2n`-wire result-register blocks have exactly `n` true
+  bits. Calling the displayed box a total invertible conservative gate
+  suppresses a real, noncanonical finite extension within each Hamming layer.
 - Figure 26c is a same-register endomap, so its hidden boundary hypothesis is
   `m = n`. Bijectivity plus conservation is definition-level sufficient only
   when the whole endomap may itself be selected as one arbitrary primitive.
@@ -89,7 +89,7 @@ For every finite `f : BitState m -> BitState n`,
 
 `(x, resultRegisterInput n) -> (x, resultRegisterOutput (f x))`.
 
-This is semantic gate existence, not yet fixed-basis synthesis.
+This is semantic gate existence, not itself fixed-basis synthesis.
 
 ### Direct semantic realization
 
@@ -98,8 +98,8 @@ This is semantic gate existence, not yet fixed-basis synthesis.
 
 `DirectlyRealizable f <-> IsReversible f and WeightPreserving f`
 
-for a same-width endomap only. The predicate must not mention `Circuit` and
-must not be presented as Fredkin synthesis.
+for a same-width endomap only. The predicate does not mention `Circuit` and is
+not presented as Fredkin synthesis.
 
 ### Fixed-basis completeness
 
@@ -146,11 +146,12 @@ The common one-controlled Fredkin convention is not smuggled in. It is
 implemented as the paper's zero-controlled Fredkin followed by the explicit
 data-wire swap; the theorem therefore remains about the repository basis.
 
-This route proves existence of a concrete finite clean block but does not expose
-a useful uniform closed-form bound for the final group-closure witness: the
-subgroup proof may concatenate blocks for multiple transpositions.  In
-particular, an earlier proposed direct `2*n + 7` marker sketch was not
-installed as a theorem.  No optimality claim is made.
+This route proves existence of an exact finite clean witness but does not
+expose a useful uniform closed-form bound for the final group-closure witness:
+the subgroup proof may concatenate blocks for multiple transpositions.  The
+`Nonempty` and subgroup-closure proof is classical and existential; it exports
+no synthesis algorithm.  In particular, an earlier proposed direct `2*n + 7`
+marker sketch was not installed as a theorem.  No optimality claim is made.
 
 ### False no-ancilla reading
 
@@ -168,14 +169,14 @@ kernel-checked by exhaustive `decide`; the circuit theorem itself is not an
 enumeration of syntax.
 
 The dependency-free exact audit
-`ConservativeLogic/Audit/completeness_groups.py` exhaustively closes the
-finite generator groups at widths one through four.  Paper Fredkin plus
-structural wire permutations generates the full conservative group at widths
-one, two, and three and an index-two subgroup at width four.  It also checks
-that `1100 <-> 1010` is outside that subgroup.  Hence width four is the first
-counterexample in this checked range.  This computation establishes
-minimality; the Lean theorem supplies the non-enumerative structural
-obstruction at width four.
+[`formal/ConservativeLogic/Audit/completeness_groups.py`](../formal/ConservativeLogic/Audit/completeness_groups.py)
+exhaustively closes the finite generator groups at widths one through four.
+Paper Fredkin plus structural wire permutations generates the full
+conservative group at widths one, two, and three and an index-two subgroup at
+width four.  It also checks that `1100 <-> 1010` is outside that subgroup.
+Hence width four is the first counterexample in this checked range.  This
+computation establishes minimality; the Lean theorem supplies the
+non-enumerative structural obstruction at width four.
 
 ### Figure 25 fixed-basis corollary
 
@@ -194,8 +195,8 @@ that Figure 25 itself supplied a small circuit.
 - “Clean” means one exact known Boolean state, possibly mixed and not required
   to be all zero.
 - “No garbage” means the complete ancillary register is returned bit for bit.
-- The returned scratch is visible in the theorem even though Figure 26 omits
-  it from the drawing.
+- The returned ancillary workspace is visible in the theorem even though
+  Figure 26 omits scratch from the drawing.
 - The canonical edge macro has explicit linear local bounds.  The final
   completeness theorem exposes its selected finite ancillary width but makes
   no global linear, least-space, least-time, gate-count, or physical line-count
@@ -224,9 +225,13 @@ direct_realization_iff
 Circuit.FredkinStructural
 CleanFredkinRealization
 CleanFredkinRealizable
+CleanFredkinRealizableFunction
 oneControlledFredkin
 patternMatch
+edgeClean_width_le
+edgeWidth_le
 adjacentTranspositionCircuit
+adjacentTranspositionCircuit_fredkinCount
 adjacentTranspositionClean
 Conservative.weightLayer_exchange_connected
 Conservative.weightLayer_hammingTwo_connected
@@ -237,18 +242,20 @@ figure25_fredkin_complete
 
 middleLayerSwapConservative
 circuit_four_even
+middleLayerSwap_odd
 middleLayerSwap_not_circuit
 ```
 
 The parity counterexample is in a separate public correction leaf.  The exact
-small-width group harness remains a diagnostic under `ConservativeLogic.Audit`.
+small-width group harness is the diagnostic Python file linked above.
 
 ## Adversarial Matrix
 
-The Lean audit and its exact-group companion cover:
+The repository Lean audits and the exact-group companion cover:
 
 - the positive theorem at widths `0`, `1`, `2`, `3`, and `4`, plus exact
-  same-width generator closure through the first obstructed width `4`;
+  same-width generator closure at widths `1` through the first obstructed
+  width `4`;
 - result width zero in Figure 25;
 - a noninjective arbitrary `f` in Figure 25, confirming that retained `x`, not
   injectivity of `f`, makes the initialized slice injective;
@@ -258,25 +265,37 @@ The Lean audit and its exact-group companion cover:
 - true- and false-literal pattern steps, preventing a hidden NOT;
 - both directions of the isolated transposition;
 - a third state fixed by that transposition;
-- nonzero initialized scratch and exact restoration;
-- active `WirePerm` direction and data/scratch block order;
+- nonzero, mixed ancillary initialization and exact restoration;
+- active `WirePerm` direction and data/ancillary block order;
 - the odd four-wire target versus even circuit invariant;
 - absence of `unitWire`, generic semantic gates, fan-out, weakening, and
   contraction in synthesis witnesses;
 - Figure 25 semantic existence kept separate from its fixed-basis corollary;
 - finite iterate wording kept separate from feedback execution.
 
-## Verification Plan
+## Verification Results
 
-Run focused builds for each new public leaf, the API/root build, and the
-non-public audit. Then run an uncontended clean default build and rebuild the
-audit after the clean. Print axioms for the layer assembly, extension theorem,
-Figure 25 theorem, direct iff, fixed-basis theorem, parity invariant, and
-counterexample. Expected axioms are only standard Lean/mathlib classical or
-quotient principles; no project axiom, `sorry`, unsafe proof shortcut, or
-native-code trust axiom is acceptable in the public results.
+Verification on 2026-07-18 completed as follows:
 
-Scan new public and audit files for placeholders, accidental broad imports,
-generic semantic-gate constructors, hidden fan-out language, unsupported
-physical claims, and stale Stage 9 markers. Inspect the final diff and confirm
-that unrelated synchronized changes were not overwritten.
+- A focused build of all six completeness leaves, `ConservativeLogic.API`, and
+  the public root passed.
+- `lake clean` followed by the default `lake build` passed all 1,003 jobs from
+  scratch.  The diagnostic leaf was then rebuilt after the clean with
+  `lake build ConservativeLogic.Audit.Completeness ConservativeLogic`; all 996
+  jobs passed.
+- The diagnostic examples cover widths zero through four, result width zero,
+  a noninjective Figure 25 function, unequal-weight rejection, both Fredkin
+  control conventions, both literal branches, both swap directions, a fixed
+  third state, mixed clean initialization/restoration, structural wire
+  direction, and the parity obstruction.
+- Every printed Stage 9 result reports exactly `propext`, `Classical.choice`,
+  and `Quot.sound`.  No project axiom, `sorry`, `admit`, `unsafe` declaration,
+  `native_decide`, or `Lean.ofReduceBool` occurs in the checked Stage 9 Lean
+  sources.
+- `python3 ConservativeLogic/Audit/completeness_groups.py` reports generated
+  and full group orders `1/1`, `2/2`, `36/36`, and `207360/414720` at widths
+  one through four, and confirms that the conservative `1100 <-> 1010` target
+  is absent at width four.
+- Placeholder/claim-boundary scans and `git diff --check` pass.  The final
+  inspection preserves unrelated synchronized work and leaves Stage 10
+  untouched.

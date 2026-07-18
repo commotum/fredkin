@@ -341,12 +341,37 @@ Lean results as the work proceeds.
   biconditionals, while `Circuit.HasLatency.seq_inverse` and
   `Circuit.HasLatency.inverse_seq` prove the honest `L + L` round-trip latency.
   `UniformLatencyCircuit.inverse` remains a certificate constructor only.
+- `WeightLayer`, `Conservative.onWeightLayer`, and
+  `Conservative.ofWeightLayers` identify a finite conservative permutation
+  with independent permutations of its exact Hamming-weight layers.
+- `exists_conservative_extending_pair` classically and noncanonically extends
+  injective equal-weight pairs.  `exists_figure25_conservative` applies it to
+  Figure 25's initialized slice, including noninjective selected functions and
+  result width zero.
+- `DirectlyRealizable` and `direct_realization_iff` characterize the separate
+  monolithic same-register semantic reading as exactly bijectivity plus weight
+  preservation; they do not mention `Circuit`.
+- `CleanFredkinRealization` records one exact possibly mixed ancillary prefix,
+  a complete circuit and initialized-state equation, exact prefix restoration,
+  exclusion of `unitWire`, and zero path latency.
+- `patternMatch` and `adjacentTranspositionCircuit` construct a clean
+  Johnson-graph edge transposition.  The local ancillary width is at most
+  `3*m + 3`, complete width at most `4*m + 5`, and the exact paper-Fredkin
+  syntax count is `4*logicGateCount + 3`.
+- `singleExchangeClean`, Hamming-layer connectivity, and finite
+  permutation-group closure prove `fredkin_complete_conservative` for every
+  finite conservative permutation using paper Fredkin plus free structural
+  reindexing.  The proof is classical existential and installs no executable
+  synthesis algorithm or global closed-form workspace bound.
+- `figure25_fredkin_complete` keeps the visible `m + 2n` result-register block
+  separate from the additional returned completeness workspace.
+- `circuit_four_even` and `middleLayerSwap_not_circuit` formally refute
+  universal same-width/no-ancilla completeness at width four.  A separate
+  dependency-free exact closure audit checks the generated group is full at
+  widths one through three and has index two at width four.
 
 ### Assumptions to Test, Not Yet Facts
 
-- Fredkin completeness for all weight-preserving permutations may require
-  clean ancillas that are returned, arbitrary wire permutations, or both. The
-  no-ancilla fixed-width interpretation must not be assumed.
 - The paper's claim that an all-zero scratchpad loses no generality and its
   stated linear lower/upper scratch bounds require reconstruction from other
   sources or fresh proofs.
@@ -464,7 +489,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 8; later names remain provisional:
+Checked low-to-high layout through Stage 9; later names remain provisional:
 
 ```text
 ConservativeLogic/
@@ -488,10 +513,16 @@ ConservativeLogic/
   Audit/Simulation.lean     -- non-public Stage 6 boundary and axiom audit
   Ancilla/Uncompute.lean    -- explicit spy registers and compute-copy-uncompute
   Audit/Uncompute.lean      -- non-public Stage 8 boundaries, timing, and axiom audit
-  Universality/Fredkin.lean
+  Completeness/Semantic.lean -- Hamming layers and noncanonical semantic completion
+  Completeness/Fredkin.lean -- clean witness, basis certificate, and composition
+  Completeness/Johnson.lean -- equal-weight exchange connectivity
+  Completeness/Adjacent.lean -- explicit clean local transposition and routing
+  Completeness/Synthesis.lean -- finite group-closure completeness theorem
+  Completeness/NoAncilla.lean -- width-four parity obstruction
+  Audit/Completeness.lean   -- Stage 9 boundaries and axiom audit
+  Audit/completeness_groups.py -- exact dependency-free widths 1--4 group audit
   Sequential/Core.lean      -- separate transition/feedback semantics
   Billiard/Discrete.lean    -- optional, late, isolated from the verified core
-  Audit/Main.lean           -- theorem map, examples, `#print axioms`
   API.lean                  -- thin public re-export
 ```
 
@@ -624,11 +655,37 @@ placeholders to refine during stage work.
   proved zero-latency certificate only; the audit's
   `unitWireUncompute_not_meetsPaperCombinationalTiming` refutes an unsupported
   positive-latency generalization.
-- `fredkin_complete_conservative`: a carefully scoped synthesis theorem for
-  finite weight-preserving permutations, with all clean ancillas and wire
-  permutations exposed.
-- `direct_realization_iff`: characterize direct same-register realizability,
-  separately from fixed-Fredkin-basis synthesis.
+- `WeightLayer`, `Conservative.onWeightLayer`,
+  `Conservative.ofWeightLayers`, and their round-trip laws: exact semantic
+  decomposition by Hamming weight.
+- `exists_conservative_extending_pair` and
+  `exists_figure25_conservative`: classical noncanonical layer completion and
+  Figure 25's total semantic extension.
+- `direct_realization_iff`: direct monolithic same-register realizability is
+  exactly bijectivity plus weight preservation, separately from fixed-basis
+  synthesis.
+- `Circuit.FredkinStructural`, `CleanFredkinRealization`, and
+  `CleanFredkinRealizable`: one exact possibly mixed returned ancillary prefix,
+  a full initialized-state equation, a no-`unitWire` basis certificate, and
+  zero path latency.
+- `oneControlledFredkin_spec`: the separately named common convention is built
+  from paper Fredkin followed by an explicit structural data-wire swap.
+- `patternMatch_spec`, `edgeClean_width_le`, `edgeWidth_le`,
+  `adjacentTranspositionCircuit_spec`,
+  `adjacentTranspositionCircuit_fredkinCount`, and
+  `adjacentTranspositionClean`: exact local Johnson-edge semantics,
+  restoration, and resource bounds.
+- `Conservative.weightLayer_exchange_connected`,
+  `Conservative.weightLayer_hammingTwo_connected`, and
+  `singleExchangeClean`: layer connectivity and clean routed state exchanges.
+- `fredkin_complete_conservative` and `clean_fredkin_realizable_iff`: classical
+  existential paper-Fredkin-plus-structural-reindexing completeness, with no
+  executable synthesis algorithm or global closed-form cost claim.
+- `figure25_fredkin_complete`: fixed-basis synthesis of the noncanonical total
+  Figure 25 completion with its additional returned workspace exposed.
+- `circuit_four_even`, `middleLayerSwap_odd`, and
+  `middleLayerSwap_not_circuit`: the formal width-four no-ancilla parity
+  obstruction, paired with the exact small-width group audit for minimality.
 - Optional `Billiard.step_reversible` and `interactionGate_refines_collision`:
   discrete model results only after collision well-definedness is proved.
 
@@ -724,8 +781,11 @@ table, ordering, reversibility, and conservation without convention drift.
 - Define coordinatewise-XOR (equivalently `F₂`) linearity in a theorem/audit
   leaf and prove the paper's nonlinearity assertion with a concrete failure of
   additivity; do not impose a heavy Boolean-ring API on the core state module.
-- If useful, define the common one-controlled variant and prove the precise
-  control-negation conjugacy; keep it out of the default paper API.
+- Keep the common one-controlled convention distinct from the paper primitive.
+  Stage 9 later implements it as paper Fredkin followed by an explicit
+  structural data-wire swap and proves its separately named truth table,
+  basis certificate, and zero-latency theorem; no hidden control-negation
+  primitive is introduced.
 
 #### Completion Requirements
 
@@ -923,7 +983,7 @@ complete ancilla accounting and restoration guarantees.
 
 ### 9-COMPLETENESS
 
-**Status:** Complete (2026-07-17), from clean synchronized baseline `5b28ef8`.
+**Status:** Complete (2026-07-18), from clean synchronized baseline `5b28ef8`.
 The paper text and Figures 24--26 were re-audited visually before the formal
 contract was fixed in `goal-1/9-COMPLETENESS.md`.  Stage 10 has not started.
 
@@ -977,8 +1037,10 @@ proving corrected forms and recording exact resource assumptions.
 
 #### Completion Requirements
 
-- The completeness theorem has explicit quantifiers over width, ancilla count,
-  initialization, returned scratch, permitted wiring, and garbage.
+- `CleanFredkinRealization` records the selected width, exact ancillary
+  initialization, full circuit, permitted-basis certificate, zero latency, and
+  complete `clean ++ data ↦ clean ++ gate(data)` equation.  There is no unnamed
+  garbage block; the named ancillary prefix is returned exactly.
 - Small-width exhaustive checks agree with the general statement and guard
   against convention mistakes, but the general proof is not mere enumeration.
 - Any false stronger reading has a minimal checked counterexample.

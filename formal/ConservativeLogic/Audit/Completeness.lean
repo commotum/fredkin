@@ -79,6 +79,19 @@ example : SourceCircuit.eval (patternMatch (oneBit false)) (oneBit true) 0 = fal
   · rfl
   · exact (notTrue value).elim
 
+example : SourceCircuit.eval (patternMatch (oneBit true)) (oneBit true) 0 = true :=
+  (patternMatch_spec (oneBit true) (oneBit true)).2 rfl
+
+example : SourceCircuit.eval (patternMatch (oneBit true)) (oneBit false) 0 = false := by
+  have notTrue :
+      SourceCircuit.eval (patternMatch (oneBit true)) (oneBit false) 0 ≠ true := by
+    intro isTrue
+    have equality := (patternMatch_spec (oneBit true) (oneBit false)).1 isTrue
+    exact (by decide : oneBit false ≠ oneBit true) equality
+  cases value : SourceCircuit.eval (patternMatch (oneBit true)) (oneBit false) 0
+  · rfl
+  · exact (notTrue value).elim
+
 /-! ## Canonical and routed transpositions -/
 
 example : edgeClean noBits 0 = true := by decide

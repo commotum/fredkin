@@ -119,14 +119,15 @@ arbitrary conservative gate is exactly bijectivity plus Hamming-weight
 preservation.  Independently, an explicit pattern-controlled last-pair swap is
 compiled to paper Fredkin gates plus structural reindexing, uses a visible
 mixed clean ancillary prefix, returns that prefix exactly, excludes every
-`unitWire`, and has zero path
-latency.  Structural conjugation realizes every transposition between states
+`unitWire`, and has zero path latency.  Structural conjugation realizes every
+transposition between states
 that differ by exchanging one true and one false coordinate; Johnson-graph
 connectivity and finite permutation-group closure then give
 `fredkin_complete_conservative` for every finite conservative
 permutation.  The witness exposes its selected finite ancilla width and exact
-initialization, but the final group proof does not claim a global linear or
-optimal width bound.  Finally, every width-four circuit is proved even as a
+initialization, but the classical existential group proof is not an executable
+compiler and does not claim a global linear or optimal width bound.  Finally,
+every width-four circuit is proved even as a
 permutation of all states, while the conservative swap `1100 ↔ 1010` is odd,
 so the same-width/no-ancilla reading is formally false.  Structural wire
 reindexing remains an admitted routing convention, not a synthesized physical
