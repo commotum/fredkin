@@ -23,8 +23,14 @@ facts. It also exports the structural feed-forward circuit inverse, complete
 static inverse semantics, semantic cancellation in both directions, exact
 reversed-path timing, and preservation of uniform-latency certificates.
 Cancellation is not syntactic zero-delay identity: round-trip latencies add.
-No graph/feedback inversion or oriented time-reversal semantics is claimed;
-garbage recycling, feedback, traces, and sequential execution remain absent.
+It also exports the explicit result-register spy bank and complete
+compute-copy-uncompute construction.  From a supplied full-state realization,
+the exact original scratch/source/argument register is restored and the
+separate initialized register becomes `(target, bitwiseNot target)`.  This is a
+static finite theorem with exact Fredkin accounting and a zero-latency-only
+timing corollary.  No arbitrary-function synthesis, delay padding,
+graph/feedback inversion, oriented time-reversal semantics, traces, sequential
+execution, physical routing, or thermodynamic conclusion is claimed.
 -/
 
 namespace ConservativeLogic

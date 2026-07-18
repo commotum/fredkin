@@ -32,10 +32,11 @@ lake build ConservativeLogic.Audit.Circuit
 lake build ConservativeLogic.Audit.Realization
 lake build ConservativeLogic.Audit.Simulation
 lake build ConservativeLogic.Audit.Inverse
+lake build ConservativeLogic.Audit.Uncompute
 lake build
 ```
 
-Stages 1 through 7 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 8 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -93,7 +94,21 @@ certificates are preserved. A latency-`L` forward/inverse round trip has
 latency `L + L`; the unit-wire round trip evaluates to identity but has latency
 two. These are feed-forward expression theorems, not inversion of Figure 19's
 feedback graph, oriented `t ↦ -t` execution, or physical time-reversal
-invariance. Compute-copy-uncompute, garbage recycling, feedback, traces,
-stream simulation, and physical conclusions remain later or out of scope.
+invariance.
+
+Stage 8 adds an explicit `2n`-wire result register and one real routed Fredkin
+spy per result bit. Canonical `(a,0,1)` is actively mapped to the paper gate's
+physical `(a,1,0)` order, so the proved vector equation is
+`(x,0ⁿ,1ⁿ) ↦ (x,x,¬x)`. Given a concrete full-state `Realizes` witness, the
+public compute-copy-uncompute circuit restores the exact packed scratch,
+source, and argument register and returns `(f(x),¬f(x))`; transient midpoint
+garbage is uncomputed rather than hidden. The construction is globally
+reversible and Hamming-weight preserving, and its exact Fredkin count is twice
+the supplied circuit count plus the result width. The unpadded timing theorem
+is deliberately limited to zero-latency supplied circuits: a checked unit-wire
+example has both delay-two and delay-zero boundary paths. No arbitrary-function
+synthesis, all-zero-scratch conversion, delay padding, feedback, traces,
+physical routing, or thermodynamic conclusion follows from this stage.
+
 The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.

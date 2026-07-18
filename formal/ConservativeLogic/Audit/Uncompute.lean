@@ -50,7 +50,7 @@ private def arbitrarySemanticFunction : BitState 3 → BitState 3 := id
 
 /- Unequal-width source syntax is not a balanced target circuit witness. -/
 #guard_msgs (drop info) in
-#check_failure computeCopyUncompute andLayout SourceCircuit.fanout
+#check_failure computeCopyUncompute fanoutLayout SourceCircuit.fanout
 
 /-! ## Exact paper ports and the required canonical permutation -/
 
@@ -365,13 +365,13 @@ theorem andUncompute_ne_identity :
 example : Circuit.fredkinCount copyPair = 1 := copyPair_fredkinCount
 
 example : Circuit.fredkinCount (copyRegisterCircuit 0) = 0 := by
-  simpa using copyRegisterCircuit_fredkinCount 0
+  simp
 
 example : Circuit.fredkinCount (copyRegisterCircuit 2) = 2 := by
-  simpa using copyRegisterCircuit_fredkinCount 2
+  simp
 
 example : Circuit.fredkinCount (copyResultCircuit scratchOrLayout) = 1 := by
-  simpa [scratchOrLayout] using copyResultCircuit_fredkinCount scratchOrLayout
+  simp [scratchOrLayout]
 
 example : Circuit.fredkinCount andUncompute = 3 := by
   rw [andUncompute, computeCopyUncompute_fredkinCount]
@@ -386,5 +386,240 @@ example : Circuit.fredkinCount
       (computeCopyUncompute emptyResultLayout (Circuit.identity 1)) = 0 := by
   rw [computeCopyUncompute_fredkinCount]
   decide
+
+/-! ## Zero-latency qualification and positive-delay counterexample -/
+
+private theorem fredkinAndCircuit_hasLatency_zero :
+    Circuit.HasLatency fredkinAndCircuit 0 := by
+  unfold fredkinAndCircuit routedFredkin
+  intro input output actual path
+  have equality := Circuit.HasLatency.seq
+    (Circuit.hasLatency_permute andInputWiring)
+    (Circuit.HasLatency.seq Circuit.hasLatency_fredkin
+      (Circuit.hasLatency_permute resultFromDataOneWiring)) path
+  simpa using equality
+
+example : Circuit.HasLatency andUncompute 0 :=
+  computeCopyUncompute_hasLatency_zero andLayout
+    fredkinAndCircuit_hasLatency_zero
+
+private theorem copyPair_any_path (input output : Fin 3) :
+    Circuit.PathDelay copyPair input output 0 := by
+  simpa [copyPair] using
+    Circuit.PathDelay.seq
+      (Circuit.PathDelay.permute copyPairInputWiring input)
+      (Circuit.PathDelay.fredkin (copyPairInputWiring input) output)
+
+private theorem copyRegisterInputWiring_one :
+    copyRegisterInputWiring 1 = Equiv.refl (Fin 3) := by
+  decide
+
+private theorem copyRegisterOutputWiring_one :
+    copyRegisterOutputWiring 1 = Equiv.refl (Fin 3) := by
+  decide
+
+private theorem copyRegister_one_path (input output : Fin 3) :
+    Circuit.PathDelay (copyRegisterCircuit 1) input output 0 := by
+  unfold copyRegisterCircuit
+  rw [copyRegisterInputWiring_one, copyRegisterOutputWiring_one]
+  change Circuit.PathDelay
+    (Circuit.seq (Circuit.permute (Equiv.refl (Fin 3)))
+      (Circuit.seq (Circuit.tensor copyPair (Circuit.identity 0))
+        (Circuit.permute (Equiv.refl (Fin 3))))) input output 0
+  have inputPath : Circuit.PathDelay
+      (Circuit.permute (Equiv.refl (Fin 3))) input input 0 :=
+    Circuit.PathDelay.permute (Equiv.refl (Fin 3)) input
+  have bankPath : Circuit.PathDelay
+      (Circuit.tensor copyPair (Circuit.identity 0)) input output 0 :=
+    Circuit.PathDelay.tensorLeft (right := Circuit.identity 0)
+      (copyPair_any_path input output)
+  have outputPath : Circuit.PathDelay
+      (Circuit.permute (Equiv.refl (Fin 3))) output output 0 :=
+    Circuit.PathDelay.permute (Equiv.refl (Fin 3)) output
+  simpa using Circuit.PathDelay.seq inputPath
+    (Circuit.PathDelay.seq bankPath outputPath)
+
+private def trivialCopyResultWiring : WirePerm 3 :=
+  middleSwapWiring 1 0 2 0
+
+private theorem trivialCopyResultWiring_eq :
+    trivialCopyResultWiring = Equiv.refl (Fin 3) := by
+  decide
+
+private theorem unitWire_embedded_copy_path (input output : Fin 3) :
+    Circuit.PathDelay (copyResultCircuit unitWireLayout) input output 0 := by
+  change Circuit.PathDelay
+    (Circuit.seq (Circuit.permute trivialCopyResultWiring)
+      (Circuit.seq
+        (Circuit.tensor
+          (Circuit.tensor (Circuit.identity 0) (copyRegisterCircuit 1))
+          (Circuit.identity 0))
+        (Circuit.permute trivialCopyResultWiring.symm))) input output 0
+  rw [trivialCopyResultWiring_eq]
+  have routeIn : Circuit.PathDelay
+      (Circuit.permute (Equiv.refl (Fin 3))) input input 0 :=
+    Circuit.PathDelay.permute (Equiv.refl (Fin 3)) input
+  have copyInner : Circuit.PathDelay
+      (Circuit.tensor (Circuit.identity 0) (copyRegisterCircuit 1))
+      input output 0 := by
+    simpa using Circuit.PathDelay.tensorRight (left := Circuit.identity 0)
+      (copyRegister_one_path input output)
+  have body : Circuit.PathDelay
+      (Circuit.tensor
+        (Circuit.tensor (Circuit.identity 0) (copyRegisterCircuit 1))
+        (Circuit.identity 0)) input output 0 := by
+    simpa using Circuit.PathDelay.tensorLeft (right := Circuit.identity 0)
+      copyInner
+  have routeOut : Circuit.PathDelay
+      (Circuit.permute (Equiv.refl (Fin 3)).symm) output output 0 := by
+    simpa using Circuit.PathDelay.permute (Equiv.refl (Fin 3)).symm output
+  simpa using Circuit.PathDelay.seq routeIn
+    (Circuit.PathDelay.seq body routeOut)
+
+def unitWireUncompute : Circuit 3 :=
+  computeCopyUncompute unitWireLayout Circuit.unitWire
+
+example (argument : BitState 1) :
+    Circuit.eval unitWireUncompute
+        (BitState.append (unitWireLayout.packInput noBits noBits argument)
+          (resultRegisterInput 1)) =
+      BitState.append (unitWireLayout.packInput noBits noBits argument)
+        (resultRegisterOutput argument) :=
+  compute_copy_uncompute_spec unitWire_realizes argument
+
+theorem unitWireUncompute_delayed_path :
+    Circuit.PathDelay unitWireUncompute 0 0 2 := by
+  have forward : Circuit.PathDelay
+      (Circuit.tensor Circuit.unitWire (Circuit.identity 2)) 0 0 1 :=
+    Circuit.PathDelay.tensorLeft (right := Circuit.identity 2)
+      Circuit.PathDelay.unitWire_one
+  have backward : Circuit.PathDelay
+      (Circuit.tensor (Circuit.inverse Circuit.unitWire) (Circuit.identity 2))
+      0 0 1 := by
+    change Circuit.PathDelay
+      (Circuit.tensor Circuit.unitWire (Circuit.identity 2)) 0 0 1
+    exact Circuit.PathDelay.tensorLeft (right := Circuit.identity 2)
+      Circuit.PathDelay.unitWire_one
+  simpa [unitWireUncompute, computeCopyUncompute, unitWireLayout,
+    Circuit.inverse] using
+    Circuit.PathDelay.seq forward
+      (Circuit.PathDelay.seq (unitWire_embedded_copy_path 0 0) backward)
+
+theorem unitWireUncompute_immediate_path :
+    Circuit.PathDelay unitWireUncompute 1 1 0 := by
+  have forward : Circuit.PathDelay
+      (Circuit.tensor Circuit.unitWire (Circuit.identity 2)) 1 1 0 := by
+    change Circuit.PathDelay
+      (Circuit.tensor Circuit.unitWire (Circuit.identity 2))
+      (Fin.natAdd 1 (0 : Fin 2)) (Fin.natAdd 1 (0 : Fin 2)) 0
+    exact Circuit.PathDelay.tensorRight (left := Circuit.unitWire)
+      (Circuit.PathDelay.identity (0 : Fin 2))
+  have backward : Circuit.PathDelay
+      (Circuit.tensor (Circuit.inverse Circuit.unitWire) (Circuit.identity 2))
+      1 1 0 := by
+    change Circuit.PathDelay
+      (Circuit.tensor Circuit.unitWire (Circuit.identity 2))
+      (Fin.natAdd 1 (0 : Fin 2)) (Fin.natAdd 1 (0 : Fin 2)) 0
+    exact Circuit.PathDelay.tensorRight (left := Circuit.unitWire)
+      (Circuit.PathDelay.identity (0 : Fin 2))
+  simpa [unitWireUncompute, computeCopyUncompute, unitWireLayout,
+    Circuit.inverse] using
+    Circuit.PathDelay.seq forward
+      (Circuit.PathDelay.seq (unitWire_embedded_copy_path 1 1) backward)
+
+/-- Static uncomputation does not erase physical delay.  Without padding, the
+main path has delay two while a result-register path remains immediate. -/
+theorem unitWireUncompute_not_meetsPaperCombinationalTiming :
+    ¬ Circuit.MeetsPaperCombinationalTiming unitWireUncompute := by
+  rintro ⟨latency, uniform⟩
+  have delayed : 2 = latency := uniform unitWireUncompute_delayed_path
+  have immediate : 0 = latency := uniform unitWireUncompute_immediate_path
+  omega
+
+/-! ## Public surface and axiom footprints -/
+
+#check zeroRegister
+#check oneRegister
+#check bitwiseNot
+#check resultRegisterInput
+#check resultRegisterOutput
+#check hammingWeight_zeroRegister
+#check hammingWeight_oneRegister
+#check hammingWeight_resultRegisterInput
+#check copyPairInputWiring
+#check copyPair
+#check copyPair_physical_spec
+#check copyPair_spec
+#check copyRegisterWidth
+#check copyRegisterInputWiring
+#check copyRegisterOutputWiring
+#check copyRegisterCircuit
+#check copyRegister_spec
+#check hammingWeight_add_bitwiseNot
+#check hammingWeight_resultRegisterOutput
+#check computeCopyUncomputeWidth
+#check copyResultCircuit
+#check copyResult_spec
+#check computeCopyUncompute
+#check compute_copy_uncompute_spec
+#check compute_copy_uncompute_isReversible
+#check compute_copy_uncompute_conservative
+#check copyPair_fredkinCount
+#check copyRegisterCircuit_fredkinCount
+#check copyResultCircuit_fredkinCount
+#check computeCopyUncompute_fredkinCount
+#check copyRegisterCircuit_hasLatency_zero
+#check copyResultCircuit_hasLatency_zero
+#check computeCopyUncompute_hasLatency_zero
+
+#print Circuit
+#print zeroRegister
+#print oneRegister
+#print bitwiseNot
+#print resultRegisterInput
+#print resultRegisterOutput
+#print copyPairInputWiring
+#print copyPair
+#print copyRegisterWidth
+#print copyRegisterInputWiring
+#print copyRegisterOutputWiring
+#print copyRegisterCircuit
+#print computeCopyUncomputeWidth
+#print copyResultCircuit
+#print computeCopyUncompute
+
+#print axioms hammingWeight_zeroRegister
+#print axioms hammingWeight_oneRegister
+#print axioms hammingWeight_resultRegisterInput
+#print axioms copyPair_physical_spec
+#print axioms copyPair_spec
+#print axioms copyRegister_spec
+#print axioms hammingWeight_add_bitwiseNot
+#print axioms hammingWeight_resultRegisterOutput
+#print axioms copyResult_spec
+#print axioms compute_copy_uncompute_spec
+#print axioms compute_copy_uncompute_isReversible
+#print axioms compute_copy_uncompute_conservative
+#print axioms copyPair_fredkinCount
+#print axioms copyRegisterCircuit_fredkinCount
+#print axioms copyResultCircuit_fredkinCount
+#print axioms computeCopyUncompute_fredkinCount
+#print axioms copyRegisterCircuit_hasLatency_zero
+#print axioms copyResultCircuit_hasLatency_zero
+#print axioms computeCopyUncompute_hasLatency_zero
+
+#print axioms copyPair_ne_identity
+#print axioms missing_one_weight_obstruction
+#print axioms scratchOr_realizes
+#print axioms emptyResult_realizes
+#print axioms unitWire_realizes
+#print axioms and_uncompute_complete
+#print axioms scratch_or_uncompute_complete
+#print axioms empty_result_uncompute_complete
+#print axioms andUncompute_ne_identity
+#print axioms fredkinAndCircuit_hasLatency_zero
+#print axioms unitWireUncompute_delayed_path
+#print axioms unitWireUncompute_immediate_path
+#print axioms unitWireUncompute_not_meetsPaperCombinationalTiming
 
 end ConservativeLogic.Audit.Uncompute

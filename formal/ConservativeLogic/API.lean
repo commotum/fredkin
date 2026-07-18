@@ -43,8 +43,15 @@ global latency. The API additionally exports structural inversion of the
 balanced feed-forward grammar, equality of inverse evaluation with the inverse
 conservative equivalence, exact endpoint-reversing path correspondence,
 common-latency preservation, and latency-additive forward/inverse composition.
-It does not define a feedback-graph inverse, oriented wire execution, ticks,
-traces, sequential simulation, garbage recycling, or physical time reversal.
+Finally, it exports explicit zero/one result registers, a routed paper-Fredkin
+spy bank, result-block copying, and complete compute-copy-uncompute.  The final
+initialized-slice theorem restores the exact scratch/source/argument state and
+returns the selected result with its complement; separate theorems expose
+global reversibility, Hamming-weight preservation, exact Fredkin count, and the
+qualified zero-latency case.  It does not define arbitrary-function synthesis,
+delay padding, an all-zero-scratch conversion, a feedback-graph inverse,
+oriented wire execution, ticks, traces, sequential simulation, physical
+routing, or physical time reversal.
 -/
 
 namespace ConservativeLogic

@@ -128,8 +128,11 @@ private theorem interleaveThree_apply {n : Nat}
       PaperFredkin.state (first index) (second index) (third index) port := by
   unfold interleaveThree
   rw [WirePerm.onState_apply]
-  simp [copyRegisterInputWiring, groupedCoordinates,
-    interleavedCoordinates]
+  simp only [copyRegisterInputWiring, groupedCoordinates,
+    interleavedCoordinates, Equiv.symm_trans, Equiv.symm_symm,
+    finCongr_symm, Equiv.prodComm_symm, Equiv.trans_apply, finCongr_apply,
+    Fin.cast_cast, Fin.cast_eq_self, Equiv.symm_apply_apply,
+    Equiv.prodComm_apply, Prod.swap_prod_mk]
   refine Fin.cases ?_ ?_ port
   · rw [show
         Fin.cast _ (finProdFinEquiv ((0 : Fin 3), index)) =
@@ -847,17 +850,9 @@ private theorem copyResultBody_hasLatency_zero
         (Circuit.tensor (Circuit.identity scratchWidth)
           (copyRegisterCircuit resultWidth))) 0 :=
     hasLatency_castCircuit _ left
-  have combined : Circuit.HasLatency
-      (Circuit.tensor
-        (Simulation.castCircuit
-          (Nat.add_assoc scratchWidth resultWidth
-            (resultWidth + resultWidth)).symm
-          (Circuit.tensor (Circuit.identity scratchWidth)
-            (copyRegisterCircuit resultWidth)))
-        (Circuit.identity (garbageWidth + 0))) 0 :=
-    hasLatency_tensor_zero leftCast
-      (Circuit.hasLatency_identity (garbageWidth + 0))
-  exact combined
+  intro input output actual path
+  exact Circuit.HasLatency.tensor leftCast
+    (Circuit.hasLatency_identity (garbageWidth + 0)) path
 
 private theorem copyResultCore_hasLatency_zero
     (scratchWidth resultWidth garbageWidth : Nat) :
