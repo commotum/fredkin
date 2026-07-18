@@ -342,6 +342,10 @@ All commands ran under `formal/` with Lean/mathlib `v4.32.0`:
 | `lake clean` followed by `lake build` | passed from scratch, all 718 jobs |
 | post-clean `lake build ConservativeLogic.Audit.Circuit` | passed, all 709 jobs |
 
+After the documentation foldback, a final cached default build again passed all
+710 jobs and the circuit audit replayed all 709 jobs with the same constructor
+and axiom output.
+
 The diagnostic prints the complete constructor and public certificate surfaces.
 Its `#print axioms` audit covers tensor closure/application, all evaluator laws,
 general reversibility and weight preservation, path composition, base and

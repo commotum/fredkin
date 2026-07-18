@@ -45,9 +45,9 @@ Circuit evaluation is a conservative equivalence. A separate static
 `MeetsPaperCombinationalTiming` certify one common unit-wire latency across
 every existing boundary path. Structural permutations are zero-delay
 meta-level port reindexings, not synthesized routing circuits. The grammar is
-not claimed to be the paper's feedback-capable directed-graph model, and the
-timing layer is
-not a tick, trace, transition, stream, or physical-routing semantics. Explicit
+not claimed to be the paper's feedback-capable directed-graph model, and its
+timing layer is not a tick, trace, transition, stream, or physical-routing
+semantics. Explicit
 constants, garbage, and initialized auxiliary wires enter next through the
 Stage 5 realization interface. The focused audit commands are explicit because
 diagnostic leaves are intentionally not imported by the public root.
