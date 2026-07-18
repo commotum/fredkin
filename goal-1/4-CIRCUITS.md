@@ -1,0 +1,263 @@
+# 4-CIRCUITS
+
+## Current Facts
+
+- Stage 3 is complete at synchronized commit `50c1269`; the worktree was clean
+  when this stage began. A cached `lake build` still succeeds with 707 jobs.
+- The public API supplies balanced `Conservative n` maps, ordered block
+  append/split with Hamming-weight additivity, active bijective `WirePerm`
+  semantics, `UnitWire.value` with separate `delay = 1`, and the exact
+  paper-convention `PaperFredkin.conservative` map.
+- No circuit syntax, evaluator, feed-forward timing relation, equal-latency
+  predicate, or Stage 4 diagnostic exists.
+- Direct inspection of the extracted paper and PDF pp. 225, 227–229, and
+  244–245 confirms that P6 restricts composition to one-to-one substitution;
+  fan-out belongs inside an explicit signal-processing element.
+- Section 2.5's literal circuit is a directed graph of instantaneous gates and
+  positive-length delayed wires. It permits feedback and memory, so a
+  serial/tensor term language is not automatically equivalent to that model.
+- Section 7.1 calls a network combinational only when it has no feedback and
+  every existing external-input-to-external-output path traverses the same
+  number of unit wires. Figure 7 gives only the narrower
+  argument-to-result-path fact and calls its network formally sequential.
+- The paper's external port counts are balanced. It tacitly includes the unit
+  wire and instantaneous identity gate in realizability bases, but does not
+  declare arbitrary wire permutations to be free physical circuits.
+
+## Updated Assumptions
+
+- Use `Circuit n`, where the single index is both input and output width. Every
+  admitted primitive is balanced, so mismatched serial composition,
+  contraction, and weakening should be ill-typed rather than represented by a
+  checker after the fact.
+- Fix the Stage 4 basis to structural identity, unit wire, paper Fredkin,
+  explicit bijective structural port reindexing, exact-width serial
+  composition, and disjoint tensor. Do not add an `ofFunction`, `ofEquiv`,
+  `ofReversible`, `ofConservative`, or generic semantic-gate constructor that
+  would trivialize later realization and synthesis stages.
+- Treat `Circuit.permute` as zero-delay meta-level boundary reindexing with the
+  existing active `WirePerm` convention. It is not a Fredkin synthesis theorem,
+  routed crossover, or physical wire network.
+- Let `Circuit.eval : Circuit n → Conservative n` reuse Stage 3 primitives.
+  Reversibility and weight preservation remain separately exposed facts even
+  though evaluation returns their bundle.
+- Model static topology with a `PathDelay` relation. Unit wire contributes its
+  exact delay one, Fredkin/identity/structural permutation contribute zero,
+  serial paths add, and tensor paths remain in disjoint blocks. This is timing
+  metadata only, not tick, trace, transition, stream, or feedback semantics.
+- Define the paper-combinational predicate by existence of one latency shared
+  by every existing boundary path. At width zero this is vacuously true; use
+  zero as the canonical exhibited latency without claiming latency uniqueness.
+- A scalar maximum depth is insufficient, and requiring every syntax subtree
+  to be balanced is too strong. The whole circuit
+  `(unit ⊗ id); (id ⊗ unit)` must be accepted at latency one even though each
+  intermediate tensor is unequal-latency.
+
+## Big Picture Objective
+
+Add a reusable balanced feed-forward circuit language whose only composition
+operations consume ports one-to-one, give it exact static conservative
+semantics, and formalize the paper's stronger equal-unit-wire-path condition
+without claiming a graph, feedback, inverse-network, realization, or physical
+routing result.
+
+## Detailed Implementation Plan
+
+- Add `ConservativeLogic.Circuit.Syntax` with the fixed constructors:
+
+  ```text
+  Circuit.identity (n : Nat) : Circuit n
+  Circuit.unitWire : Circuit 1
+  Circuit.fredkin : Circuit 3
+  Circuit.permute (σ : WirePerm n) : Circuit n
+  Circuit.seq (first second : Circuit n) : Circuit n
+  Circuit.tensor (left : Circuit m) (right : Circuit n) : Circuit (m + n)
+  ```
+
+  Document that the inductive grammar is feed-forward, tensor blocks are
+  ordered/disjoint, and permutation is structural rather than synthesized.
+- Add `ConservativeLogic.Circuit.Semantics` with reusable disjoint tensor
+  closure for `Reversible` and `Conservative`, then define bundled circuit
+  evaluation. Expected stable laws include:
+
+  ```text
+  Reversible.tensor
+  Reversible.tensor_apply_append
+  Conservative.tensor
+  Conservative.tensor_apply_append
+  Circuit.eval
+  Circuit.eval_identity
+  Circuit.eval_unitWire
+  Circuit.eval_fredkin
+  Circuit.eval_seq
+  Circuit.eval_tensor
+  Circuit.eval_permute
+  Circuit.eval_isReversible
+  Circuit.eval_weightPreserving
+  ```
+
+  Tensor proofs must use `BitState.split`/`append` and
+  `hammingWeight_append`; tensor must never feed the same block to both
+  children. Fredkin and unit-wire equations must reuse their Stage 3 bundles,
+  not duplicate their truth functions.
+- Add `ConservativeLogic.Circuit.Timed` with:
+
+  ```text
+  Circuit.PathDelay c input output delay
+  Circuit.HasLatency c delay
+  Circuit.PaperCombinational c
+  ```
+
+  plus base path rules, serial addition, tensor left/right embeddings, general
+  latency closure for identity/unit/Fredkin/permutation/serial/equal-latency
+  tensor, and a blockwise serial/tensor theorem strong enough to certify
+  compensated paths.
+- Extend `ConservativeLogic.API` and the root with the three stable leaves.
+  Diagnostics must not be publicly imported.
+- Add `ConservativeLogic.Audit.Circuit` with guarded failures for mismatched
+  serial widths and nonbijective reindexing; zero-width checks; asymmetric
+  Fredkin, tensor-order, non-self-inverse permutation, and noncommuting serial
+  evaluations; and exact timing regressions.
+- The timing regressions must show:
+
+  - structural identity and unit wire have the same value map but latencies
+    zero and one respectively;
+  - `unit ⊗ unit` has latency one;
+  - acyclic `unit ⊗ id` is not paper-combinational;
+  - `(unit ⊗ id); (id ⊗ unit)` has latency one;
+  - unequal arrivals followed by instantaneous Fredkin remain nonuniform.
+- Update `README.md`, `goal-1/0-plan.md`, and this report only with results
+  supported by completed proofs and verification.
+
+## Build Structure
+
+- `ConservativeLogic/Circuit/Syntax.lean` imports only the reversible core and
+  owns the fixed grammar. It contains no semantics or future-stage interfaces.
+- `ConservativeLogic/Circuit/Semantics.lean` imports the syntax and Stage 3
+  primitive leaves. It owns tensor closure, evaluation, and static
+  reversibility/conservation theorems.
+- `ConservativeLogic/Circuit/Timed.lean` imports the syntax and unit-wire
+  metadata. It owns path-delay/equal-latency facts but no state evolution.
+- `ConservativeLogic/API.lean` remains a thin stable re-export. Internal leaves
+  do not import it.
+- `ConservativeLogic/Audit/Circuit.lean` imports the public API and remains
+  diagnostic-only.
+
+Focused and adjacent builds:
+
+```text
+cd formal
+lake build ConservativeLogic.Circuit.Syntax
+lake build ConservativeLogic.Circuit.Semantics
+lake build ConservativeLogic.Circuit.Timed
+lake build ConservativeLogic.API ConservativeLogic
+lake build ConservativeLogic.Audit.Circuit
+lake build
+lake clean
+lake build
+lake build ConservativeLogic.Audit.Circuit
+```
+
+Required scans will cover proof holes/project axioms; forbidden declaration
+modifiers; internal imports; constructor names and arbitrary semantic
+injection; contraction/weakening/copy/drop/fan-out; nonbijective reindexing;
+duplicate Fredkin/unit implementations; future-stage declarations; bounded
+`decide`; diagnostic imports; and diff whitespace.
+
+## Boundary Checks
+
+- Model boundary: `Circuit` is a corrected feed-forward expression grammar,
+  not the paper's arbitrary directed graph. There is no graph normalization,
+  feedback, transducer, memory, trajectory, or closed-system theorem.
+- Linearity boundary: serial composition consumes exactly one whole boundary;
+  tensor consumes distinct left/right blocks; permutation is an equivalence.
+  No constructor duplicates, discards, contracts, weakens, or invents a port.
+- Basis boundary: the only value-processing gate constructor is the exact
+  paper Fredkin. Unit wire and identity remain syntactically and temporally
+  distinct even though their static value maps agree.
+- Permutation boundary: structural port reindexing is explicit, active, and
+  zero-delay. It is neither a physical routing layout nor synthesized from the
+  Fredkin basis; later completeness statements must expose it as an allowance.
+- Semantic boundary: `eval` is a finite boundary-value map. Its static
+  conservation theorem does not establish the paper's closed trajectory
+  invariant or open stream behavior.
+- Timing boundary: paths count explicit unit-wire constructors. Gate,
+  structural identity, and structural permutation contribute no wire delay.
+  The timing layer has no execution clock or oriented time reversal.
+- Combinational boundary: every syntax term is feed-forward, but only terms
+  satisfying the global all-existing-path latency predicate are called
+  paper-combinational. Figure 7 is not certified without its full source/sink
+  path evidence.
+- Stage boundary: do not add inverse syntax, realization partitions,
+  constants, garbage, scratch, ancillas, sequential state, billiard geometry,
+  universality, or resource measures.
+
+## No-Cheating Checks
+
+- Inspect and `#print` the complete `Circuit` constructor surface. Guard that
+  `Circuit.seq Circuit.unitWire Circuit.fredkin` cannot elaborate.
+- Guard that an arbitrary `Fin 2 → Fin 2` cannot be supplied to
+  `Circuit.permute`; only `WirePerm 2` is accepted.
+- Scan for arbitrary-map injection names (`ofFunction`, `ofMap`, `ofEquiv`,
+  `ofReversible`, `ofConservative`, generic semantic gate) and for
+  copy/fan-out/drop/discard/contraction/weakening constructors.
+- Prove tensor evaluation on arbitrary appended blocks and test asymmetric
+  fixed inputs, including a zero-width side, so block aliasing or reversal is
+  detected.
+- Test active permutation direction with a non-self-inverse three-cycle and
+  serial direction with noncommuting circuits.
+- Derive general reversibility from the bundled equivalence and derive general
+  weight preservation separately from primitive preservation and tensor block
+  additivity. Do not infer either property from the other.
+- Inspect every `decide` use; it is allowed only for bounded diagnostic states
+  and guarded compile failures, never for arbitrary-width semantics or timing.
+- Use actual `PathDelay` witnesses to reject unequal latency. Do not substitute
+  maximum depth, local subtree balance, or evaluator equality for the
+  all-path condition.
+- Run `#print axioms` on both tensor closure laws, all six evaluation laws,
+  general reversibility/conservation, serial/tensor path composition, latency
+  closure, and named unequal/compensated regressions.
+- Scan for later-stage declarations and for any claim that structural
+  permutation is physical/synthesized or that the syntax corresponds to every
+  paper graph.
+
+## Completion Requirements
+
+- The public root exports the fixed-width grammar, evaluator, and static timing
+  predicates but no diagnostic module.
+- Constructor signatures make mismatched serial connections and nonbijective
+  reindexing ill-typed; constructor inspection and guarded failures cover this.
+- Evaluation agrees generally with identity, Stage 3 unit/Fredkin semantics,
+  first-then-second serial order, disjoint ordered tensor, and the active
+  permutation action.
+- Every circuit has a separately exposed bijectivity proof and Hamming-weight
+  preservation proof, including width zero.
+- Path timing counts unit wires exactly, composes serially, remains block-local
+  under tensor, and distinguishes zero-delay structural identity from a
+  delay-one unit wire.
+- Fixed timing theorems accept equal and compensated paths and reject acyclic
+  unequal paths, including unequal arrivals at Fredkin.
+- Documentation states the corrected feed-forward scope, structural
+  permutation policy, all-external-path criterion, Figure 7 limitation, and
+  absence of sequential/physical claims.
+- Focused builds, public consumer build, full build, uncontended clean rebuild,
+  guarded negative checks, fixed evaluations, path-property tests,
+  proof-hole/project-axiom/forbidden-shortcut scans, main-result axiom audits,
+  `git diff --check`, complete diff inspection, and a clean worktree all pass.
+- The plan/paper map records exact declarations, advances CL-002 only for
+  static path length, records CL-005 as partial/open for Figure 7, and resolves
+  the feed-forward/structural-permutation part of CL-017 without claiming graph
+  equivalence or physical routing.
+
+## Stage Results
+
+**Stage status: in progress.** No Stage 4 Lean declaration has yet been added.
+
+### Remaining work
+
+- Compile-check the exact tensor and dependent path constructor APIs under the
+  pinned toolchain, then implement the three stable leaves and diagnostic.
+- Replace any statement shape contradicted by Lean with a checked fact in this
+  report and `0-plan.md`.
+- Run and record the complete verification matrix before marking this stage
+  complete.
