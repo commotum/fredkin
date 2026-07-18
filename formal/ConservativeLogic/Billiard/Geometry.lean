@@ -130,19 +130,19 @@ def shortRoute : Route 2 where
 def fourTickDetour : Route 6 where
   position
     | ⟨0, _⟩ => ⟨0, 0⟩
-    | ⟨1, _⟩ => ⟨1, 0⟩
+    | ⟨1, _⟩ => ⟨0, -1⟩
     | ⟨2, _⟩ => ⟨1, -1⟩
-    | ⟨3, _⟩ => ⟨0, -1⟩
-    | ⟨4, _⟩ => ⟨0, 0⟩
-    | ⟨5, _⟩ => ⟨1, 0⟩
+    | ⟨3, _⟩ => ⟨1, 0⟩
+    | ⟨4, _⟩ => ⟨2, 0⟩
+    | ⟨5, _⟩ => ⟨2, 1⟩
     | ⟨6, _⟩ => ⟨1, 1⟩
   direction
-    | ⟨0, _⟩ => .northeast
-    | ⟨1, _⟩ => .northwest
-    | ⟨2, _⟩ => .southwest
-    | ⟨3, _⟩ => .southeast
-    | ⟨4, _⟩ => .northeast
-    | ⟨5, _⟩ => .southeast
+    | ⟨0, _⟩ => .northwest
+    | ⟨1, _⟩ => .northeast
+    | ⟨2, _⟩ => .southeast
+    | ⟨3, _⟩ => .northeast
+    | ⟨4, _⟩ => .southeast
+    | ⟨5, _⟩ => .southwest
   advances := by
     intro tick
     fin_cases tick <;> rfl
@@ -159,9 +159,9 @@ theorem fourTickDetour_extra_latency : 6 = 2 + 4 := rfl
 def fourTickDetourMirrors : Fin 5 → Mirror
   | ⟨0, _⟩ => .vertical
   | ⟨1, _⟩ => .horizontal
-  | ⟨2, _⟩ => .vertical
+  | ⟨2, _⟩ => .horizontal
   | ⟨3, _⟩ => .horizontal
-  | ⟨4, _⟩ => .horizontal
+  | ⟨4, _⟩ => .vertical
 
 /-- Every direction change in the selected detour is certified by its fixed mirror. -/
 theorem fourTickDetour_reflects (turn : Fin 5) :
@@ -169,6 +169,17 @@ theorem fourTickDetour_reflects (turn : Fin 5) :
         (fourTickDetour.direction turn.castSucc) =
       fourTickDetour.direction turn.succ := by
   fin_cases turn <;> rfl
+
+/-- Grid point at which the selected detour performs a named direction change. -/
+def fourTickDetourTurnPoint (turn : Fin 5) : Point :=
+  fourTickDetour.position (Fin.castLE (Nat.le_succ 6) turn.succ)
+
+/-- Distinct turns use distinct grid points, so the fixed mirror schedule is consistent. -/
+theorem fourTickDetour_turnPoints_injective :
+    Function.Injective fourTickDetourTurnPoint := by
+  intro left right
+  fin_cases left <;> fin_cases right <;>
+    simp [fourTickDetourTurnPoint, fourTickDetour]
 
 /-- A route crossing the origin in the northeast direction. -/
 def northeastCrossing : Route 2 where
@@ -204,6 +215,15 @@ def TimedUse.ConflictFree {leftLatency rightLatency : Nat}
     left.startTime + leftTick.val = right.startTime + rightTick.val →
       left.route.position leftTick ≠ right.route.position rightTick
 
+/-- Squared center-distance lower bound whenever two timed routes overlap in time. -/
+def TimedUse.HasSampleClearance {leftLatency rightLatency : Nat}
+    (minimumSquared : Int) (left : TimedUse leftLatency)
+    (right : TimedUse rightLatency) : Prop :=
+  ∀ leftTick rightTick,
+    left.startTime + leftTick.val = right.startTime + rightTick.val →
+      minimumSquared ≤
+        (left.route.position leftTick).squaredDistance (right.route.position rightTick)
+
 /-- Simultaneously used naked crossing paths conflict at the origin. -/
 theorem simultaneous_crossing_conflict :
     ¬ TimedUse.ConflictFree
@@ -211,10 +231,33 @@ theorem simultaneous_crossing_conflict :
   intro clear
   exact clear 1 1 rfl rfl
 
-/-- A one-tick offset makes these particular sampled crossing uses conflict-free. -/
-theorem staggered_crossing_clear :
+/-- A one-tick offset avoids equal sampled centers for these particular routes. -/
+theorem oneTickStagger_sampleConflictFree :
     TimedUse.ConflictFree
       ⟨northeastCrossing, 0⟩ ⟨southeastCrossing, 1⟩ := by
+  intro leftTick rightTick
+  fin_cases leftTick <;> fin_cases rightTick <;> decide
+
+/-- The one-tick offset still violates the squared-distance threshold two. -/
+theorem oneTickStagger_not_sampleClearance :
+    ¬ TimedUse.HasSampleClearance 2
+      ⟨northeastCrossing, 0⟩ ⟨southeastCrossing, 1⟩ := by
+  intro clear
+  exact (by decide : ¬ 2 ≤
+    (northeastCrossing.position 1).squaredDistance
+      (southeastCrossing.position 0)) (clear 1 0 rfl)
+
+/-- A two-tick offset meets threshold two whenever these route uses overlap in time. -/
+theorem twoTickStagger_sampleClearance :
+    TimedUse.HasSampleClearance 2
+      ⟨northeastCrossing, 0⟩ ⟨southeastCrossing, 2⟩ := by
+  intro leftTick rightTick
+  fin_cases leftTick <;> fin_cases rightTick <;> decide
+
+/-- The same two-tick schedule also excludes equal sampled centers. -/
+theorem twoTickStagger_sampleConflictFree :
+    TimedUse.ConflictFree
+      ⟨northeastCrossing, 0⟩ ⟨southeastCrossing, 2⟩ := by
   intro leftTick rightTick
   fin_cases leftTick <;> fin_cases rightTick <;> decide
 

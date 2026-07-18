@@ -170,13 +170,29 @@ example (turn : Fin 5) :
       Grid.fourTickDetour.direction turn.succ :=
   Grid.fourTickDetour_reflects turn
 
+example : Function.Injective
+    Grid.fourTickDetourTurnPoint :=
+  Grid.fourTickDetour_turnPoints_injective
+
 example : ¬ Grid.TimedUse.ConflictFree
     ⟨Grid.northeastCrossing, 0⟩ ⟨Grid.southeastCrossing, 0⟩ :=
   Grid.simultaneous_crossing_conflict
 
 example : Grid.TimedUse.ConflictFree
     ⟨Grid.northeastCrossing, 0⟩ ⟨Grid.southeastCrossing, 1⟩ :=
-  Grid.staggered_crossing_clear
+  Grid.oneTickStagger_sampleConflictFree
+
+example : ¬ Grid.TimedUse.HasSampleClearance 2
+    ⟨Grid.northeastCrossing, 0⟩ ⟨Grid.southeastCrossing, 1⟩ :=
+  Grid.oneTickStagger_not_sampleClearance
+
+example : Grid.TimedUse.HasSampleClearance 2
+    ⟨Grid.northeastCrossing, 0⟩ ⟨Grid.southeastCrossing, 2⟩ :=
+  Grid.twoTickStagger_sampleClearance
+
+example : Grid.TimedUse.ConflictFree
+    ⟨Grid.northeastCrossing, 0⟩ ⟨Grid.southeastCrossing, 2⟩ :=
+  Grid.twoTickStagger_sampleConflictFree
 
 /-- Distinct sampled centers need not meet the radius-derived squared threshold two. -/
 theorem distinct_not_sampleClear :
@@ -227,7 +243,7 @@ example (p q : Bool) :
 #print axioms ConservativeLogic.Billiard.Switch.encode_weightPreserving
 #print axioms ConservativeLogic.Billiard.Collision.allowedEquiv
 #print axioms ConservativeLogic.Billiard.ScatteringLayer.Configuration.totalBallCount_step
-#print axioms ConservativeLogic.Billiard.Grid.staggered_crossing_clear
+#print axioms ConservativeLogic.Billiard.Grid.twoTickStagger_sampleClearance
 #print axioms ConservativeLogic.Billiard.Figure14.output_refines_collision
 #print axioms ConservativeLogic.Billiard.Figure14.sampled_clearance
 
