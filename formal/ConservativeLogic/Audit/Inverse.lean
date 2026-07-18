@@ -68,6 +68,12 @@ example : Circuit.eval (Circuit.inverse (Circuit.identity 0)) noBits = noBits :=
   funext index
   exact Fin.elim0 index
 
+/- Width-zero latency is vacuous and intentionally not unique. -/
+example (latency : Nat) :
+    Circuit.HasLatency (Circuit.inverse (Circuit.identity 0)) latency := by
+  intro input
+  exact Fin.elim0 input
+
 private def emptyWiring : WirePerm 0 := Equiv.refl _
 
 example : Circuit.inverse (Circuit.permute emptyWiring) =
@@ -112,6 +118,22 @@ example : Circuit.eval (Circuit.inverse (Circuit.permute cycleThree))
     (Circuit.eval (Circuit.permute cycleThree) (threeBits true false false)) =
       threeBits true false false := by
   decide
+
+private theorem cycleThree_forward_path :
+    Circuit.PathDelay (Circuit.permute cycleThree) 0 2 0 := by
+  change (2 : Fin 3) = cycleThree 0 ∧ (0 : Nat) = 0
+  decide
+
+example : Circuit.PathDelay (Circuit.inverse (Circuit.permute cycleThree)) 2 0 0 :=
+  Circuit.PathDelay.inverse (Circuit.permute cycleThree)
+    cycleThree_forward_path
+
+/- A missing `.symm` would incorrectly retain this forward path direction. -/
+example : ¬ Circuit.PathDelay
+    (Circuit.inverse (Circuit.permute cycleThree)) 0 2 0 := by
+  intro path
+  change (2 : Fin 3) = cycleThree.symm 0 ∧ (0 : Nat) = 0 at path
+  exact (by decide : (2 : Fin 3) ≠ cycleThree.symm 0) path.1
 
 /-! ## Noncommuting serial reversal and semantic cancellation -/
 
@@ -172,6 +194,21 @@ example (leftInput rightInput : BitState 3) :
     Circuit.eval_tensor_append
       (Circuit.inverse (Circuit.permute cycleThree))
       (Circuit.inverse Circuit.fredkin) leftInput rightInput
+
+/- Tensor inversion does not create a path between its disjoint blocks. -/
+example : ¬ Circuit.PathDelay (Circuit.inverse asymmetricTensor) 0 3 0 := by
+  intro path
+  change Circuit.PathDelay
+    (Circuit.tensor (Circuit.permute cycleThree.symm) Circuit.unitWire) 0 3 0 at path
+  rcases path with
+    ⟨leftInput, leftOutput, inputLeft, outputLeft, leftPath⟩ |
+    ⟨rightInput, rightOutput, inputRight, outputRight, rightPath⟩
+  · have impossible := congrArg Fin.val outputLeft
+    simp at impossible
+    omega
+  · have impossible := congrArg Fin.val inputRight
+    simp at impossible
+    omega
 
 /-! ## Primitive inverse value and timing checks -/
 

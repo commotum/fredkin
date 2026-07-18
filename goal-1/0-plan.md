@@ -456,7 +456,6 @@ ConservativeLogic/
   Simulation/Fredkin.lean   -- exact-resource constructive target compiler
   Simulation/Demultiplexer.lean -- checked Figure 7 value/timing reconstruction
   Audit/Simulation.lean     -- non-public Stage 6 boundary and axiom audit
-  Circuit/Inverse.lean
   Ancilla/Uncompute.lean
   Universality/Fredkin.lean
   Sequential/Core.lean      -- separate transition/feedback semantics
