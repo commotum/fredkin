@@ -26,7 +26,7 @@ open Realization.Primitive
 namespace SourceCircuit
 
 /-- Fixed source width used by the selected recursive compilation. -/
-def sourceWidth : {inputWidth outputWidth : Nat} →
+abbrev sourceWidth : {inputWidth outputWidth : Nat} →
     SourceCircuit inputWidth outputWidth → Nat
   | _, _, .identity _ => 0
   | _, _, .permute _ => 0
@@ -40,7 +40,7 @@ def sourceWidth : {inputWidth outputWidth : Nat} →
   | _, _, .tensor left right => sourceWidth left + sourceWidth right
 
 /-- Complete garbage width used by the selected recursive compilation. -/
-def garbageWidth : {inputWidth outputWidth : Nat} →
+abbrev garbageWidth : {inputWidth outputWidth : Nat} →
     SourceCircuit inputWidth outputWidth → Nat
   | _, _, .identity _ => 0
   | _, _, .permute _ => 0
@@ -87,7 +87,7 @@ theorem source_garbage_balance {inputWidth outputWidth : Nat}
         _ = (_ + _) + (garbageWidth left + garbageWidth right) := by ac_rfl
 
 /-- Complete fixed source state, independent of the circuit argument. -/
-def sourceState : {inputWidth outputWidth : Nat} →
+abbrev sourceState : {inputWidth outputWidth : Nat} →
     (circuit : SourceCircuit inputWidth outputWidth) → BitState (sourceWidth circuit)
   | _, _, .identity _ => noBits
   | _, _, .permute _ => noBits
@@ -101,7 +101,7 @@ def sourceState : {inputWidth outputWidth : Nat} →
   | _, _, .tensor left right => BitState.append (sourceState left) (sourceState right)
 
 /-- Complete final garbage state as a function of the original argument. -/
-def garbage : {inputWidth outputWidth : Nat} →
+abbrev garbage : {inputWidth outputWidth : Nat} →
     (circuit : SourceCircuit inputWidth outputWidth) →
     BitState inputWidth → BitState (garbageWidth circuit)
   | _, _, .identity _, _ => noBits
@@ -581,7 +581,10 @@ private theorem tensorIntermediate {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Na
           (castState leftBalance.symm (BitState.append result₁ garbage₁))
           (castState rightBalance.symm (BitState.append result₂ garbage₂))) =
       castState (tensorProcessWidth s₁ s₂ a₁ a₂) (castState bothCast base) := by
-        rw [castState_append_both]
+        exact congrArg (castState (tensorProcessWidth s₁ s₂ a₁ a₂))
+          (castState_append_both leftBalance.symm rightBalance.symm
+            (BitState.append result₁ garbage₁)
+            (BitState.append result₂ garbage₂)).symm
     _ = castState (bothCast.trans (tensorProcessWidth s₁ s₂ a₁ a₂)) base :=
       castState_trans _ _ _
     _ = castState (tensorOutputWidth leftBalance rightBalance) base :=
@@ -601,7 +604,6 @@ private theorem tensorFinal {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Nat}
         (BitState.append (BitState.append result₁ result₂)
           (BitState.append garbage₁ garbage₂)) := by
   rw [castState_trans]
-  apply castState_proof_irrel
 
 private theorem zeroRealizes_tensor {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Nat}
     (leftBalance : s₁ + a₁ = r₁ + g₁)
@@ -645,5 +647,137 @@ private theorem zeroRealizes_tensor {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : N
     (s₂ := s₂) (a₂ := a₂) (r₂ := r₂) (g₂ := g₂)
     leftBalance rightBalance (leftTarget argument₁) (leftGarbage argument₁)
     (rightTarget argument₂) (rightGarbage argument₂)]
+
+/-! ## Recursive compiler -/
+
+namespace SourceCircuit
+
+/-- Normalized target term before the public leading-zero scratch transport. -/
+private def compileCore : {inputWidth outputWidth : Nat} →
+    (source : SourceCircuit inputWidth outputWidth) →
+    Circuit (sourceWidth source + inputWidth)
+  | _, _, .identity width => Circuit.identity (0 + width)
+  | _, _, .permute wiring =>
+      castCircuit (Nat.zero_add _).symm (Circuit.permute wiring)
+  | _, _, .constant value => Circuit.identity (_ + 0)
+  | _, _, .discard width => Circuit.identity (0 + width)
+  | _, _, .andGate => fredkinAndCircuit
+  | _, _, .orGate => fredkinOrCircuit
+  | _, _, .notGate => fredkinNotCircuit
+  | _, _, .fanout => fredkinFanoutCircuit
+  | _, _, .seq first second =>
+      serialCircuit (source_garbage_balance first)
+        (compileCore first) (compileCore second)
+  | _, _, .tensor left right =>
+      tensorCircuit (source_garbage_balance left) (source_garbage_balance right)
+        (compileCore left) (compileCore right)
+
+/--
+Compile an explicit finite source term to the Stage 4 target grammar. The
+leading transport accounts only for the canonical width-zero scratch prefix.
+-/
+def compile {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    Circuit (simulationLayout source).width :=
+  castCircuit (Nat.zero_add (sourceWidth source + inputWidth)).symm
+    (compileCore source)
+
+private theorem append_noBits_right {width : Nat} (state : BitState width) :
+    BitState.append state noBits = castState (Nat.add_zero width).symm state := by
+  funext index
+  refine Fin.addCases ?_ (fun impossible => Fin.elim0 impossible) index
+  intro inner
+  rw [BitState.append_castAdd, castState_apply]
+  congr 1
+
+private theorem identityCore_realizes (width : Nat) :
+    ZeroRealizes (source_garbage_balance (.identity width))
+      (compileCore (.identity width)) (sourceState (.identity width))
+      (eval (.identity width)) (garbage (.identity width)) := by
+  intro argument
+  simp only [compileCore, Circuit.eval_identity, sourceState, eval, garbage]
+  rw [append_noBits_left, append_noBits_right, castState_trans]
+
+private theorem permuteCore_realizes {width : Nat} (wiring : WirePerm width) :
+    ZeroRealizes (source_garbage_balance (.permute wiring))
+      (compileCore (.permute wiring)) (sourceState (.permute wiring))
+      (eval (.permute wiring)) (garbage (.permute wiring)) := by
+  intro argument
+  simp only [compileCore, sourceState, eval, garbage]
+  rw [append_noBits_left, eval_castCircuit, Circuit.eval_permute]
+  rw [append_noBits_right, castState_trans]
+
+private theorem constantCore_realizes {width : Nat} (value : BitState width) :
+    ZeroRealizes (source_garbage_balance (.constant value))
+      (compileCore (.constant value)) (sourceState (.constant value))
+      (eval (.constant value)) (garbage (.constant value)) := by
+  intro argument
+  have argument_eq : argument = noBits := by
+    funext index
+    exact Fin.elim0 index
+  subst argument
+  rfl
+
+private theorem discardCore_realizes (width : Nat) :
+    ZeroRealizes (source_garbage_balance (.discard width))
+      (compileCore (.discard width)) (sourceState (.discard width))
+      (eval (.discard width)) (garbage (.discard width)) := by
+  intro argument
+  rfl
+
+private theorem andCore_realizes :
+    ZeroRealizes (source_garbage_balance .andGate)
+      (compileCore .andGate) (sourceState .andGate)
+      andTarget (garbage .andGate) := by
+  apply (zero_realizes_iff (source_garbage_balance .andGate)
+    fredkinAndCircuit andSource andTarget andGarbage).1
+  simpa [zeroLayout, andLayout, castCircuit, source_garbage_balance,
+    sourceWidth, garbageWidth, garbage] using fredkin_realizes_and
+
+private theorem orCore_realizes :
+    ZeroRealizes (source_garbage_balance .orGate)
+      (compileCore .orGate) (sourceState .orGate)
+      orTarget (garbage .orGate) := by
+  apply (zero_realizes_iff (source_garbage_balance .orGate)
+    fredkinOrCircuit orSource orTarget orGarbage).1
+  simpa [zeroLayout, orLayout, andLayout, castCircuit, source_garbage_balance,
+    sourceWidth, garbageWidth, garbage] using fredkin_realizes_or
+
+private theorem notCore_realizes :
+    ZeroRealizes (source_garbage_balance .notGate)
+      (compileCore .notGate) (sourceState .notGate)
+      notTarget (garbage .notGate) := by
+  apply (zero_realizes_iff (source_garbage_balance .notGate)
+    fredkinNotCircuit notFanoutSource notTarget notGarbage).1
+  simpa [zeroLayout, notLayout, castCircuit, source_garbage_balance,
+    sourceWidth, garbageWidth, garbage] using fredkin_realizes_not
+
+private theorem fanoutCore_realizes :
+    ZeroRealizes (source_garbage_balance .fanout)
+      (compileCore .fanout) (sourceState .fanout)
+      fanoutTarget (garbage .fanout) := by
+  apply (zero_realizes_iff (source_garbage_balance .fanout)
+    fredkinFanoutCircuit notFanoutSource fanoutTarget fanoutGarbage).1
+  simpa [zeroLayout, fanoutLayout, castCircuit, source_garbage_balance,
+    sourceWidth, garbageWidth, garbage] using fredkin_realizes_fanout
+
+private theorem eval_andGate_eq : eval .andGate = andTarget := by
+  rfl
+
+private theorem eval_orGate_eq : eval .orGate = orTarget := by
+  rfl
+
+private theorem eval_notGate_eq : eval .notGate = notTarget := by
+  rfl
+
+private theorem eval_fanout_eq : eval .fanout = fanoutTarget := by
+  funext input index
+  refine Fin.cases rfl ?_ index
+  intro tail
+  refine Fin.cases rfl ?_ tail
+  intro impossible
+  exact Fin.elim0 impossible
+
+end SourceCircuit
 
 end ConservativeLogic.Simulation
