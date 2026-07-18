@@ -31,7 +31,7 @@ example : ∃ gate : Conservative (1 + (1 + 1)), ∀ argument,
 
 example : ∃ gate : Conservative (1 + (0 + 0)), ∀ argument,
     gate (BitState.append argument (resultRegisterInput 0)) =
-      BitState.append argument (resultRegisterOutput (fun _ => noBits)) :=
+      BitState.append argument (resultRegisterOutput noBits) :=
   exists_figure25_conservative (fun _ : BitState 1 => noBits)
 
 example : DirectlyRealizable (id : BitState 0 → BitState 0) := by
@@ -72,18 +72,24 @@ example : edgeClean noBits 1 = false := by decide
 example : Circuit.eval (adjacentTranspositionCircuit noBits)
     (BitState.append (edgeClean noBits) (pair false true)) =
       BitState.append (edgeClean noBits) (pair true false) := by
-  simpa [edgeData] using adjacentTranspositionCircuit_spec noBits
-    (pair false true)
+  rw [adjacentTranspositionCircuit_spec]
+  rw [show edgeData noBits false true = pair false true by decide]
+  rw [show edgeData noBits true false = pair true false by decide]
+  rw [Equiv.swap_apply_left]
 
 example : Circuit.eval (adjacentTranspositionCircuit noBits)
     (BitState.append (edgeClean noBits) (pair false false)) =
       BitState.append (edgeClean noBits) (pair false false) := by
-  simpa [edgeData] using adjacentTranspositionCircuit_spec noBits
-    (pair false false)
+  rw [adjacentTranspositionCircuit_spec]
+  rw [show edgeData noBits false true = pair false true by decide]
+  rw [show edgeData noBits true false = pair true false by decide]
+  rw [Equiv.swap_apply_of_ne_of_ne] <;> decide
 
 example : CleanFredkinRealizable
     (Equiv.swap (pair false true) (pair true false)) := by
-  simpa [edgeData] using adjacentTranspositionClean noBits
+  simpa only [show edgeData noBits false true = pair false true by decide,
+    show edgeData noBits true false = pair true false by decide] using
+    adjacentTranspositionClean noBits
 
 example : CleanFredkinRealizable
     (Equiv.swap (pair false true)
@@ -117,7 +123,7 @@ example : ∃ gate : Conservative (1 + (1 + 1)),
   figure25_fredkin_complete constantFalse
 
 example : ¬ Circuit.FredkinStructural Circuit.unitWire := by
-  rfl
+  simp [Circuit.FredkinStructural]
 
 /-! ## False no-ancilla reading -/
 
