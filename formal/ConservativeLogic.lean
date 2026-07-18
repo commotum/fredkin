@@ -40,7 +40,9 @@ same-width/no-ancilla completeness.  No all-zero-scratch conversion, global
 linear scratch bound, delay padding, graph/feedback inversion, oriented
 time-reversal semantics,
 traces, sequential execution, physical routing, or thermodynamic conclusion
-is claimed.
+is claimed by this finite root.  Corrected registered transition and trace
+semantics are available only through the separate opt-in import
+`ConservativeLogic.Sequential`.
 -/
 
 namespace ConservativeLogic

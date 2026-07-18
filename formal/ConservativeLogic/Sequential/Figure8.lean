@@ -64,9 +64,11 @@ def core : Circuit 3 :=
 def network : Network 1 2 where
   core := core
   instantaneous := by
-    simpa [core] using
+    intro input output actual path
+    have delay : actual = 0 + 0 :=
       (Circuit.HasLatency.seq Circuit.hasLatency_fredkin
-        (Circuit.hasLatency_permute outputSwap))
+        (Circuit.hasLatency_permute outputSwap)) path
+    simpa using delay
 
 /-- Complete parametric Figure 8 transition, including its visible garbage. -/
 theorem tick_packed (q kbar j : Bool) :
@@ -176,39 +178,25 @@ theorem tick_toggle (q : Bool) :
 theorem hold_state_succ (initial : Bool) (time : Nat) :
     (run initial (fun _ => true) (fun _ => false)).state (time + 1) =
       (run initial (fun _ => true) (fun _ => false)).state time := by
-  have step := network.machine.run_tick (bit initial)
-    (inputSignal (fun _ => true) (fun _ => false)) time
-  rw [show inputSignal (fun _ => true) (fun _ => false) time = pair true false from rfl,
-    tick_hold] at step
-  have next := (congrArg Prod.fst step).symm
-  simpa [run] using next.trans
-    (bit_eta ((network.machine.run (bit initial)
-      (inputSignal (fun _ => true) (fun _ => false))).state time))
+  rw [state_succ]
+  rw [← bit_eta ((run initial (fun _ => true) (fun _ => false)).state time)]
+  cases (run initial (fun _ => true) (fun _ => false)).state time 0 <;> rfl
 
 theorem set_state_succ (initial : Bool) (time : Nat) :
     (run initial (fun _ => true) (fun _ => true)).state (time + 1) = bit true := by
-  have step := network.machine.run_tick (bit initial)
-    (inputSignal (fun _ => true) (fun _ => true)) time
-  rw [show inputSignal (fun _ => true) (fun _ => true) time = pair true true from rfl,
-    tick_set] at step
-  simpa [run] using (congrArg Prod.fst step).symm
+  rw [state_succ]
+  cases (run initial (fun _ => true) (fun _ => true)).state time 0 <;> rfl
 
 theorem reset_state_succ (initial : Bool) (time : Nat) :
     (run initial (fun _ => false) (fun _ => false)).state (time + 1) = bit false := by
-  have step := network.machine.run_tick (bit initial)
-    (inputSignal (fun _ => false) (fun _ => false)) time
-  rw [show inputSignal (fun _ => false) (fun _ => false) time = pair false false from rfl,
-    tick_reset] at step
-  simpa [run] using (congrArg Prod.fst step).symm
+  rw [state_succ]
+  cases (run initial (fun _ => false) (fun _ => false)).state time 0 <;> rfl
 
 theorem toggle_state_succ (initial : Bool) (time : Nat) :
     (run initial (fun _ => false) (fun _ => true)).state (time + 1) =
       bit (!((run initial (fun _ => false) (fun _ => true)).state time 0)) := by
-  have step := network.machine.run_tick (bit initial)
-    (inputSignal (fun _ => false) (fun _ => true)) time
-  rw [show inputSignal (fun _ => false) (fun _ => true) time = pair false true from rfl,
-    tick_toggle] at step
-  simpa [run] using (congrArg Prod.fst step).symm
+  rw [state_succ]
+  cases (run initial (fun _ => false) (fun _ => true)).state time 0 <;> rfl
 
 /-- With `(Kbar,J)=(0,1)`, the visible output alternates every tick. -/
 theorem toggle_visible_succ (initial : Bool) (time : Nat) :

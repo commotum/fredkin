@@ -65,7 +65,9 @@ odd weight-layer transposition disproves universal same-width/no-ancilla
 completeness for this circuit grammar.  No all-zero-scratch conversion,
 global linear workspace bound, delay padding, feedback-graph inverse, oriented
 wire execution, ticks, traces, sequential simulation, physical routing, or
-physical time reversal is claimed.
+physical time reversal is claimed.  The separately buildable opt-in module
+`ConservativeLogic.Sequential` supplies corrected discrete registered
+semantics without becoming a dependency of this finite API.
 -/
 
 namespace ConservativeLogic

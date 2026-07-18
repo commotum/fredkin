@@ -34,11 +34,13 @@ lake build ConservativeLogic.Audit.Simulation
 lake build ConservativeLogic.Audit.Inverse
 lake build ConservativeLogic.Audit.Uncompute
 lake build ConservativeLogic.Audit.Completeness
+lake build ConservativeLogic.Sequential
+lake build ConservativeLogic.Audit.Sequential
 python3 ConservativeLogic/Audit/completeness_groups.py
 lake build
 ```
 
-Stages 1 through 9 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 10 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -132,7 +134,32 @@ permutation of all states, while the conservative swap `1100 ↔ 1010` is odd,
 so the same-width/no-ancilla reading is formally false.  Structural wire
 reindexing remains an admitted routing convention, not a synthesized physical
 network; all-zero scratch, the paper's asymptotic scratch assertions, feedback,
-and sequential universality remain unresolved.
+and sequential universality remain unresolved in the finite public API.
+
+Stage 10 adds the separate opt-in import `ConservativeLogic.Sequential`.
+It defines total synchronous machines with explicit initial state, canonical
+causal traces, unique trace equations, and strict input-prefix dependence.
+An open conservative machine is one complete permutation
+`memory ++ input ↔ nextMemory ++ output`; checked one-tick and finite-prefix
+theorems state boundary flux rather than falsely preserving open memory weight
+alone.  Register-separated closure stores every former output until the next
+tick, preserves complete closed-state Hamming weight at every finite time, and
+has an explicit reversible finite iterate.  Complete output histories plus
+terminal memory retrodict finite open runs, a semantic result deliberately
+kept distinct from literal graph reversal and physical time reversal.
+
+The circuit-backed sequential bridge accepts only a feed-forward core proved
+to have zero path latency, because static `Circuit.eval .unitWire` does not
+execute stored state.  A structural-swap delay cell proves the exact one-tick
+offset.  The Figure 8 reconstruction uses one paper Fredkin and explicit
+output routing, exposes arbitrary initialization, visible `Q`, and the `?`
+garbage wire, and proves its full tick and characteristic trace.  Figure 9's
+printed accumulator recurrence is checked separately and its complete tick is
+proved bijective but nonconservative.  Figure 10's factor-five slowdown,
+time-multiplexing schedule, the general sequential compiler, literal Figure 19
+graph inversion, NAND-comparable complexity, and physical conclusions remain
+documented rather than inferred.  The sequential umbrella is intentionally
+not imported by `ConservativeLogic` or `ConservativeLogic.API`.
 
 The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.
