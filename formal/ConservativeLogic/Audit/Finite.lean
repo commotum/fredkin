@@ -40,6 +40,9 @@ example : (Conservative.identity 0 : Conservative 0) emptyState = emptyState := 
 example : hammingWeight (BitState.append (singleton true) (singleton false)) = 1 := by
   decide
 
+example : zeroCount (pair true false) = 1 := by
+  decide
+
 example : BitState.split 1 1 (pair true false) =
     (singleton true, singleton false) := by
   decide
@@ -77,6 +80,10 @@ example : WirePerm.onState swapTwo (pair false true) = pair true false := by
 example : WeightPreserving (WirePerm.onState swapTwo) :=
   WirePerm.onState_weightPreserving swapTwo
 
+example : zeroCount (WirePerm.onState swapTwo (pair true false)) =
+    zeroCount (pair true false) :=
+  WeightPreserving.zeroCount (WirePerm.onState_weightPreserving swapTwo) _
+
 private def cycleThree : WirePerm 3 :=
   (Equiv.swap (0 : Fin 3) 1).trans (Equiv.swap (1 : Fin 3) 2)
 
@@ -112,6 +119,7 @@ example : (WirePerm.conservative emptyWirePerm) emptyState = emptyState := by
 #print axioms BitState.split_append
 #print axioms BitState.append_split
 #print axioms hammingWeight_append
+#print axioms WeightPreserving.zeroCount
 #print axioms IsReversible.comp
 #print axioms WeightPreserving.comp
 #print axioms WeightPreserving.inverse

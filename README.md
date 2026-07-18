@@ -25,6 +25,8 @@ release pair. To reproduce the build:
 cd formal
 lake update
 lake exe cache get
+lake build
+lake build ConservativeLogic.Examples
 lake build ConservativeLogic.Audit.Guardrails
 lake build ConservativeLogic.Audit.Finite
 lake build ConservativeLogic.Audit.Fredkin
@@ -38,13 +40,41 @@ lake build ConservativeLogic.Sequential
 lake build ConservativeLogic.Audit.Sequential
 lake build ConservativeLogic.Billiard
 lake build ConservativeLogic.Audit.Billiard
+lake build ConservativeLogic.Audit.Axioms
 python3 ConservativeLogic/Audit/completeness_groups.py
-lake build
 ```
+
+The default build is deliberately first: it compiles only the finite public
+root.  The later commands explicitly opt into examples, diagnostic audits,
+registered semantics, and sampled billiard geometry.
+
+## Entry points and theorem correspondence
+
+| Import or document | Purpose |
+|---|---|
+| `ConservativeLogic` | Stable finite Boolean, circuit, realization, inverse, uncompute, and clean-completeness API |
+| `ConservativeLogic.Examples` | Small consumer examples using only the stable finite root |
+| `ConservativeLogic.Sequential` | Opt-in synchronous state, trace, delayed-feedback, and paper-example semantics |
+| `ConservativeLogic.Billiard` | Opt-in constrained collision interfaces and sampled Figure 14 geometry |
+| `ConservativeLogic.Audit.Axioms` | Non-public aggregate `#print axioms` target for the main theorem families |
+| [`goal-1/0-plan.md`](goal-1/0-plan.md) | Canonical paper-claim map, correction statuses, exact declarations, and unresolved/out-of-model inventory |
+
+Representative theorem families include `hammingWeight_append` and
+`WeightPreserving.zeroCount`; `PaperFredkin.table`; `Circuit.eval_*`,
+`Circuit.wireOfLength_hasLatency`, and the path-timing predicates;
+`Realization.Realizes` and `Simulation.SourceCircuit.compile_realizes`;
+`Circuit.inverse_eval` and `Ancilla.compute_copy_uncompute_spec`;
+`fredkin_complete_conservative` and `middleLayerSwap_not_circuit`; the opt-in
+`Sequential.ConservativeMachine` trace/flux/closure results; and the opt-in
+`Billiard.Interaction.equiv`, legal scattering, sampled-clearance, and
+`Billiard.Figure14.output_refines_collision` results.  The canonical map gives
+the fully qualified declarations and records every corrected, disproved, open,
+or out-of-model paper claim.
 
 Stages 1 through 11 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
-additivity, separate reversibility and weight-preservation predicates, bundled
+additivity, the derived false-wire count `N₀ = width - N₁`, separate
+reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
 identity-on-values semantics with separate one-step delay metadata, and the
 paper-convention Fredkin gate. It also exports a balanced feed-forward circuit
@@ -54,8 +84,10 @@ Circuit evaluation is a conservative equivalence. A separate static
 `PathDelay` relation records individual routes, while `HasLatency` and
 `MeetsPaperCombinationalTiming` certify one common unit-wire latency across
 every existing boundary path. Structural permutations are zero-delay
-meta-level port reindexings, not synthesized routing circuits. The grammar is
-not claimed to be the paper's feedback-capable directed-graph model, and its
+meta-level port reindexings, not synthesized routing circuits. The grammar can
+also construct a one-bit wire of every finite length, with static identity
+semantics and exact unit-wire latency.  It is not claimed to be the paper's
+feedback-capable directed-graph model, and its
 timing layer is not a tick, trace, transition, stream, or physical-routing
 semantics.
 
@@ -187,8 +219,8 @@ directions and is therefore not a general drop-in wire-delay gadget.
 The naked crossing conflicts when simultaneous.  A one-tick stagger avoids an
 equal sampled center but fails the radius-derived squared-distance threshold;
 a two-tick stagger satisfies that sampled threshold.  Figure 14 has a complete
-coordinate trace: every
-active ball makes four unit lattice moves, all integral frames preserve ball
+coordinate trace: every active ball makes four unit lattice moves, all integral
+frames preserve ball
 count and meet the sampled squared-distance threshold, the right-angle turn
 occurs exactly on input `11`, and the full final frame observes
 `(pq,!p q,p !q,pq)`.  These are discrete sampled certificates, not continuous
@@ -197,8 +229,8 @@ theorems.
 
 Figures 15 and 17 provide no coordinates or numerical latency, while Figure
 18 says steering/timing mirrors and unit wires are not explicitly indicated
-and leaves its
-bridge/trivial crossover obligations unproved.  Accordingly, the library does
+and leaves its bridge/trivial crossover obligations unproved.  Accordingly,
+the library does
 not claim Figure 17/18 physical refinement, arbitrary mirror delay, a general
 billiard layout compiler, P8 packing bounds, physical time reversal, or any
 thermodynamic conclusion.  The billiard umbrella is not imported by the finite

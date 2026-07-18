@@ -1,5 +1,6 @@
 import Mathlib.Logic.Equiv.Fintype
-import ConservativeLogic.Ancilla.Uncompute
+import ConservativeLogic.Reversible.Core
+import ConservativeLogic.Ancilla.Register
 
 /-!
 # Finite Hamming layers and semantic conservative completion

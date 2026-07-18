@@ -1,6 +1,8 @@
 import ConservativeLogic.Simulation.Source
 import ConservativeLogic.Realization.Primitive
 import ConservativeLogic.Circuit.Timed
+import ConservativeLogic.Circuit.Structural
+import ConservativeLogic.Circuit.Resources
 
 /-!
 # Constructive Fredkin simulation of finite source circuits
@@ -131,115 +133,33 @@ abbrev simulationLayout {inputWidth outputWidth : Nat}
 
 end SourceCircuit
 
-/-! ## Width transport and explicit structural block routing -/
+/-! ## Compatibility names for the former compiler-owned structural API -/
 
-/-- Dependent width transport for target syntax; it changes no wire order. -/
-def castCircuit {leftWidth rightWidth : Nat} (width : leftWidth = rightWidth)
+/-- Compatibility alias for `Circuit.cast`; new code should use the circuit-owned name. -/
+abbrev castCircuit {leftWidth rightWidth : Nat} (width : leftWidth = rightWidth)
     (circuit : Circuit leftWidth) : Circuit rightWidth :=
-  width ▸ circuit
+  Circuit.cast width circuit
 
-/-- Circuit evaluation commutes exactly with width transport. -/
+/-- Compatibility theorem for `Circuit.eval_cast`. -/
 theorem eval_castCircuit {leftWidth rightWidth : Nat}
     (width : leftWidth = rightWidth) (circuit : Circuit leftWidth)
     (input : BitState leftWidth) :
     Circuit.eval (castCircuit width circuit) (castState width input) =
-      castState width (Circuit.eval circuit input) := by
-  cases width
-  rfl
+      castState width (Circuit.eval circuit input) :=
+  Circuit.eval_cast width circuit input
 
-private def fourDecompose (a b c d : Nat) :
-    Fin ((a + b) + (c + d)) ≃ (Fin a ⊕ Fin b) ⊕ (Fin c ⊕ Fin d) :=
-  finSumFinEquiv.symm |>.trans
-    (Equiv.sumCongr finSumFinEquiv.symm finSumFinEquiv.symm)
+/-- Compatibility alias for the circuit-owned four-block middle swap. -/
+abbrev middleSwapWiring (a b c d : Nat) : WirePerm ((a + b) + (c + d)) :=
+  Circuit.middleSwapWiring a b c d
 
-private def fourCompose (a b c d : Nat) :
-    (Fin a ⊕ Fin b) ⊕ (Fin c ⊕ Fin d) ≃ Fin ((a + b) + (c + d)) :=
-  (Equiv.sumCongr finSumFinEquiv finSumFinEquiv).trans finSumFinEquiv
-
-/-- Actively exchange the middle two of four adjacent ordered wire blocks. -/
-def middleSwapWiring (a b c d : Nat) : WirePerm ((a + b) + (c + d)) :=
-  (fourDecompose a b c d).trans <|
-      (Equiv.sumSumSumComm (Fin a) (Fin b) (Fin c) (Fin d)).trans <|
-      (fourCompose a c b d).trans <|
-        finCongr (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d))
-
-private theorem castState_apply {leftWidth rightWidth : Nat}
-    (width : leftWidth = rightWidth) (state : BitState leftWidth)
-    (index : Fin rightWidth) :
-    castState width state index = state (Fin.cast width.symm index) := by
-  cases width
-  rfl
-
-/-- The active middle-block permutation has the stated four-block action. -/
+/-- Compatibility theorem for `Circuit.middleSwapWiring_on_append`. -/
 theorem middleSwapWiring_on_append {a b c d : Nat}
     (as : BitState a) (bs : BitState b) (cs : BitState c) (ds : BitState d) :
     WirePerm.onState (middleSwapWiring a b c d)
         (BitState.append (BitState.append as bs) (BitState.append cs ds)) =
       castState (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d))
-        (BitState.append (BitState.append as cs) (BitState.append bs ds)) := by
-  funext output
-  obtain ⟨input, rfl⟩ := (middleSwapWiring a b c d).surjective output
-  rw [WirePerm.onState_apply_image, castState_apply]
-  let tagged := fourDecompose a b c d input
-  have taggedBack : (fourDecompose a b c d).symm tagged = input := by
-    simp [tagged]
-  rcases tagged with ((index | index) | (index | index))
-  · have input_eq :
-        Fin.castAdd (c + d) (Fin.castAdd b index) = input := by
-      simpa [fourDecompose] using taggedBack
-    clear taggedBack
-    subst input
-    have route :
-        Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
-            (middleSwapWiring a b c d
-              (Fin.castAdd (c + d) (Fin.castAdd b index))) =
-          Fin.castAdd (b + d) (Fin.castAdd c index) := by
-      apply Fin.ext
-      simp [middleSwapWiring, fourDecompose, fourCompose]
-    rw [route]
-    simp
-  · have input_eq :
-        Fin.castAdd (c + d) (Fin.natAdd a index) = input := by
-      simpa [fourDecompose] using taggedBack
-    clear taggedBack
-    subst input
-    have route :
-        Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
-            (middleSwapWiring a b c d
-              (Fin.castAdd (c + d) (Fin.natAdd a index))) =
-          Fin.natAdd (a + c) (Fin.castAdd d index) := by
-      apply Fin.ext
-      simp [middleSwapWiring, fourDecompose, fourCompose]
-    rw [route]
-    simp
-  · have input_eq :
-        Fin.natAdd (a + b) (Fin.castAdd d index) = input := by
-      simpa [fourDecompose] using taggedBack
-    clear taggedBack
-    subst input
-    have route :
-        Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
-            (middleSwapWiring a b c d
-              (Fin.natAdd (a + b) (Fin.castAdd d index))) =
-          Fin.castAdd (b + d) (Fin.natAdd a index) := by
-      apply Fin.ext
-      simp [middleSwapWiring, fourDecompose, fourCompose]
-    rw [route]
-    simp
-  · have input_eq :
-        Fin.natAdd (a + b) (Fin.natAdd c index) = input := by
-      simpa [fourDecompose] using taggedBack
-    clear taggedBack
-    subst input
-    have route :
-        Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
-            (middleSwapWiring a b c d
-              (Fin.natAdd (a + b) (Fin.natAdd c index))) =
-          Fin.natAdd (a + c) (Fin.natAdd b index) := by
-      apply Fin.ext
-      simp [middleSwapWiring, fourDecompose, fourCompose]
-    rw [route]
-    simp
+        (BitState.append (BitState.append as cs) (BitState.append bs ds)) :=
+  Circuit.middleSwapWiring_on_append as bs cs ds
 
 /-! ## State/circuit width transport used by the compiler proofs -/
 
@@ -391,14 +311,14 @@ private theorem zero_realizes_iff {s a r g : Nat} (balanced : s + a = r + g)
     (circuit : Circuit (s + a)) (source : BitState s)
     (target : BitState a → BitState r) (garbage : BitState a → BitState g) :
     Realizes (zeroLayout balanced)
-        (castCircuit (Nat.zero_add (s + a)).symm circuit)
+        (Circuit.cast (Nat.zero_add (s + a)).symm circuit)
         noBits source target garbage ↔
       ZeroRealizes balanced circuit source target garbage := by
   constructor <;> intro realizes argument
   · have raw := realizes argument
-    rw [zeroLayout_packInput, eval_castCircuit, zeroLayout_packOutput] at raw
+    rw [zeroLayout_packInput, Circuit.eval_cast, zeroLayout_packOutput] at raw
     exact castState_injective (Nat.zero_add (s + a)).symm raw
-  · rw [zeroLayout_packInput, eval_castCircuit, zeroLayout_packOutput]
+  · rw [zeroLayout_packInput, Circuit.eval_cast, zeroLayout_packOutput]
     exact congrArg (castState (Nat.zero_add (s + a)).symm) (realizes argument)
 
 /-! ## Full-state serial composition -/
@@ -427,9 +347,9 @@ private def serialCircuit {s₁ a b g₁ s₂ : Nat}
     (first : Circuit (s₁ + a)) (second : Circuit (s₂ + b)) :
     Circuit ((s₂ + s₁) + a) :=
   Circuit.seq
-    (castCircuit (Nat.add_assoc s₂ s₁ a).symm
+    (Circuit.cast (Nat.add_assoc s₂ s₁ a).symm
       (Circuit.tensor (Circuit.identity s₂) first))
-    (castCircuit (serialSecondWidth (s₂ := s₂) firstBalance)
+    (Circuit.cast (serialSecondWidth (s₂ := s₂) firstBalance)
       (Circuit.tensor second (Circuit.identity g₁)))
 
 private theorem serialIntermediate {s₁ a b g₁ s₂ : Nat}
@@ -521,12 +441,12 @@ private theorem zeroRealizes_serial {s₁ a b g₁ s₂ c g₂ : Nat}
   intro argument
   simp only [serialCircuit, Circuit.eval_seq]
   rw [← castState_append_assoc_symm secondSource firstSource argument]
-  rw [eval_castCircuit, Circuit.eval_tensor_append, Circuit.eval_identity]
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append, Circuit.eval_identity]
   rw [firstRealizes argument,
     serialIntermediate (s₁ := s₁) (a := a) (b := b) (g₁ := g₁)
       (s₂ := s₂) firstBalance secondSource (firstTarget argument)
       (firstGarbage argument)]
-  rw [eval_castCircuit, Circuit.eval_tensor_append, Circuit.eval_identity]
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append, Circuit.eval_identity]
   rw [secondRealizes (firstTarget argument),
     serialFinal (s₁ := s₁) (a := a) (b := b) (g₁ := g₁)
       (s₂ := s₂) (c := c) (g₂ := g₂) firstBalance secondBalance
@@ -563,11 +483,11 @@ private def tensorCircuit {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Nat}
     (left : Circuit (s₁ + a₁)) (right : Circuit (s₂ + a₂)) :
     Circuit ((s₁ + s₂) + (a₁ + a₂)) :=
   Circuit.seq
-    (Circuit.permute (middleSwapWiring s₁ s₂ a₁ a₂))
+    (Circuit.permute (Circuit.middleSwapWiring s₁ s₂ a₁ a₂))
     (Circuit.seq
-      (castCircuit (tensorProcessWidth s₁ s₂ a₁ a₂) (Circuit.tensor left right))
-      (castCircuit (tensorOutputWidth leftBalance rightBalance)
-        (Circuit.permute (middleSwapWiring r₁ g₁ r₂ g₂))))
+      (Circuit.cast (tensorProcessWidth s₁ s₂ a₁ a₂) (Circuit.tensor left right))
+      (Circuit.cast (tensorOutputWidth leftBalance rightBalance)
+        (Circuit.permute (Circuit.middleSwapWiring r₁ g₁ r₂ g₂))))
 
 private theorem tensorIntermediate {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Nat}
     (leftBalance : s₁ + a₁ = r₁ + g₁)
@@ -646,14 +566,14 @@ private theorem zeroRealizes_tensor {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : N
     (BitState.append_split argument).symm
   rw [argument_eq]
   simp only [tensorCircuit, BitState.split_append, Circuit.eval_seq]
-  rw [Circuit.eval_permute, middleSwapWiring_on_append]
-  rw [eval_castCircuit, Circuit.eval_tensor_append]
+  rw [Circuit.eval_permute, Circuit.middleSwapWiring_on_append]
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append]
   rw [leftRealizes argument₁, rightRealizes argument₂]
   rw [tensorIntermediate (s₁ := s₁) (a₁ := a₁) (r₁ := r₁) (g₁ := g₁)
     (s₂ := s₂) (a₂ := a₂) (r₂ := r₂) (g₂ := g₂)
     leftBalance rightBalance (leftTarget argument₁) (leftGarbage argument₁)
     (rightTarget argument₂) (rightGarbage argument₂)]
-  rw [eval_castCircuit, Circuit.eval_permute, middleSwapWiring_on_append]
+  rw [Circuit.eval_cast, Circuit.eval_permute, Circuit.middleSwapWiring_on_append]
   rw [tensorFinal (s₁ := s₁) (a₁ := a₁) (r₁ := r₁) (g₁ := g₁)
     (s₂ := s₂) (a₂ := a₂) (r₂ := r₂) (g₂ := g₂)
     leftBalance rightBalance (leftTarget argument₁) (leftGarbage argument₁)
@@ -669,7 +589,7 @@ private def compileCore : {inputWidth outputWidth : Nat} →
     Circuit (sourceWidth source + inputWidth)
   | _, _, .identity width => Circuit.identity (0 + width)
   | _, _, .permute wiring =>
-      castCircuit (Nat.zero_add _).symm (Circuit.permute wiring)
+      Circuit.cast (Nat.zero_add _).symm (Circuit.permute wiring)
   | _, _, .constant _ => Circuit.identity (_ + 0)
   | _, _, .discard width => Circuit.identity (0 + width)
   | _, _, .andGate => fredkinAndCircuit
@@ -690,7 +610,7 @@ leading transport accounts only for the canonical width-zero scratch prefix.
 def compile {inputWidth outputWidth : Nat}
     (source : SourceCircuit inputWidth outputWidth) :
     Circuit (simulationLayout source).width :=
-  castCircuit (Nat.zero_add (sourceWidth source + inputWidth)).symm
+  Circuit.cast (Nat.zero_add (sourceWidth source + inputWidth)).symm
     (compileCore source)
 
 private theorem append_noBits_right {width : Nat} (state : BitState width) :
@@ -715,7 +635,7 @@ private theorem permuteCore_realizes {width : Nat} (wiring : WirePerm width) :
       (eval (.permute wiring)) (garbage (.permute wiring)) := by
   intro argument
   simp only [compileCore, sourceState, eval, garbage]
-  rw [append_noBits_left, eval_castCircuit, Circuit.eval_permute]
+  rw [append_noBits_left, Circuit.eval_cast, Circuit.eval_permute]
   rw [append_noBits_right, castState_trans]
 
 private theorem constantCore_realizes {width : Nat} (value : BitState width) :
@@ -742,7 +662,7 @@ private theorem andCore_realizes :
       andTarget (garbage .andGate) := by
   apply (zero_realizes_iff (source_garbage_balance .andGate)
     fredkinAndCircuit andSource andTarget andGarbage).1
-  simpa [zeroLayout, andLayout, castCircuit, source_garbage_balance,
+  simpa [zeroLayout, andLayout, Circuit.cast, source_garbage_balance,
     sourceWidth, garbageWidth, garbage] using fredkin_realizes_and
 
 private theorem orCore_realizes :
@@ -751,7 +671,7 @@ private theorem orCore_realizes :
       orTarget (garbage .orGate) := by
   apply (zero_realizes_iff (source_garbage_balance .orGate)
     fredkinOrCircuit orSource orTarget orGarbage).1
-  simpa [zeroLayout, orLayout, andLayout, castCircuit, source_garbage_balance,
+  simpa [zeroLayout, orLayout, andLayout, Circuit.cast, source_garbage_balance,
     sourceWidth, garbageWidth, garbage] using fredkin_realizes_or
 
 private theorem notCore_realizes :
@@ -760,7 +680,7 @@ private theorem notCore_realizes :
       notTarget (garbage .notGate) := by
   apply (zero_realizes_iff (source_garbage_balance .notGate)
     fredkinNotCircuit notFanoutSource notTarget notGarbage).1
-  simpa [zeroLayout, notLayout, castCircuit, source_garbage_balance,
+  simpa [zeroLayout, notLayout, Circuit.cast, source_garbage_balance,
     sourceWidth, garbageWidth, garbage] using fredkin_realizes_not
 
 private theorem fanoutCore_realizes :
@@ -769,7 +689,7 @@ private theorem fanoutCore_realizes :
       fanoutTarget (garbage .fanout) := by
   apply (zero_realizes_iff (source_garbage_balance .fanout)
     fredkinFanoutCircuit notFanoutSource fanoutTarget fanoutGarbage).1
-  simpa [zeroLayout, fanoutLayout, castCircuit, source_garbage_balance,
+  simpa [zeroLayout, fanoutLayout, Circuit.cast, source_garbage_balance,
     sourceWidth, garbageWidth, garbage] using fredkin_realizes_fanout
 
 private theorem eval_andGate_eq : eval .andGate = andTarget := by
@@ -834,26 +754,6 @@ end SourceCircuit
 
 end ConservativeLogic.Simulation
 
-namespace ConservativeLogic.Circuit
-
-/-- Exact number of paper-Fredkin constructors in a target circuit term. -/
-def fredkinCount : {width : Nat} → Circuit width → Nat
-  | _, .identity _ => 0
-  | _, .unitWire => 0
-  | _, .fredkin => 1
-  | _, .permute _ => 0
-  | _, .seq first second => fredkinCount first + fredkinCount second
-  | _, .tensor left right => fredkinCount left + fredkinCount right
-
-@[simp]
-theorem fredkinCount_castCircuit {leftWidth rightWidth : Nat}
-    (width : leftWidth = rightWidth) (circuit : Circuit leftWidth) :
-    fredkinCount (Simulation.castCircuit width circuit) = fredkinCount circuit := by
-  cases width
-  rfl
-
-end ConservativeLogic.Circuit
-
 namespace ConservativeLogic.Simulation.SourceCircuit
 
 private theorem compileCore_fredkinCount {inputWidth outputWidth : Nat}
@@ -899,7 +799,7 @@ theorem compile_fredkinCount {inputWidth outputWidth : Nat}
 private theorem hasLatency_castCircuit {leftWidth rightWidth latency : Nat}
     (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
     (timed : Circuit.HasLatency circuit latency) :
-    Circuit.HasLatency (Simulation.castCircuit width circuit) latency := by
+    Circuit.HasLatency (Circuit.cast width circuit) latency := by
   cases width
   exact timed
 
@@ -930,23 +830,23 @@ private theorem serialCircuit_hasLatency_zero {s₁ a b g₁ s₂ : Nat}
       (Circuit.tensor (Circuit.identity s₂) first) 0 :=
     Circuit.HasLatency.tensor (Circuit.hasLatency_identity s₂) firstTimed
   have firstStageCast : Circuit.HasLatency
-      (Simulation.castCircuit (Nat.add_assoc s₂ s₁ a).symm
+      (Circuit.cast (Nat.add_assoc s₂ s₁ a).symm
         (Circuit.tensor (Circuit.identity s₂) first)) 0 :=
     hasLatency_castCircuit (Nat.add_assoc s₂ s₁ a).symm firstStage
   have secondStage : Circuit.HasLatency
       (Circuit.tensor second (Circuit.identity g₁)) 0 :=
     Circuit.HasLatency.tensor secondTimed (Circuit.hasLatency_identity g₁)
   have secondStageCast : Circuit.HasLatency
-      (Simulation.castCircuit
+      (Circuit.cast
         (Simulation.serialSecondWidth (s₂ := s₂) firstBalance)
         (Circuit.tensor second (Circuit.identity g₁))) 0 :=
     hasLatency_castCircuit
       (Simulation.serialSecondWidth (s₂ := s₂) firstBalance) secondStage
   have timed : Circuit.HasLatency
       (Circuit.seq
-        (Simulation.castCircuit (Nat.add_assoc s₂ s₁ a).symm
+        (Circuit.cast (Nat.add_assoc s₂ s₁ a).symm
           (Circuit.tensor (Circuit.identity s₂) first))
-        (Simulation.castCircuit
+        (Circuit.cast
           (Simulation.serialSecondWidth (s₂ := s₂) firstBalance)
           (Circuit.tensor second (Circuit.identity g₁)))) (0 + 0) :=
     Circuit.HasLatency.seq firstStageCast secondStageCast
@@ -965,46 +865,46 @@ private theorem tensorCircuit_hasLatency_zero
     Circuit.HasLatency
       (Simulation.tensorCircuit leftBalance rightBalance left right) 0 := by
   have inputRouting : Circuit.HasLatency
-      (Circuit.permute (Simulation.middleSwapWiring s₁ s₂ a₁ a₂)) 0 :=
+      (Circuit.permute (Circuit.middleSwapWiring s₁ s₂ a₁ a₂)) 0 :=
     Circuit.hasLatency_permute _
   have body : Circuit.HasLatency (Circuit.tensor left right) 0 :=
     Circuit.HasLatency.tensor leftTimed rightTimed
   have bodyCast : Circuit.HasLatency
-      (Simulation.castCircuit
+      (Circuit.cast
         (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂)
         (Circuit.tensor left right)) 0 :=
     hasLatency_castCircuit
       (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂) body
   have outputRouting : Circuit.HasLatency
-      (Circuit.permute (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)) 0 :=
+      (Circuit.permute (Circuit.middleSwapWiring r₁ g₁ r₂ g₂)) 0 :=
     Circuit.hasLatency_permute _
   have outputRoutingCast : Circuit.HasLatency
-      (Simulation.castCircuit
+      (Circuit.cast
         (Simulation.tensorOutputWidth leftBalance rightBalance)
-        (Circuit.permute (Simulation.middleSwapWiring r₁ g₁ r₂ g₂))) 0 :=
+        (Circuit.permute (Circuit.middleSwapWiring r₁ g₁ r₂ g₂))) 0 :=
     hasLatency_castCircuit
       (Simulation.tensorOutputWidth leftBalance rightBalance) outputRouting
   have processThenRoute : Circuit.HasLatency
       (Circuit.seq
-        (Simulation.castCircuit
+        (Circuit.cast
           (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂)
           (Circuit.tensor left right))
-        (Simulation.castCircuit
+        (Circuit.cast
           (Simulation.tensorOutputWidth leftBalance rightBalance)
           (Circuit.permute
-            (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)))) (0 + 0) :=
+            (Circuit.middleSwapWiring r₁ g₁ r₂ g₂)))) (0 + 0) :=
     Circuit.HasLatency.seq bodyCast outputRoutingCast
   have timed : Circuit.HasLatency
       (Circuit.seq
-        (Circuit.permute (Simulation.middleSwapWiring s₁ s₂ a₁ a₂))
+        (Circuit.permute (Circuit.middleSwapWiring s₁ s₂ a₁ a₂))
         (Circuit.seq
-          (Simulation.castCircuit
+          (Circuit.cast
             (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂)
             (Circuit.tensor left right))
-          (Simulation.castCircuit
+          (Circuit.cast
             (Simulation.tensorOutputWidth leftBalance rightBalance)
             (Circuit.permute
-              (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)))))
+              (Circuit.middleSwapWiring r₁ g₁ r₂ g₂)))))
       (0 + (0 + 0)) :=
     Circuit.HasLatency.seq inputRouting processThenRoute
   unfold Simulation.tensorCircuit

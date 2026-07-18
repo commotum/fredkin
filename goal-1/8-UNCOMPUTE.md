@@ -327,4 +327,4 @@ Verification evidence:
 No arbitrary-function existence, all-zero-scratch conversion, fixed-basis
 Fredkin completeness, asymptotic scratch/resource theorem, delay-padding
 algorithm, feedback/trace semantics, physical routing, or thermodynamic claim
-was added. Stage 9 has not started.
+was added. At this Stage 8 completion baseline, Stage 9 had not started.

@@ -123,6 +123,12 @@ example : Circuit.HasLatency (Circuit.identity 1) 0 :=
 example : Circuit.HasLatency Circuit.unitWire 1 :=
   Circuit.hasLatency_unitWire_one
 
+example : Circuit.eval (Circuit.wireOfLength 4) (singleton true) = singleton true := by
+  simp
+
+example : Circuit.HasLatency (Circuit.wireOfLength 4) 4 :=
+  Circuit.wireOfLength_hasLatency 4
+
 /-- A one-wire delay beside an instantaneous identity is feed-forward but nonuniform. -/
 def unequalParallel : Circuit 2 :=
   Circuit.tensor Circuit.unitWire (Circuit.identity 1)
@@ -237,6 +243,7 @@ theorem unequalIntoFredkin_not_meetsPaperCombinationalTiming :
 #print axioms Circuit.eval_seq
 #print axioms Circuit.eval_tensor
 #print axioms Circuit.eval_tensor_append
+#print axioms Circuit.eval_wireOfLength
 #print axioms Circuit.eval_isReversible
 #print axioms Circuit.eval_weightPreserving
 #print axioms Circuit.PathDelay.seq
@@ -248,6 +255,7 @@ theorem unequalIntoFredkin_not_meetsPaperCombinationalTiming :
 #print axioms Circuit.hasLatency_permute
 #print axioms Circuit.HasLatency.meetsPaperCombinationalTiming
 #print axioms Circuit.HasLatency.seq
+#print axioms Circuit.wireOfLength_hasLatency
 #print axioms Circuit.HasLatency.tensor
 #print axioms Circuit.HasLatency.compensatedTensorSeq
 #print axioms Circuit.UniformLatencyCircuit.seq

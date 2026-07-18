@@ -1,5 +1,8 @@
 import ConservativeLogic.Circuit.Inverse
-import ConservativeLogic.Simulation.Fredkin
+import ConservativeLogic.Circuit.Structural
+import ConservativeLogic.Circuit.Resources
+import ConservativeLogic.Realization.Primitive
+import ConservativeLogic.Ancilla.Register
 
 /-!
 # Explicit spy registers and compute-copy-uncompute
@@ -22,41 +25,6 @@ feedback, physical routing, or a positive-latency time-reversal theorem.
 namespace ConservativeLogic.Ancilla
 
 open Realization
-
-/-! ## Explicit result-register states -/
-
-/-- The width-`n` all-zero register. -/
-def zeroRegister (n : Nat) : BitState n := fun _ => false
-
-/-- The width-`n` all-one register. -/
-def oneRegister (n : Nat) : BitState n := fun _ => true
-
-/-- Pointwise Boolean complement of a fixed-width register. -/
-def bitwiseNot {n : Nat} (state : BitState n) : BitState n :=
-  fun index => !state index
-
-/-- The prescribed ordered result-register initialization `(0ⁿ,1ⁿ)`. -/
-def resultRegisterInput (n : Nat) : BitState (n + n) :=
-  BitState.append (zeroRegister n) (oneRegister n)
-
-/-- The ordered result-register output `(value,¬value)`. -/
-def resultRegisterOutput {n : Nat} (value : BitState n) : BitState (n + n) :=
-  BitState.append value (bitwiseNot value)
-
-@[simp]
-theorem hammingWeight_zeroRegister (n : Nat) :
-    hammingWeight (zeroRegister n) = 0 := by
-  simp [hammingWeight, zeroRegister]
-
-@[simp]
-theorem hammingWeight_oneRegister (n : Nat) :
-    hammingWeight (oneRegister n) = n := by
-  simp [hammingWeight, oneRegister]
-
-@[simp]
-theorem hammingWeight_resultRegisterInput (n : Nat) :
-    hammingWeight (resultRegisterInput n) = n := by
-  simp [resultRegisterInput]
 
 /-! ## One physical paper-Fredkin spy -/
 
@@ -346,7 +314,7 @@ private theorem interleaveThree_succ {n : Nat}
 private def copyPairBank : (n : Nat) → Circuit (copyRegisterWidth n)
   | 0 => .identity 0
   | n + 1 =>
-      Simulation.castCircuit (copyRegisterWidth_succ n)
+      Circuit.cast (copyRegisterWidth_succ n)
         (.tensor copyPair (copyPairBank n))
 
 private theorem copyPairBank_spec {n : Nat} (value : BitState n) :
@@ -360,7 +328,7 @@ private theorem copyPairBank_spec {n : Nat} (value : BitState n) :
   | succ n inductionHypothesis =>
       rw [interleaveThree_succ]
       simp only [copyPairBank]
-      rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append]
+      rw [Circuit.eval_cast, Circuit.eval_tensor_append]
       change castState _
         (BitState.append
           (Circuit.eval copyPair (PaperFredkin.state (value 0) false true))
@@ -405,21 +373,6 @@ theorem copyRegister_spec {n : Nat} (value : BitState n) :
           (BitState.append value (bitwiseNot value)))) = _
   exact (WirePerm.onState (copyRegisterInputWiring n)).symm_apply_apply _
 
-/-- A register and its pointwise complement contain exactly `n` true bits. -/
-theorem hammingWeight_add_bitwiseNot {n : Nat} (state : BitState n) :
-    hammingWeight state + hammingWeight (bitwiseNot state) = n := by
-  unfold hammingWeight bitwiseNot
-  simpa using
-    (Finset.card_filter_add_card_filter_not
-      (s := Finset.univ) (p := fun index : Fin n => state index = true))
-
-/-- Every ordered output pair `(value,¬value)` has exactly `n` true bits. -/
-@[simp]
-theorem hammingWeight_resultRegisterOutput {n : Nat} (value : BitState n) :
-    hammingWeight (resultRegisterOutput value) = n := by
-  rw [resultRegisterOutput, hammingWeight_append,
-    hammingWeight_add_bitwiseNot]
-
 /-! ## Copying the selected result block of a complete realization output -/
 
 private abbrev copyResultCoreWidth (scratchWidth resultWidth garbageWidth : Nat) :
@@ -438,7 +391,7 @@ private theorem copyResultRouteOutputWidth
 private def copyResultRouteWiring
     (scratchWidth resultWidth garbageWidth : Nat) :
     WirePerm (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
-  Simulation.middleSwapWiring
+  Circuit.middleSwapWiring
     (scratchWidth + resultWidth) garbageWidth
     (resultWidth + resultWidth) 0
 
@@ -450,10 +403,10 @@ private def copyResultRoute
 private def copyResultBody
     (scratchWidth resultWidth garbageWidth : Nat) :
     Circuit (copyResultCoreWidth scratchWidth resultWidth garbageWidth) :=
-  Simulation.castCircuit
+  Circuit.cast
     (copyResultRouteOutputWidth scratchWidth resultWidth garbageWidth)
     (.tensor
-      (Simulation.castCircuit
+      (Circuit.cast
         (Nat.add_assoc scratchWidth resultWidth
           (resultWidth + resultWidth)).symm
         (.tensor (.identity scratchWidth)
@@ -500,7 +453,7 @@ private theorem copyResultRoute_spec
       copyResultRoutedState scratch result garbage register := by
   simpa [copyResultRoute, copyResultRouteWiring, copyResultCoreState,
     copyResultRoutedState] using
-    (Simulation.middleSwapWiring_on_append
+    (Circuit.middleSwapWiring_on_append
       (BitState.append scratch result) garbage register
       Realization.Primitive.noBits)
 
@@ -514,11 +467,11 @@ private theorem copyResultBody_spec
       copyResultRoutedState scratch result garbage
         (resultRegisterOutput result) := by
   unfold copyResultRoutedState copyResultBody
-  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append,
     Circuit.eval_identity]
   rw [← castState_append_assoc_symm scratch result
     (resultRegisterInput resultWidth)]
-  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append,
     Circuit.eval_identity, copyRegister_spec]
   apply congrArg (castState
     (copyResultRouteOutputWidth scratchWidth resultWidth garbageWidth))
@@ -622,7 +575,7 @@ for the subsequent inverse.
 -/
 def copyResultCircuit (layout : Layout) :
     Circuit (computeCopyUncomputeWidth layout) :=
-  Simulation.castCircuit (copyResultCoreToLayoutWidth layout)
+  Circuit.cast (copyResultCoreToLayoutWidth layout)
     (copyResultCore layout.scratchWidth layout.resultWidth
       layout.garbageWidth)
 
@@ -639,7 +592,7 @@ theorem copyResult_spec (layout : Layout)
         (resultRegisterOutput result) := by
   rw [← copyResultCoreState_to_layout layout scratch result garbage
     (resultRegisterInput layout.resultWidth)]
-  rw [copyResultCircuit, Simulation.eval_castCircuit, copyResultCore_spec]
+  rw [copyResultCircuit, Circuit.eval_cast, copyResultCore_spec]
   exact copyResultCoreState_to_layout layout scratch result garbage
     (resultRegisterOutput result)
 
@@ -779,7 +732,7 @@ theorem computeCopyUncompute_fredkinCount (layout : Layout)
 private theorem hasLatency_castCircuit {leftWidth rightWidth latency : Nat}
     (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
     (timed : Circuit.HasLatency circuit latency) :
-    Circuit.HasLatency (Simulation.castCircuit width circuit) latency := by
+    Circuit.HasLatency (Circuit.cast width circuit) latency := by
   cases width
   exact timed
 
@@ -844,7 +797,7 @@ private theorem copyResultBody_hasLatency_zero
     hasLatency_tensor_zero (Circuit.hasLatency_identity scratchWidth)
       (copyRegisterCircuit_hasLatency_zero resultWidth)
   have leftCast : Circuit.HasLatency
-      (Simulation.castCircuit
+      (Circuit.cast
         (Nat.add_assoc scratchWidth resultWidth
           (resultWidth + resultWidth)).symm
         (Circuit.tensor (Circuit.identity scratchWidth)

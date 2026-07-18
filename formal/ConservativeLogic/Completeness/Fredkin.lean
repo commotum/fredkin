@@ -1,5 +1,5 @@
 import Mathlib.GroupTheory.Perm.ClosureSwap
-import ConservativeLogic.Completeness.Semantic
+import ConservativeLogic.Ancilla.Uncompute
 
 /-!
 # Clean Fredkin-basis synthesis
@@ -50,7 +50,7 @@ def FredkinStructural : {width : Nat} → Circuit width → Prop
 
 @[simp] theorem fredkinStructural_castCircuit {leftWidth rightWidth : Nat}
     (width : leftWidth = rightWidth) (circuit : Circuit leftWidth) :
-    FredkinStructural (Simulation.castCircuit width circuit) ↔
+    FredkinStructural (Circuit.cast width circuit) ↔
       FredkinStructural circuit := by
   cases width
   rfl
@@ -252,7 +252,7 @@ private def emptyState : BitState 0 := fun index => Fin.elim0 index
 private theorem hasLatency_castCircuit {leftWidth rightWidth : Nat}
     (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
     (timed : Circuit.HasLatency circuit 0) :
-    Circuit.HasLatency (Simulation.castCircuit width circuit) 0 := by
+    Circuit.HasLatency (Circuit.cast width circuit) 0 := by
   cases width
   exact timed
 
@@ -398,7 +398,7 @@ private theorem firstRoute_spec {firstAncilla secondAncilla width : Nat}
 private def firstLayer {width : Nat} {firstGate : Reversible width}
     (first : CleanFredkinRealization firstGate) (secondAncilla : Nat) :
     Circuit ((first.ancillaWidth + secondAncilla) + width) :=
-  Simulation.castCircuit
+  Circuit.cast
     (by ac_rfl :
       (first.ancillaWidth + width) + secondAncilla =
         (first.ancillaWidth + secondAncilla) + width)
@@ -418,14 +418,14 @@ private theorem firstLayer_spec {width secondAncilla : Nat}
         (BitState.append (BitState.append first.ancillaInit secondInit)
           (firstGate state)) := by
   rw [firstRoute_spec]
-  rw [firstLayer, Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+  rw [firstLayer, Circuit.eval_cast, Circuit.eval_tensor_append,
     first.realizes, Circuit.eval_identity]
   exact firstRoute_spec first.ancillaInit secondInit (firstGate state) |>.symm
 
 private def secondLayer {width : Nat} {secondGate : Reversible width}
     (firstAncilla : Nat) (second : CleanFredkinRealization secondGate) :
     Circuit ((firstAncilla + second.ancillaWidth) + width) :=
-  Simulation.castCircuit
+  Circuit.cast
     (by ac_rfl :
       firstAncilla + (second.ancillaWidth + width) =
         (firstAncilla + second.ancillaWidth) + width)
@@ -441,7 +441,7 @@ private theorem secondLayer_spec {width firstAncilla : Nat}
         (secondGate state) := by
   unfold secondLayer
   rw [← castState_append_assoc_symm firstInit second.ancillaInit state]
-  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append,
     Circuit.eval_identity, second.realizes]
   exact castState_append_assoc_symm firstInit second.ancillaInit
     (secondGate state)

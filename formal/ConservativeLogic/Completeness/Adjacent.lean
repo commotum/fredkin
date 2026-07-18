@@ -41,7 +41,7 @@ private theorem gate_layer_width {m : Nat} (source : SourceCircuit m 1) :
   simp [controlledWidth]
 
 private def gateLayer (width : Nat) : Circuit (width + 4) :=
-  Simulation.castCircuit (by omega : (width + 1) + 3 = width + 4)
+  Circuit.cast (by omega : (width + 1) + 3 = width + 4)
     (.tensor (.identity (width + 1)) .fredkin)
 
 def markerComputation {m : Nat} (source : SourceCircuit m 1) :
@@ -52,11 +52,11 @@ def markerComputation {m : Nat} (source : SourceCircuit m 1) :
 def controlledSwap {m : Nat} (source : SourceCircuit m 1) :
     Circuit (controlledWidth source) :=
   .seq
-    (Simulation.castCircuit (core_plus_targets_width source)
+    (Circuit.cast (core_plus_targets_width source)
       (.tensor (markerComputation source) (.identity 2)))
     (.seq
       (gateLayer (markerLayout source).width)
-      (Simulation.castCircuit (core_plus_targets_width source)
+      (Circuit.cast (core_plus_targets_width source)
         (.tensor (Circuit.inverse (markerComputation source)) (.identity 2))))
 
 def pair (first second : Bool) : BitState 2 :=
@@ -228,7 +228,7 @@ private theorem gateLayer_spec {w : Nat} (main : BitState w)
             (if predicate = true then first else second))) := by
   unfold gateLayer
   rw [regroup_gate_input main predicate (!predicate) first second]
-  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append,
     Circuit.eval_identity, Circuit.eval_fredkin, PaperFredkin.table]
   cases predicate <;>
     simp only [Bool.not_false, Bool.not_true, Bool.false_eq_true,
@@ -367,7 +367,7 @@ theorem controlledSwap_spec {m : Nat} (source : SourceCircuit m 1)
         (SourceCircuit.compile_realizes source) argument)
   unfold controlledSwap controlledInput
   simp only [Circuit.eval_seq]
-  rw [Simulation.eval_castCircuit]
+  rw [Circuit.eval_cast]
   rw [Circuit.eval_tensor_append, Circuit.eval_identity]
   rw [marker_spec]
   generalize value_eq : SourceCircuit.eval source argument 0 = value
@@ -393,7 +393,7 @@ theorem controlledSwap_spec {m : Nat} (source : SourceCircuit m 1)
     rw [marker_spec, source_eval_eq, result_output_eq]
   rw [source_eval_eq]
   rw [result_output_eq, gateLayer_spec]
-  rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
+  rw [Circuit.eval_cast, Circuit.eval_tensor_append,
     Circuit.eval_identity]
   rw [← marker_spec_value, Circuit.eval_inverse_eval]
 
@@ -459,7 +459,7 @@ def edgeState {m : Nat} (pattern : BitState m) (head : BitState m)
 
 def edgeRouteWiring {m : Nat} (pattern : BitState m) :
     WirePerm (edgeWidth pattern) :=
-  Simulation.middleSwapWiring
+  Circuit.middleSwapWiring
     (SourceCircuit.sourceWidth (edgeSource pattern)) 2 m 2
 
 def edgeRoute {m : Nat} (pattern : BitState m) : Circuit (edgeWidth pattern) :=
@@ -467,7 +467,7 @@ def edgeRoute {m : Nat} (pattern : BitState m) : Circuit (edgeWidth pattern) :=
 
 def edgeControlled {m : Nat} (pattern : BitState m) :
     Circuit (edgeWidth pattern) :=
-  Simulation.castCircuit (controlled_to_edge_width pattern)
+  Circuit.cast (controlled_to_edge_width pattern)
     (controlledSwap (edgeSource pattern))
 
 def edgeControlledState {m : Nat} (pattern : BitState m)
@@ -481,7 +481,7 @@ theorem edgeRoute_spec {m : Nat} (pattern head : BitState m)
       edgeControlledState pattern head first second := by
   unfold edgeRoute edgeRouteWiring edgeState edgeClean edgeData
   rw [Circuit.eval_permute]
-  rw [Simulation.middleSwapWiring_on_append]
+  rw [Circuit.middleSwapWiring_on_append]
   unfold edgeControlledState controlledInput
   simp only [markerLayout, Realization.Layout.packInput]
   rw [append_noBits_left]
@@ -498,7 +498,7 @@ theorem edgeControlled_spec {m : Nat} (pattern head : BitState m)
         (if head = pattern then second else first)
         (if head = pattern then first else second) := by
   unfold edgeControlled edgeControlledState
-  rw [Simulation.eval_castCircuit]
+  rw [Circuit.eval_cast]
   rw [patternControlledSwap_spec]
 
 def adjacentTranspositionCircuit {m : Nat} (pattern : BitState m) :
@@ -620,7 +620,7 @@ theorem adjacentTranspositionCircuit_spec {m : Nat}
 private theorem hasLatency_castCircuit {leftWidth rightWidth latency : Nat}
     (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
     (timed : Circuit.HasLatency circuit latency) :
-    Circuit.HasLatency (Simulation.castCircuit width circuit) latency := by
+    Circuit.HasLatency (Circuit.cast width circuit) latency := by
   cases width
   exact timed
 

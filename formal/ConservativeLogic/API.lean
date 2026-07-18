@@ -6,6 +6,8 @@ import ConservativeLogic.Gate.Fredkin
 import ConservativeLogic.Gate.Fredkin.Nonlinear
 import ConservativeLogic.Circuit.Syntax
 import ConservativeLogic.Circuit.Semantics
+import ConservativeLogic.Circuit.Structural
+import ConservativeLogic.Circuit.Resources
 import ConservativeLogic.Circuit.Timed
 import ConservativeLogic.Circuit.Inverse
 import ConservativeLogic.Realization.Core
@@ -13,6 +15,7 @@ import ConservativeLogic.Realization.Primitive
 import ConservativeLogic.Simulation.Source
 import ConservativeLogic.Simulation.Fredkin
 import ConservativeLogic.Simulation.Demultiplexer
+import ConservativeLogic.Ancilla.Register
 import ConservativeLogic.Ancilla.Uncompute
 import ConservativeLogic.Completeness.Semantic
 import ConservativeLogic.Completeness.Fredkin

@@ -4,7 +4,8 @@
 
 Complete on 2026-07-18 from clean synchronized baseline `5b28ef8`.  The
 semantic completion, corrected fixed-basis theorem, explicit clean workspace,
-and width-four no-ancilla obstruction are checked.  Stage 10 has not started.
+and width-four no-ancilla obstruction are checked.  At this Stage 9 completion
+baseline, Stage 10 had not started.
 
 ## Re-Audited Paper Claims
 
