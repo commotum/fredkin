@@ -855,7 +855,7 @@ total structural inverse, complete static inverse semantics, exact
 endpoint-reversed path correspondence, common-latency preservation, and
 latency-additive round trips for the corrected balanced feed-forward grammar.
 Verification and boundary evidence are recorded in `goal-1/7-INVERSE.md`;
-Stage 8 has not started.
+Stage 8 is now complete separately.
 
 #### Big Picture Objective
 
@@ -884,10 +884,11 @@ path and equal-latency certificates.
 
 ### 8-UNCOMPUTE
 
-**Status:** In progress (2026-07-17), from clean synchronized baseline
-`ccab07c`. Checked paper facts, the corrected port/timing boundaries, exact
-public theorem contract, adversarial tests, and required verification are
-recorded in `goal-1/8-UNCOMPUTE.md`.
+**Status:** Complete (2026-07-17), from clean synchronized baseline `ccab07c`.
+The public explicit spy registers, all-width copy circuit, embedded
+result-copy layer, complete compute-copy-uncompute theorem, global properties,
+exact resources, corrected timing scope, adversarial regressions, and final
+verification evidence are recorded in `goal-1/8-UNCOMPUTE.md`.
 
 #### Big Picture Objective
 

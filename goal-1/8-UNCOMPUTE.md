@@ -258,7 +258,73 @@ lake build ConservativeLogic.Audit.Uncompute
 
 ## Stage Results
 
-**Stage status: in progress.** Repository and paper facts, the corrected
-Figure 22 port order, the static/timing boundary, exact public theorem contract,
-adversarial regression matrix, and build requirements are recorded. No Stage 8
-Lean declaration has yet been added.
+**Stage status: complete (2026-07-17).** Stage 8 was implemented from clean
+synchronized baseline `ccab07c` under Lean/mathlib `v4.32.0`.
+
+- `ConservativeLogic.Ancilla.Uncompute` defines separately named all-zero and
+  all-one halves, pointwise complement, the exact `2n`-wire input/output result
+  registers, and their weights. The proof
+  `hammingWeight_add_bitwiseNot` establishes the output weight for every width,
+  rather than by bounded evaluation.
+- `copyPairInputWiring = PaperFredkin.dataSwap` records the correction forced by
+  Table (2): canonical `(a,0,1)` is routed to physical `(a,1,0)`.
+  `copyPair_physical_spec` and `copyPair_spec` check the two interfaces, and the
+  audit checks both Boolean rows plus deliberately unpermuted failures.
+- `copyRegisterCircuit` is an explicit grouped-to-interleaved permutation,
+  recursive tensor bank, and inverse regrouping. `copyRegister_spec` proves the
+  complete all-width equation `(x,0ⁿ,1ⁿ) -> (x,x,not x)`, including `n = 0`,
+  without reusing any input as two circuit wires.
+- `copyResult_spec` embeds that bank into an arbitrary complete
+  `(scratch,result,garbage)` midpoint. Its width transports use only
+  `Layout.balanced`; source and garbage widths are never identified.
+- From a supplied concrete `Realizes` witness,
+  `compute_copy_uncompute_spec` proves
+  `(scratch,source,argument,0ⁿ,1ⁿ) ->
+   (scratch,source,argument,target,not target)` as equality of the entire
+  state. The supplied scratch, consumed source, and argument return exactly;
+  the named transient midpoint garbage is uncomputed. The returned argument
+  and ancillary result/complement register remain explicit.
+- `compute_copy_uncompute_isReversible` and
+  `compute_copy_uncompute_conservative` state the global whole-map properties
+  separately from the initialized slice. Exact syntax theorems prove one copy
+  Fredkin per result bit and total count
+  `count(circuit) + (resultWidth + count(circuit))`.
+- `computeCopyUncompute_hasLatency_zero` is intentionally conditional on a
+  zero-latency supplied circuit. The non-public actual-builder regression
+  `unitWireUncompute_not_meetsPaperCombinationalTiming` constructs a delay-two
+  main path and a delay-zero result-register path, refuting an unsupported
+  positive-latency generalization without padding.
+- `ConservativeLogic.Audit.Uncompute` imports only `ConservativeLogic.API` and
+  checks guarded arbitrary-function/unequal-width builder failures, the port
+  correction, missing-one conservation obstruction, zero and asymmetric
+  widths, noninjective AND, nonzero scratch/source, unequal source/garbage
+  widths, result width zero with a nonempty main register, transient-garbage
+  disappearance, nonidentity, global properties, exact counts, and timing.
+
+Verification evidence:
+
+- Focused public build: `ConservativeLogic.Ancilla.Uncompute`, 772/772 jobs.
+- Public API/root build: 779 jobs; cached default build: 779 jobs.
+- Dedicated audit build: 778/778 jobs.
+- After stopping concurrent diagnostic commands, an uncontended `lake clean`
+  followed by the default build completed 787/787 jobs. The post-clean
+  `ConservativeLogic.Audit.Uncompute` build completed 778/778 jobs. An earlier
+  contested attempt was discarded after a reviewer compile raced the clean and
+  removed an expected `.olean`; it is not counted as verification evidence.
+- Public and audit `#print axioms` output contains only Lean/mathlib foundations
+  `propext`, `Classical.choice`, and `Quot.sound`. Source scans find no
+  executable `sorry`, `admit`, project `axiom`, `unsafe`, `opaque`,
+  `Classical.choose`, `Nonempty.some`, semantic-circuit injection, or
+  source-language fallback in the public leaf.
+- The public leaf imports only `Circuit.Inverse` and `Simulation.Fredkin`; the
+  API exports it, the root remains thin, and the audit remains non-public.
+  Independent public-soundness and documentation/audit reviews found no
+  remaining actionable issue.
+- `git diff --check` and complete baseline-diff inspection pass. README, public
+  module documentation, theorem map, paper map, module direction, and
+  CL-009/CL-010/CL-020 now record the proved result and its corrected limits.
+
+No arbitrary-function existence, all-zero-scratch conversion, fixed-basis
+Fredkin completeness, asymptotic scratch/resource theorem, delay-padding
+algorithm, feedback/trace semantics, physical routing, or thermodynamic claim
+was added. Stage 9 has not started.
