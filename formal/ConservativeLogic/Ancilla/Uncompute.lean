@@ -590,7 +590,6 @@ private theorem copyResultCoreState_to_layout
         (castState normalize
           (copyResultCoreState scratch result garbage register)) := by
         rw [castState_trans]
-        exact castState_proof_irrel _ _ _
     _ = castState liftOutput
         (BitState.append
           (castState mainAssoc
@@ -640,5 +639,263 @@ theorem copyResult_spec (layout : Layout)
   rw [copyResultCircuit, Simulation.eval_castCircuit, copyResultCore_spec]
   exact copyResultCoreState_to_layout layout scratch result garbage
     (resultRegisterOutput result)
+
+/-! ## Complete compute-copy-uncompute -/
+
+/--
+Run a balanced computation on the main register, copy its selected result into
+the explicit initialized `2n` register, and run the structural inverse on the
+complete main register.
+-/
+def computeCopyUncompute (layout : Layout)
+    (circuit : Circuit layout.width) :
+    Circuit (computeCopyUncomputeWidth layout) :=
+  .seq
+    (.tensor circuit
+      (.identity (layout.resultWidth + layout.resultWidth)))
+    (.seq (copyResultCircuit layout)
+      (.tensor (Circuit.inverse circuit)
+        (.identity (layout.resultWidth + layout.resultWidth))))
+
+/--
+Complete initialized-slice equation.  The exact original packed
+`(scratch,source,argument)` register is restored, the transient garbage is
+absent, and the separate initialized register contains `(target,¬target)`.
+-/
+theorem compute_copy_uncompute_spec
+    {layout : Layout} {circuit : Circuit layout.width}
+    {scratch : BitState layout.scratchWidth}
+    {source : BitState layout.sourceWidth}
+    {target : BitState layout.argumentWidth → BitState layout.resultWidth}
+    {garbage : BitState layout.argumentWidth → BitState layout.garbageWidth}
+    (realizes : Realizes layout circuit scratch source target garbage)
+    (argument : BitState layout.argumentWidth) :
+    Circuit.eval (computeCopyUncompute layout circuit)
+        (BitState.append (layout.packInput scratch source argument)
+          (resultRegisterInput layout.resultWidth)) =
+      BitState.append (layout.packInput scratch source argument)
+        (resultRegisterOutput (target argument)) := by
+  simp only [computeCopyUncompute, Circuit.eval_seq,
+    Circuit.eval_tensor_append, Circuit.eval_identity]
+  rw [realizes argument, copyResult_spec]
+  rw [Circuit.eval_tensor_append, Circuit.eval_identity]
+  rw [← realizes argument, Circuit.eval_inverse_eval]
+
+/-- The complete construction is globally reversible on all boundary states. -/
+theorem compute_copy_uncompute_isReversible (layout : Layout)
+    (circuit : Circuit layout.width) :
+    IsReversible (Circuit.eval (computeCopyUncompute layout circuit)) :=
+  Circuit.eval_isReversible _
+
+/-- The complete construction globally preserves total Hamming weight. -/
+theorem compute_copy_uncompute_conservative (layout : Layout)
+    (circuit : Circuit layout.width) :
+    WeightPreserving (Circuit.eval (computeCopyUncompute layout circuit)) :=
+  Circuit.eval_weightPreserving _
+
+/-! ## Exact structural resources -/
+
+private theorem fredkinCount_inverse {width : Nat} (circuit : Circuit width) :
+    Circuit.fredkinCount (Circuit.inverse circuit) =
+      Circuit.fredkinCount circuit := by
+  induction circuit with
+  | identity width => rfl
+  | unitWire => rfl
+  | fredkin => rfl
+  | permute wiring => rfl
+  | seq first second firstIH secondIH =>
+      simp only [Circuit.inverse_seq, Circuit.fredkinCount,
+        firstIH, secondIH]
+      omega
+  | tensor left right leftIH rightIH =>
+      simp only [Circuit.inverse_tensor, Circuit.fredkinCount,
+        leftIH, rightIH]
+
+@[simp]
+theorem copyPair_fredkinCount : Circuit.fredkinCount copyPair = 1 := by
+  rfl
+
+private theorem copyPairBank_fredkinCount (n : Nat) :
+    Circuit.fredkinCount (copyPairBank n) = n := by
+  induction n with
+  | zero => rfl
+  | succ n inductionHypothesis =>
+      simp only [copyPairBank, Circuit.fredkinCount_castCircuit,
+        Circuit.fredkinCount, copyPair_fredkinCount, inductionHypothesis]
+      omega
+
+/-- The all-width copy layer contains exactly one Fredkin constructor per bit. -/
+@[simp]
+theorem copyRegisterCircuit_fredkinCount (n : Nat) :
+    Circuit.fredkinCount (copyRegisterCircuit n) = n := by
+  simp [copyRegisterCircuit, Circuit.fredkinCount,
+    copyPairBank_fredkinCount]
+
+private theorem copyResultRoute_fredkinCount
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit.fredkinCount
+        (copyResultRoute scratchWidth resultWidth garbageWidth) = 0 := by
+  rfl
+
+private theorem copyResultBody_fredkinCount
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit.fredkinCount
+        (copyResultBody scratchWidth resultWidth garbageWidth) = resultWidth := by
+  simp [copyResultBody, Circuit.fredkinCount,
+    copyRegisterCircuit_fredkinCount]
+
+private theorem copyResultCore_fredkinCount
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit.fredkinCount
+        (copyResultCore scratchWidth resultWidth garbageWidth) = resultWidth := by
+  simp [copyResultCore, Circuit.fredkinCount,
+    copyResultRoute_fredkinCount, copyResultBody_fredkinCount,
+    fredkinCount_inverse]
+
+/-- Embedded result copying adds exactly one Fredkin per selected result bit. -/
+@[simp]
+theorem copyResultCircuit_fredkinCount (layout : Layout) :
+    Circuit.fredkinCount (copyResultCircuit layout) = layout.resultWidth := by
+  simp [copyResultCircuit, copyResultCore_fredkinCount]
+
+/--
+Exact syntax count: the computation occurs once forward and once inversely,
+with one additional spy Fredkin for each selected result bit.  This is not an
+optimality, depth, or physical-routing theorem.
+-/
+theorem computeCopyUncompute_fredkinCount (layout : Layout)
+    (circuit : Circuit layout.width) :
+    Circuit.fredkinCount (computeCopyUncompute layout circuit) =
+      Circuit.fredkinCount circuit +
+        (layout.resultWidth + Circuit.fredkinCount circuit) := by
+  simp [computeCopyUncompute, Circuit.fredkinCount,
+    copyResultCircuit_fredkinCount, fredkinCount_inverse]
+
+/-! ## Accurately scoped zero-latency certificates -/
+
+private theorem hasLatency_castCircuit {leftWidth rightWidth latency : Nat}
+    (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
+    (timed : Circuit.HasLatency circuit latency) :
+    Circuit.HasLatency (Simulation.castCircuit width circuit) latency := by
+  cases width
+  exact timed
+
+private theorem hasLatency_seq_zero {width : Nat}
+    {first second : Circuit width}
+    (firstTimed : Circuit.HasLatency first 0)
+    (secondTimed : Circuit.HasLatency second 0) :
+    Circuit.HasLatency (.seq first second) 0 := by
+  intro input output actual path
+  have equality := Circuit.HasLatency.seq firstTimed secondTimed path
+  simpa using equality
+
+private theorem hasLatency_tensor_zero {leftWidth rightWidth : Nat}
+    {left : Circuit leftWidth} {right : Circuit rightWidth}
+    (leftTimed : Circuit.HasLatency left 0)
+    (rightTimed : Circuit.HasLatency right 0) :
+    Circuit.HasLatency (.tensor left right) 0 := by
+  intro input output actual path
+  exact Circuit.HasLatency.tensor leftTimed rightTimed path
+
+private theorem copyPair_hasLatency_zero :
+    Circuit.HasLatency copyPair 0 := by
+  apply hasLatency_seq_zero
+  · exact Circuit.hasLatency_permute copyPairInputWiring
+  · exact Circuit.hasLatency_fredkin
+
+private theorem copyPairBank_hasLatency_zero (n : Nat) :
+    Circuit.HasLatency (copyPairBank n) 0 := by
+  induction n with
+  | zero => exact Circuit.hasLatency_identity 0
+  | succ n inductionHypothesis =>
+      apply hasLatency_castCircuit (copyRegisterWidth_succ n)
+      exact hasLatency_tensor_zero copyPair_hasLatency_zero
+        inductionHypothesis
+
+/-- Every path through the explicit all-width copy layer has delay zero. -/
+theorem copyRegisterCircuit_hasLatency_zero (n : Nat) :
+    Circuit.HasLatency (copyRegisterCircuit n) 0 := by
+  unfold copyRegisterCircuit
+  apply hasLatency_seq_zero
+  · exact Circuit.hasLatency_permute (copyRegisterInputWiring n)
+  · apply hasLatency_seq_zero
+    · exact copyPairBank_hasLatency_zero n
+    · exact Circuit.hasLatency_permute (copyRegisterOutputWiring n)
+
+private theorem copyResultRoute_hasLatency_zero
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit.HasLatency
+      (copyResultRoute scratchWidth resultWidth garbageWidth) 0 :=
+  Circuit.hasLatency_permute _
+
+private theorem copyResultBody_hasLatency_zero
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit.HasLatency
+      (copyResultBody scratchWidth resultWidth garbageWidth) 0 := by
+  unfold copyResultBody
+  apply hasLatency_castCircuit
+    (copyResultRouteOutputWidth scratchWidth resultWidth garbageWidth)
+  have left : Circuit.HasLatency
+      (Circuit.tensor (Circuit.identity scratchWidth)
+        (copyRegisterCircuit resultWidth)) 0 :=
+    hasLatency_tensor_zero (Circuit.hasLatency_identity scratchWidth)
+      (copyRegisterCircuit_hasLatency_zero resultWidth)
+  have leftCast : Circuit.HasLatency
+      (Simulation.castCircuit
+        (Nat.add_assoc scratchWidth resultWidth
+          (resultWidth + resultWidth)).symm
+        (Circuit.tensor (Circuit.identity scratchWidth)
+          (copyRegisterCircuit resultWidth))) 0 :=
+    hasLatency_castCircuit _ left
+  have combined : Circuit.HasLatency
+      (Circuit.tensor
+        (Simulation.castCircuit
+          (Nat.add_assoc scratchWidth resultWidth
+            (resultWidth + resultWidth)).symm
+          (Circuit.tensor (Circuit.identity scratchWidth)
+            (copyRegisterCircuit resultWidth)))
+        (Circuit.identity (garbageWidth + 0))) 0 :=
+    hasLatency_tensor_zero leftCast
+      (Circuit.hasLatency_identity (garbageWidth + 0))
+  exact combined
+
+private theorem copyResultCore_hasLatency_zero
+    (scratchWidth resultWidth garbageWidth : Nat) :
+    Circuit.HasLatency
+      (copyResultCore scratchWidth resultWidth garbageWidth) 0 := by
+  unfold copyResultCore
+  apply hasLatency_seq_zero
+  · exact copyResultRoute_hasLatency_zero _ _ _
+  · apply hasLatency_seq_zero
+    · exact copyResultBody_hasLatency_zero _ _ _
+    · exact Circuit.HasLatency.inverse
+        (copyResultRoute_hasLatency_zero _ _ _)
+
+/-- The embedded result-copy circuit has uniform zero unit-wire latency. -/
+theorem copyResultCircuit_hasLatency_zero (layout : Layout) :
+    Circuit.HasLatency (copyResultCircuit layout) 0 := by
+  apply hasLatency_castCircuit
+  exact copyResultCore_hasLatency_zero _ _ _
+
+/--
+The unpadded complete construction has uniform zero latency when the supplied
+computation itself does.  No positive-latency generalization is claimed: the
+unchanged result-register tensor branches would require separate delay
+padding.
+-/
+theorem computeCopyUncompute_hasLatency_zero (layout : Layout)
+    {circuit : Circuit layout.width}
+    (timed : Circuit.HasLatency circuit 0) :
+    Circuit.HasLatency (computeCopyUncompute layout circuit) 0 := by
+  unfold computeCopyUncompute
+  apply hasLatency_seq_zero
+  · exact hasLatency_tensor_zero timed
+      (Circuit.hasLatency_identity
+        (layout.resultWidth + layout.resultWidth))
+  · apply hasLatency_seq_zero
+    · exact copyResultCircuit_hasLatency_zero layout
+    · exact hasLatency_tensor_zero timed.inverse
+        (Circuit.hasLatency_identity
+          (layout.resultWidth + layout.resultWidth))
 
 end ConservativeLogic.Ancilla

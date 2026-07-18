@@ -40,23 +40,35 @@ private theorem oneBit_eta (input : BitState 1) : oneBit (input 0) = input := by
   funext index
   exact Fin.eq_zero index ▸ rfl
 
+/-! ## Guarded builder-domain failures -/
+
+private def arbitrarySemanticFunction : BitState 3 → BitState 3 := id
+
+/- The builder accepts an explicit balanced circuit, not an arbitrary function. -/
+#guard_msgs (drop info) in
+#check_failure computeCopyUncompute andLayout arbitrarySemanticFunction
+
+/- Unequal-width source syntax is not a balanced target circuit witness. -/
+#guard_msgs (drop info) in
+#check_failure computeCopyUncompute andLayout SourceCircuit.fanout
+
 /-! ## Exact paper ports and the required canonical permutation -/
 
 example : Circuit.eval Circuit.fredkin (threeBits false true false) =
     threeBits false false true := by
-  simpa only [threeBits] using copyPair_physical_spec false
+  simpa only [threeBits, Bool.not_false] using copyPair_physical_spec false
 
 example : Circuit.eval Circuit.fredkin (threeBits true true false) =
     threeBits true true false := by
-  simpa only [threeBits] using copyPair_physical_spec true
+  simpa only [threeBits, Bool.not_true] using copyPair_physical_spec true
 
 example : Circuit.eval copyPair (threeBits false false true) =
     threeBits false false true := by
-  simpa only [threeBits] using copyPair_spec false
+  simpa only [threeBits, Bool.not_false] using copyPair_spec false
 
 example : Circuit.eval copyPair (threeBits true false true) =
     threeBits true true false := by
-  simpa only [threeBits] using copyPair_spec true
+  simpa only [threeBits, Bool.not_true] using copyPair_spec true
 
 /-- Static copying on the initialized slice is not a syntactic identity term. -/
 theorem copyPair_ne_identity : copyPair ≠ Circuit.identity 3 := by
@@ -179,6 +191,19 @@ example : scratchOrLayout.garbageWidth = 2 := rfl
 example : hammingWeight scratchOrScratch = 1 := by decide
 example : hammingWeight orSource = 1 := by decide
 
+example (argument : BitState 2) :
+    Circuit.eval (copyResultCircuit scratchOrLayout)
+        (BitState.append
+          (scratchOrLayout.packOutput scratchOrScratch (orTarget argument)
+            (orGarbage argument))
+          (resultRegisterInput scratchOrLayout.resultWidth)) =
+      BitState.append
+        (scratchOrLayout.packOutput scratchOrScratch (orTarget argument)
+          (orGarbage argument))
+        (resultRegisterOutput (orTarget argument)) :=
+  copyResult_spec scratchOrLayout scratchOrScratch
+    (orTarget argument) (orGarbage argument)
+
 /-- A nonempty main register whose selected result has width zero. -/
 private def emptyResultLayout : Layout where
   sourceWidth := 0
@@ -207,6 +232,19 @@ private theorem emptyResult_realizes :
   rw [← oneBit_eta argument]
   exact emptyResult_complete (argument 0)
 
+example (argument : BitState 1) :
+    Circuit.eval (copyResultCircuit emptyResultLayout)
+        (BitState.append
+          (emptyResultLayout.packOutput noBits (emptyResultTarget argument)
+            (emptyResultGarbage argument))
+          (resultRegisterInput 0)) =
+      BitState.append
+        (emptyResultLayout.packOutput noBits (emptyResultTarget argument)
+          (emptyResultGarbage argument))
+        (resultRegisterOutput (emptyResultTarget argument)) :=
+  copyResult_spec emptyResultLayout noBits
+    (emptyResultTarget argument) (emptyResultGarbage argument)
+
 /- A static identity realization with one positive-delay unit wire. -/
 private def unitWireLayout : Layout where
   sourceWidth := 0
@@ -229,5 +267,124 @@ private theorem unitWire_realizes :
   · rfl
   · intro impossible
     exact Fin.elim0 impossible
+
+/-! ## Complete initialized-slice boundaries -/
+
+private def andUncompute :=
+  computeCopyUncompute andLayout fredkinAndCircuit
+
+/-- The noninjective AND target is permitted only because the complete final
+boundary restores its original argument rather than pretending AND is a
+reversible one-bit map. -/
+theorem and_uncompute_complete (argument : BitState 2) :
+    Circuit.eval andUncompute
+        (BitState.append (andLayout.packInput noBits andSource argument)
+          (resultRegisterInput andLayout.resultWidth)) =
+      BitState.append (andLayout.packInput noBits andSource argument)
+        (resultRegisterOutput (andTarget argument)) :=
+  compute_copy_uncompute_spec fredkin_realizes_and argument
+
+private def andCollisionLeft : BitState 2 := twoBits false false
+private def andCollisionRight : BitState 2 := twoBits false true
+
+example : andTarget andCollisionLeft = andTarget andCollisionRight := by
+  decide
+
+example : andGarbage andCollisionLeft ≠ andGarbage andCollisionRight := by
+  decide
+
+/- The transient garbage is genuinely nonzero on this row before uncomputation. -/
+example : hammingWeight (andGarbage andCollisionRight) = 1 := by
+  decide
+
+example : Circuit.eval andUncompute
+      (BitState.append
+        (andLayout.packInput noBits andSource andCollisionLeft)
+        (resultRegisterInput 1)) =
+    BitState.append
+      (andLayout.packInput noBits andSource andCollisionLeft)
+      (resultRegisterOutput (andTarget andCollisionLeft)) :=
+  and_uncompute_complete andCollisionLeft
+
+example : Circuit.eval andUncompute
+      (BitState.append
+        (andLayout.packInput noBits andSource andCollisionRight)
+        (resultRegisterInput 1)) =
+    BitState.append
+      (andLayout.packInput noBits andSource andCollisionRight)
+      (resultRegisterOutput (andTarget andCollisionRight)) :=
+  and_uncompute_complete andCollisionRight
+
+/- Equal AND results still leave distinct complete restored boundaries. -/
+example :
+    BitState.append
+        (andLayout.packInput noBits andSource andCollisionLeft)
+        (resultRegisterOutput (andTarget andCollisionLeft)) ≠
+      BitState.append
+        (andLayout.packInput noBits andSource andCollisionRight)
+        (resultRegisterOutput (andTarget andCollisionRight)) := by
+  decide
+
+/-- Nonzero scratch and the nonzero OR source both return exactly; the two
+transient garbage wires are absent from the complete final boundary. -/
+theorem scratch_or_uncompute_complete (argument : BitState 2) :
+    Circuit.eval (computeCopyUncompute scratchOrLayout scratchOrCircuit)
+        (BitState.append
+          (scratchOrLayout.packInput scratchOrScratch orSource argument)
+          (resultRegisterInput scratchOrLayout.resultWidth)) =
+      BitState.append
+        (scratchOrLayout.packInput scratchOrScratch orSource argument)
+        (resultRegisterOutput (orTarget argument)) :=
+  compute_copy_uncompute_spec scratchOr_realizes argument
+
+/-- Width-zero result copying works while the main argument register remains
+nonempty and is restored exactly. -/
+theorem empty_result_uncompute_complete (argument : BitState 1) :
+    Circuit.eval
+        (computeCopyUncompute emptyResultLayout (Circuit.identity 1))
+        (BitState.append
+          (emptyResultLayout.packInput noBits noBits argument)
+          (resultRegisterInput 0)) =
+      BitState.append (emptyResultLayout.packInput noBits noBits argument)
+        (resultRegisterOutput (emptyResultTarget argument)) :=
+  compute_copy_uncompute_spec emptyResult_realizes argument
+
+/-! ## Whole-map facts, syntactic nonidentity, and exact resources -/
+
+example : IsReversible (Circuit.eval andUncompute) :=
+  compute_copy_uncompute_isReversible andLayout fredkinAndCircuit
+
+example : WeightPreserving (Circuit.eval andUncompute) :=
+  compute_copy_uncompute_conservative andLayout fredkinAndCircuit
+
+theorem andUncompute_ne_identity :
+    andUncompute ≠ Circuit.identity (computeCopyUncomputeWidth andLayout) := by
+  intro equality
+  cases equality
+
+example : Circuit.fredkinCount copyPair = 1 := copyPair_fredkinCount
+
+example : Circuit.fredkinCount (copyRegisterCircuit 0) = 0 := by
+  simpa using copyRegisterCircuit_fredkinCount 0
+
+example : Circuit.fredkinCount (copyRegisterCircuit 2) = 2 := by
+  simpa using copyRegisterCircuit_fredkinCount 2
+
+example : Circuit.fredkinCount (copyResultCircuit scratchOrLayout) = 1 := by
+  simpa [scratchOrLayout] using copyResultCircuit_fredkinCount scratchOrLayout
+
+example : Circuit.fredkinCount andUncompute = 3 := by
+  rw [andUncompute, computeCopyUncompute_fredkinCount]
+  decide
+
+example : Circuit.fredkinCount
+      (computeCopyUncompute scratchOrLayout scratchOrCircuit) = 3 := by
+  rw [computeCopyUncompute_fredkinCount]
+  decide
+
+example : Circuit.fredkinCount
+      (computeCopyUncompute emptyResultLayout (Circuit.identity 1)) = 0 := by
+  rw [computeCopyUncompute_fredkinCount]
+  decide
 
 end ConservativeLogic.Audit.Uncompute
