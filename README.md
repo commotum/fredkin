@@ -182,8 +182,10 @@ Finite products of admitted collision sites provide deterministic,
 involutive, count-preserving simultaneous scattering only for independent
 owned channels.  Directed routes use a rotated integer lattice, with explicit
 sampled mirror turns, a four-tick detour, and global-time crossover predicates.
-The naked crossing conflicts when simultaneous and is certified clear for one
-specific staggered schedule.  Figure 14 has a complete coordinate trace: every
+The naked crossing conflicts when simultaneous.  A one-tick stagger avoids an
+equal sampled center but fails the radius-derived squared-distance threshold;
+a two-tick stagger satisfies that sampled threshold.  Figure 14 has a complete
+coordinate trace: every
 active ball makes four unit lattice moves, all integral frames preserve ball
 count and meet the sampled squared-distance threshold, the right-angle turn
 occurs exactly on input `11`, and the full final frame observes
@@ -192,7 +194,8 @@ hard-ball, swept-clearance, elastic, mirror-mechanics, or physical-energy
 theorems.
 
 Figures 15 and 17 provide no coordinates or numerical latency, while Figure
-18 explicitly omits steering/timing mirrors and unit wires and leaves its
+18 says steering/timing mirrors and unit wires are not explicitly indicated
+and leaves its
 bridge/trivial crossover obligations unproved.  Accordingly, the library does
 not claim Figure 17/18 physical refinement, arbitrary mirror delay, a general
 billiard layout compiler, P8 packing bounds, physical time reversal, or any

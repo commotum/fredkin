@@ -13,8 +13,8 @@ encoder from Section 6.2.
 preservation can be stated with the existing finite-state API.  Its identity
 behavior on masks outside `AllowedLocal` is only an algebraic completion.  It
 is not a rule for three-ball, four-ball, or unselected simultaneous physical
-collisions.  The physically admitted local interface is `AllowedState` and its
-restricted equivalence `allowedEquiv`.
+collisions.  The selected local abstraction interface is `AllowedState` and
+its restricted equivalence `allowedEquiv`.
 
 Nothing here models continuous trajectories, radius, elastic impact, mirrors,
 clearance, or a global lattice evolution.

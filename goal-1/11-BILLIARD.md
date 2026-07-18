@@ -29,7 +29,7 @@ read together.  No Lean implementation has yet been accepted as a result.
   nontrivial crossover.  Figure 15 supplies drawings but no coordinates or
   numerical delays.  A crossover is called trivial only when logic or timing
   excludes simultaneous balls at the crossing.
-- Figure 18's caption explicitly omits steering/timing mirrors and unit wires,
+- Figure 18's caption says steering/timing mirrors and unit wires are not explicitly indicated,
   identifies its bridge as a nontrivial crossover, and calls the other
   crossovers trivial.  The drawing is therefore not a complete timed layout.
   Finite-radius clearance and simultaneous collision scheduling are additional
@@ -54,9 +54,9 @@ read together.  No Lean implementation has yet been accepted as a result.
 - Accepted: Figure 14 can be reconstructed at that sampled abstraction with
   exact latency four and complete endpoint refinement.
 - Rejected: occupancy-only samples determine a global update.
-- Rejected: primitive truth tables or the erased Figure 18 drawing prove a
+- Rejected: primitive truth tables or Figure 18's incomplete drawing prove a
   whole-circuit billiard refinement.
-- Unresolved: continuous elastic/specular correspondence, between-sample
+- Unresolved: continuous elastic/mirror correspondence, between-sample
   clearance, multi-contact rules, the Figure 15 bridge, the full Figure 17
   switch layout, either Figure 18 Fredkin layout, arbitrary delay, and
   compositional physical layout.
@@ -66,7 +66,7 @@ read together.  No Lean implementation has yet been accepted as a result.
 Build the strongest honest reusable discrete abstraction supported by Section
 6: exact constrained interfaces, an executable legal collision-site step, and
 one machine-checked four-tick sampled collision layout.  Turn the missing
-global mechanics and erased layout data into checked boundary results rather
+global mechanics and not-explicitly-indicated layout data into checked boundary results rather
 than filling them in by convention.
 
 ## Detailed Implementation Plan
@@ -86,7 +86,8 @@ than filling them in by convention.
 4. Add `Billiard/Geometry.lean` with integer grid points, four directed diagonal
    velocities, certified finite routes, horizontal/vertical mirror reflection,
    a finite delay detour, sampled clearance, and time-indexed route conflict.
-   Check a simultaneous crossing conflict and a staggered conflict-free use.
+   Check a simultaneous crossing conflict, a one-tick sample-clearance failure,
+   and a two-tick schedule meeting the sampled threshold.
 5. Add `Billiard/Figure14.lean` with four explicit directed routes, the active
    sampled configuration for each `(p,q)`, exact start/end observation, latency
    four, frame legality/clearance, count preservation, and a right-angle-turn
@@ -103,12 +104,12 @@ Expected principal declarations:
 Billiard.Interaction.encode
 Billiard.Interaction.ValidOutput
 Billiard.Interaction.equiv
-Billiard.Interaction.weightPreserving
-Billiard.Interaction.validOutput_card
+Billiard.Interaction.encode_weightPreserving
+Billiard.Interaction.card_validOutput
 Billiard.Interaction.no_raw_equiv
 Billiard.Switch.equiv
-Billiard.Switch.weightPreserving
-Billiard.Switch.validOutput_card
+Billiard.Switch.encode_weightPreserving
+Billiard.Switch.card_validOutput
 Billiard.Switch.no_raw_equiv
 Billiard.Collision.map
 Billiard.Collision.conservative
@@ -121,7 +122,8 @@ Billiard.ScatteringLayer.Configuration.totalBallCount_step
 Billiard.Grid.Route
 Billiard.Grid.Mirror.reflect
 Billiard.Grid.simultaneous_crossing_conflict
-Billiard.Grid.staggered_crossing_clear
+Billiard.Grid.oneTickStagger_not_sampleClearance
+Billiard.Grid.twoTickStagger_sampleClearance
 Billiard.Figure14.output_refines
 Billiard.Figure14.exact_latency
 Billiard.Figure14.sampled_clearance
@@ -183,8 +185,9 @@ boundary if the stage implementation is accepted.
   elasticity, energy, or thermodynamics; classify every documentation hit.
 - Check that an invalid three-ball output event cannot inhabit the legal local
   phase and that stepping twice restores every legal local/global state.
-- Check a pair of spatially crossing routes both with simultaneous conflict and
-  with an explicitly staggered conflict-free schedule.
+- Check a pair of spatially crossing routes with simultaneous conflict, a
+  one-tick no-coincidence schedule that still fails sampled clearance, and a
+  two-tick schedule meeting the sampled threshold.
 - Check every Figure 14 input row, every integral frame, both active-ball count
   and sampled clearance, all route directions, and the exact four-tick output.
 - Use `#print axioms` on both constrained equivalences' central laws, the global
