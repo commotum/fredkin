@@ -65,6 +65,88 @@ def FredkinStructural : {width : Nat} → Circuit width → Prop
   | seq first second firstIH secondIH => simp [firstIH, secondIH, and_comm]
   | tensor left right leftIH rightIH => simp [leftIH, rightIH]
 
+private theorem exists_path_from {width : Nat} (circuit : Circuit width)
+    (input : Fin width) :
+    ∃ output delay, PathDelay circuit input output delay := by
+  induction circuit with
+  | identity width => exact ⟨input, 0, PathDelay.identity input⟩
+  | unitWire => exact ⟨0, 1, PathDelay.unitWire_one⟩
+  | fredkin => exact ⟨0, 0, PathDelay.fredkin input 0⟩
+  | permute wiring => exact ⟨wiring input, 0, PathDelay.permute wiring input⟩
+  | seq first second firstIH secondIH =>
+      obtain ⟨middle, firstDelay, firstPath⟩ := firstIH input
+      obtain ⟨output, secondDelay, secondPath⟩ := secondIH middle
+      exact ⟨output, firstDelay + secondDelay,
+        PathDelay.seq firstPath secondPath⟩
+  | @tensor leftWidth rightWidth left right leftIH rightIH =>
+      refine Fin.addCases ?_ ?_ input
+      · intro leftInput
+        obtain ⟨leftOutput, delay, path⟩ := leftIH leftInput
+        exact ⟨Fin.castAdd rightWidth leftOutput, delay,
+          PathDelay.tensorLeft path⟩
+      · intro rightInput
+        obtain ⟨rightOutput, delay, path⟩ := rightIH rightInput
+        exact ⟨Fin.natAdd leftWidth rightOutput, delay,
+          PathDelay.tensorRight path⟩
+
+private theorem exists_path_to {width : Nat} (circuit : Circuit width)
+    (output : Fin width) :
+    ∃ input delay, PathDelay circuit input output delay := by
+  induction circuit with
+  | identity width => exact ⟨output, 0, PathDelay.identity output⟩
+  | unitWire => exact ⟨0, 1, PathDelay.unitWire_one⟩
+  | fredkin => exact ⟨0, 0, PathDelay.fredkin 0 output⟩
+  | permute wiring =>
+      refine ⟨wiring.symm output, 0, ?_⟩
+      simpa using PathDelay.permute wiring (wiring.symm output)
+  | seq first second firstIH secondIH =>
+      obtain ⟨middle, secondDelay, secondPath⟩ := secondIH output
+      obtain ⟨input, firstDelay, firstPath⟩ := firstIH middle
+      exact ⟨input, firstDelay + secondDelay,
+        PathDelay.seq firstPath secondPath⟩
+  | @tensor leftWidth rightWidth left right leftIH rightIH =>
+      refine Fin.addCases ?_ ?_ output
+      · intro leftOutput
+        obtain ⟨leftInput, delay, path⟩ := leftIH leftOutput
+        exact ⟨Fin.castAdd rightWidth leftInput, delay,
+          PathDelay.tensorLeft path⟩
+      · intro rightOutput
+        obtain ⟨rightInput, delay, path⟩ := rightIH rightOutput
+        exact ⟨Fin.natAdd leftWidth rightInput, delay,
+          PathDelay.tensorRight path⟩
+
+/-- Zero path latency certifies that no `unitWire` occurs anywhere in the term. -/
+theorem fredkinStructural_of_hasLatency_zero {width : Nat}
+    (circuit : Circuit width) (timed : HasLatency circuit 0) :
+    FredkinStructural circuit := by
+  induction circuit with
+  | identity width => trivial
+  | unitWire =>
+      have impossible := timed PathDelay.unitWire_one
+      omega
+  | fredkin => trivial
+  | permute wiring => trivial
+  | seq first second firstIH secondIH =>
+      constructor
+      · apply firstIH
+        intro input output actual path
+        obtain ⟨final, tailDelay, tailPath⟩ := exists_path_from second output
+        have total := timed (PathDelay.seq path tailPath)
+        omega
+      · apply secondIH
+        intro input output actual path
+        obtain ⟨initial, headDelay, headPath⟩ := exists_path_to first input
+        have total := timed (PathDelay.seq headPath path)
+        omega
+  | tensor left right leftIH rightIH =>
+      constructor
+      · apply leftIH
+        intro input output actual path
+        exact timed (PathDelay.tensorLeft path)
+      · apply rightIH
+        intro input output actual path
+        exact timed (PathDelay.tensorRight path)
+
 end Circuit
 
 /--
@@ -367,9 +449,6 @@ def comp {width : Nat} {firstGate secondGate : Reversible width}
       (hasLatency_seq_zero firstTimed
         (hasLatency_seq_zero inverseRouteTimed secondTimed))) path
   realizes state := by
-    change Circuit.eval _
-        (BitState.append
-          (BitState.append first.ancillaInit second.ancillaInit) state) = _
     simp only [Circuit.eval_seq]
     rw [firstLayer_spec]
     rw [Circuit.eval_inverse_eval]
@@ -377,5 +456,25 @@ def comp {width : Nat} {firstGate secondGate : Reversible width}
     rfl
 
 end CleanFredkinRealization
+
+/--
+Clean Fredkin realizability is a subgroup of the full finite state-permutation
+group.  Composition concatenates independently returned ancillary blocks.
+-/
+def cleanFredkinSubgroup (width : Nat) :
+    Subgroup (Equiv.Perm (BitState width)) where
+  carrier := CleanFredkinRealizable
+  one_mem' := ⟨CleanFredkinRealization.identity width⟩
+  mul_mem' := by
+    intro first second firstClean secondClean
+    rcases firstClean with ⟨firstRealization⟩
+    rcases secondClean with ⟨secondRealization⟩
+    refine ⟨?_⟩
+    simpa only [Equiv.Perm.mul_def] using
+      CleanFredkinRealization.comp secondRealization firstRealization
+  inv_mem' := by
+    intro gate clean
+    rcases clean with ⟨realization⟩
+    exact ⟨CleanFredkinRealization.inverse realization⟩
 
 end ConservativeLogic
