@@ -208,7 +208,6 @@ example : ¬ Circuit.PathDelay (Circuit.inverse asymmetricTensor) 0 3 0 := by
     omega
   · have impossible := congrArg Fin.val inputRight
     simp at impossible
-    omega
 
 /-! ## Primitive inverse value and timing checks -/
 
