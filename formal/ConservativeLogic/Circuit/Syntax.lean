@@ -11,7 +11,7 @@ adjacent blocks, and structural rewiring requires a bijection.
 This is not the paper's literal directed-graph model, which also permits
 feedback and state. In particular, there is no contraction, weakening,
 fan-out, arbitrary semantic-gate, feedback, or unequal-arity constructor.
-`permute` is explicit zero-cost *structural port reindexing*; it is not a claim
+`permute` is explicit zero-delay *structural port reindexing*; it is not a claim
 that a physical routed permutation circuit is freely available or synthesized
 from Fredkin gates.
 -/

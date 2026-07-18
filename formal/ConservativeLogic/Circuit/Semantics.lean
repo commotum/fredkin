@@ -1,6 +1,7 @@
 import ConservativeLogic.Circuit.Syntax
 import ConservativeLogic.Gate.UnitWire
 import ConservativeLogic.Gate.Fredkin
+import Mathlib.Logic.Equiv.Prod
 
 /-!
 # Static semantics of balanced feed-forward circuits
