@@ -778,6 +778,217 @@ private theorem eval_fanout_eq : eval .fanout = fanoutTarget := by
   intro impossible
   exact Fin.elim0 impossible
 
+private theorem compileCore_realizes {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    ZeroRealizes (source_garbage_balance source) (compileCore source)
+      (sourceState source) (eval source) (garbage source) := by
+  induction source with
+  | identity width => exact identityCore_realizes width
+  | permute wiring => exact permuteCore_realizes wiring
+  | constant value => exact constantCore_realizes value
+  | discard width => exact discardCore_realizes width
+  | andGate =>
+      rw [eval_andGate_eq]
+      exact andCore_realizes
+  | orGate =>
+      rw [eval_orGate_eq]
+      exact orCore_realizes
+  | notGate =>
+      rw [eval_notGate_eq]
+      exact notCore_realizes
+  | fanout =>
+      rw [eval_fanout_eq]
+      exact fanoutCore_realizes
+  | seq first second firstIH secondIH =>
+      exact zeroRealizes_serial (source_garbage_balance first)
+        (source_garbage_balance second) firstIH secondIH
+  | tensor left right leftIH rightIH =>
+      exact zeroRealizes_tensor (source_garbage_balance left)
+        (source_garbage_balance right) leftIH rightIH
+
+/--
+The compiled target realizes the complete source semantics with its exact
+fixed source, exact result, exact garbage, and no scratch wires.
+-/
+theorem compile_realizes {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    Realizes (simulationLayout source) (compile source) noBits
+      (sourceState source) (eval source) (garbage source) := by
+  have normalized := (zero_realizes_iff (source_garbage_balance source)
+    (compileCore source) (sourceState source) (eval source) (garbage source)).2
+      (compileCore_realizes source)
+  simpa [simulationLayout, zeroLayout, compile] using normalized
+
 end SourceCircuit
 
 end ConservativeLogic.Simulation
+
+namespace ConservativeLogic.Circuit
+
+/-- Exact number of paper-Fredkin constructors in a target circuit term. -/
+def fredkinCount : {width : Nat} → Circuit width → Nat
+  | _, .identity _ => 0
+  | _, .unitWire => 0
+  | _, .fredkin => 1
+  | _, .permute _ => 0
+  | _, .seq first second => fredkinCount first + fredkinCount second
+  | _, .tensor left right => fredkinCount left + fredkinCount right
+
+@[simp]
+theorem fredkinCount_castCircuit {leftWidth rightWidth : Nat}
+    (width : leftWidth = rightWidth) (circuit : Circuit leftWidth) :
+    fredkinCount (Simulation.castCircuit width circuit) = fredkinCount circuit := by
+  cases width
+  rfl
+
+end ConservativeLogic.Circuit
+
+namespace ConservativeLogic.Simulation.SourceCircuit
+
+private theorem compileCore_fredkinCount {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    Circuit.fredkinCount (compileCore source) = logicGateCount source := by
+  induction source with
+  | identity width => rfl
+  | permute wiring => simp [compileCore, Circuit.fredkinCount, logicGateCount]
+  | constant value => rfl
+  | discard width => rfl
+  | andGate =>
+      simp [compileCore, Circuit.fredkinCount, logicGateCount,
+        Realization.Primitive.fredkinAndCircuit,
+        Realization.Primitive.routedFredkin]
+  | orGate =>
+      simp [compileCore, Circuit.fredkinCount, logicGateCount,
+        Realization.Primitive.fredkinOrCircuit,
+        Realization.Primitive.routedFredkin]
+  | notGate =>
+      simp [compileCore, Circuit.fredkinCount, logicGateCount,
+        Realization.Primitive.fredkinNotCircuit,
+        Realization.Primitive.routedFredkin]
+  | fanout =>
+      simp [compileCore, Circuit.fredkinCount, logicGateCount,
+        Realization.Primitive.fredkinFanoutCircuit,
+        Realization.Primitive.routedFredkin]
+  | seq first second firstIH secondIH =>
+      simp [compileCore, Simulation.serialCircuit, Circuit.fredkinCount,
+        logicGateCount, firstIH, secondIH]
+  | tensor left right leftIH rightIH =>
+      simp [compileCore, Simulation.tensorCircuit, Circuit.fredkinCount,
+        logicGateCount, leftIH, rightIH]
+
+/-- Compilation uses exactly one target Fredkin per source logic gate. -/
+theorem compile_fredkinCount {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    Circuit.fredkinCount (compile source) = logicGateCount source := by
+  rw [compile, Circuit.fredkinCount_castCircuit]
+  exact compileCore_fredkinCount source
+
+/-! ## Static timing of compiled circuits -/
+
+private theorem hasLatency_castCircuit {leftWidth rightWidth latency : Nat}
+    (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
+    (timed : Circuit.HasLatency circuit latency) :
+    Circuit.HasLatency (Simulation.castCircuit width circuit) latency := by
+  cases width
+  exact timed
+
+private theorem routedFredkin_hasLatency_zero
+    (inputWiring outputWiring : WirePerm 3) :
+    Circuit.HasLatency
+      (Realization.Primitive.routedFredkin inputWiring outputWiring) 0 := by
+  unfold Realization.Primitive.routedFredkin
+  simpa using
+    (Circuit.HasLatency.seq (Circuit.hasLatency_permute inputWiring)
+      (Circuit.HasLatency.seq Circuit.hasLatency_fredkin
+        (Circuit.hasLatency_permute outputWiring)))
+
+private theorem serialCircuit_hasLatency_zero {s₁ a b g₁ s₂ : Nat}
+    (firstBalance : s₁ + a = b + g₁)
+    {first : Circuit (s₁ + a)} {second : Circuit (s₂ + b)}
+    (firstTimed : Circuit.HasLatency first 0)
+    (secondTimed : Circuit.HasLatency second 0) :
+    Circuit.HasLatency
+      (Simulation.serialCircuit firstBalance first second) 0 := by
+  have firstStage : Circuit.HasLatency
+      (Circuit.tensor (Circuit.identity s₂) first) 0 :=
+    Circuit.HasLatency.tensor (Circuit.hasLatency_identity s₂) firstTimed
+  have firstStageCast := hasLatency_castCircuit
+    (Nat.add_assoc s₂ s₁ a).symm firstStage
+  have secondStage : Circuit.HasLatency
+      (Circuit.tensor second (Circuit.identity g₁)) 0 :=
+    Circuit.HasLatency.tensor secondTimed (Circuit.hasLatency_identity g₁)
+  have secondStageCast := hasLatency_castCircuit
+    (Simulation.serialSecondWidth (s₂ := s₂) firstBalance) secondStage
+  unfold Simulation.serialCircuit
+  simpa using Circuit.HasLatency.seq firstStageCast secondStageCast
+
+private theorem tensorCircuit_hasLatency_zero
+    {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Nat}
+    (leftBalance : s₁ + a₁ = r₁ + g₁)
+    (rightBalance : s₂ + a₂ = r₂ + g₂)
+    {left : Circuit (s₁ + a₁)} {right : Circuit (s₂ + a₂)}
+    (leftTimed : Circuit.HasLatency left 0)
+    (rightTimed : Circuit.HasLatency right 0) :
+    Circuit.HasLatency
+      (Simulation.tensorCircuit leftBalance rightBalance left right) 0 := by
+  have inputRouting : Circuit.HasLatency
+      (Circuit.permute (Simulation.middleSwapWiring s₁ s₂ a₁ a₂)) 0 :=
+    Circuit.hasLatency_permute _
+  have body : Circuit.HasLatency (Circuit.tensor left right) 0 :=
+    Circuit.HasLatency.tensor leftTimed rightTimed
+  have bodyCast := hasLatency_castCircuit
+    (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂) body
+  have outputRouting : Circuit.HasLatency
+      (Circuit.permute (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)) 0 :=
+    Circuit.hasLatency_permute _
+  have outputRoutingCast := hasLatency_castCircuit
+    (Simulation.tensorOutputWidth leftBalance rightBalance) outputRouting
+  have processThenRoute := Circuit.HasLatency.seq bodyCast outputRoutingCast
+  unfold Simulation.tensorCircuit
+  simpa using Circuit.HasLatency.seq inputRouting processThenRoute
+
+private theorem compileCore_hasLatency_zero {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    Circuit.HasLatency (compileCore source) 0 := by
+  induction source with
+  | identity width => exact Circuit.hasLatency_identity (0 + width)
+  | permute wiring =>
+      exact hasLatency_castCircuit (Nat.zero_add _).symm
+        (Circuit.hasLatency_permute wiring)
+  | constant value => exact Circuit.hasLatency_identity (_ + 0)
+  | discard width => exact Circuit.hasLatency_identity (0 + width)
+  | andGate =>
+      simpa [compileCore, Realization.Primitive.fredkinAndCircuit] using
+        routedFredkin_hasLatency_zero
+          Realization.Primitive.andInputWiring
+          Realization.Primitive.resultFromDataOneWiring
+  | orGate =>
+      simpa [compileCore, Realization.Primitive.fredkinOrCircuit] using
+        routedFredkin_hasLatency_zero
+          Realization.Primitive.orInputWiring
+          Realization.Primitive.resultFromDataOneWiring
+  | notGate =>
+      simpa [compileCore, Realization.Primitive.fredkinNotCircuit] using
+        routedFredkin_hasLatency_zero
+          Realization.Primitive.notFanoutInputWiring
+          Realization.Primitive.resultFromDataTwoWiring
+  | fanout =>
+      simpa [compileCore, Realization.Primitive.fredkinFanoutCircuit] using
+        routedFredkin_hasLatency_zero
+          Realization.Primitive.notFanoutInputWiring (Equiv.refl _)
+  | seq first second firstIH secondIH =>
+      exact serialCircuit_hasLatency_zero
+        (source_garbage_balance first) firstIH secondIH
+  | tensor left right leftIH rightIH =>
+      exact tensorCircuit_hasLatency_zero
+        (source_garbage_balance left) (source_garbage_balance right)
+        leftIH rightIH
+
+/-- Every path through a compiled source circuit has zero unit-wire latency. -/
+theorem compile_hasLatency_zero {inputWidth outputWidth : Nat}
+    (source : SourceCircuit inputWidth outputWidth) :
+    Circuit.HasLatency (compile source) 0 := by
+  unfold compile
+  exact hasLatency_castCircuit _ (compileCore_hasLatency_zero source)
+
+end ConservativeLogic.Simulation.SourceCircuit

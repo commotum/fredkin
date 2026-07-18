@@ -20,6 +20,7 @@ does not satisfy the library's stronger global equal-path criterion.
 namespace ConservativeLogic.Simulation.Demultiplexer
 
 open Realization
+open Realization.Primitive
 
 private def fin6Perm (forward inverse : Fin 6 → Fin 6)
     (leftInverse : Function.LeftInverse inverse forward)
@@ -81,15 +82,12 @@ def demuxCircuit : Circuit 6 :=
       (.seq (routedGate g2InputWiring g2OutputWiring)
         (.seq routedDelay2 (routedGate g3InputWiring g3OutputWiring))))
 
-private def oneBit (value : Bool) : BitState 1 := fun _ => value
-
-private def twoBits (first second : Bool) : BitState 2 :=
-  BitState.append (oneBit first) (oneBit second)
-
-private def threeBits (first second third : Bool) : BitState 3 :=
+/-- Canonical ordered three-bit state used for `(A₀,A₁,X)`. -/
+def threeBits (first second third : Bool) : BitState 3 :=
   BitState.append (twoBits first second) (oneBit third)
 
-private def fourBits (a b c d : Bool) : BitState 4 :=
+/-- Canonical ordered four-bit state used for `(Y₀,Y₁,Y₂,Y₃)`. -/
+def fourBits (a b c d : Bool) : BitState 4 :=
   BitState.append (twoBits a b) (twoBits c d)
 
 /-- Exhaustive source/argument/result/garbage layout of the Figure 7 boundary. -/
@@ -115,8 +113,6 @@ def demuxTarget (argument : BitState 3) : BitState 4 :=
 /-- The complete two-wire sink block `(A₁,A₀)` shown in Figure 7. -/
 def demuxGarbage (argument : BitState 3) : BitState 2 :=
   twoBits (argument 1) (argument 0)
-
-private def noBits : BitState 0 := fun i => Fin.elim0 i
 
 /-- Complete initialized-slice equation, including all sources and garbage. -/
 theorem demux_complete (a0 a1 x : Bool) :
@@ -158,6 +154,9 @@ def unitWireCount : {n : Nat} → Circuit n → Nat
   | _, .permute _ => 0
   | _, .seq first second => unitWireCount first + unitWireCount second
   | _, .tensor left right => unitWireCount left + unitWireCount right
+
+/-- The literal Figure 7 reconstruction contains exactly three Fredkin nodes. -/
+theorem demux_fredkinCount : Circuit.fredkinCount demuxCircuit = 3 := by decide
 
 /-- The literal reconstruction contains exactly the seven unit wires drawn in Figure 7. -/
 theorem demuxCircuit_unitWireCount : unitWireCount demuxCircuit = 7 := by decide

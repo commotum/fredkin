@@ -9,6 +9,9 @@ import ConservativeLogic.Circuit.Semantics
 import ConservativeLogic.Circuit.Timed
 import ConservativeLogic.Realization.Core
 import ConservativeLogic.Realization.Primitive
+import ConservativeLogic.Simulation.Source
+import ConservativeLogic.Simulation.Fredkin
+import ConservativeLogic.Simulation.Demultiplexer
 
 set_option linter.style.header false
 
@@ -26,8 +29,16 @@ evaluation, and uniform-path-latency certificates. The certificate surface
 does not define ticks, traces, feedback, or sequential execution. The API also
 exports exhaustive source/clean-scratch/argument/result/garbage layouts,
 full-state realization constraints, and the exact one-Fredkin AND, OR, NOT,
-and constrained FAN-OUT realizations. It does not yet construct inverse
-circuits, garbage recycling, or general circuit simulation.
+and constrained FAN-OUT realizations. Finally, it exports an explicitly
+generated finite feed-forward source language and a constructive compiler to
+Fredkin circuits plus structural reindexing. The compiler has zero scratch,
+states its complete fixed source and argument-dependent garbage, and proves
+the full initialized-slice equation with exact Fredkin count. The separate
+Figure 7 reconstruction includes all three zero sources, address-echo garbage,
+seven unit wires, selected delay-two argument/result paths, and a proof that
+the complete boundary does not have one global latency. It does not construct
+inverse circuits, garbage recycling, graph/feedback semantics, or sequential
+simulation.
 -/
 
 namespace ConservativeLogic

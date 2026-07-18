@@ -30,10 +30,11 @@ lake build ConservativeLogic.Audit.Finite
 lake build ConservativeLogic.Audit.Fredkin
 lake build ConservativeLogic.Audit.Circuit
 lake build ConservativeLogic.Audit.Realization
+lake build ConservativeLogic.Audit.Simulation
 lake build
 ```
 
-Stages 1 through 5 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 6 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -57,7 +58,27 @@ derive target/garbage injectivity, target-fiber capacity bounds, and exact
 Hamming-weight balance. The public API also includes routed one-Fredkin
 realizations of AND, OR, NOT, and constrained FAN-OUT. FAN-OUT consumes source
 `(0,1)`, selects `(a,a)`, and retains `¬a` as garbage; it is not an
-unrestricted copy gate. General Boolean-circuit simulation, inverse circuits,
-and garbage recycling remain later stages. The focused audit commands are
-explicit because diagnostic leaves are intentionally not imported by the
-public root.
+unrestricted copy gate.
+
+Stage 6 adds an indexed conventional source language with explicit fixed block
+constants, discard, AND, OR, NOT, FAN-OUT, bijective port permutation, serial
+composition, and disjoint tensor. A total structural compiler translates every
+such finite acyclic term to the existing target grammar. Its theorem states
+the exact fixed source, complete argument-dependent garbage, zero scratch, full
+initialized-slice equality, exact Fredkin count, and abstract latency zero.
+Serial composition carries earlier garbage unchanged; tensor uses proved
+four-block permutations and never duplicates an input implicitly. Because the
+target still admits zero-delay structural `WirePerm` nodes, this is a
+Fredkin-plus-reindexing construction for the named grammar—not a pure physical
+routing theorem, a proof that every Boolean function has a source term, or the
+paper's sequential universality claim.
+
+The public Figure 7 reconstruction separately checks the complete map
+`(0,0,0,A₀,A₁,X) ↦ (Y₀,Y₁,Y₂,Y₃,A₁,A₀)` with three Fredkins and seven unit
+wires. It constructs a delay-two route for every distinguished
+argument/result pair and a zero-delay source/result counterroute, proving that
+the full six-wire boundary does not satisfy the later global equal-latency
+criterion. Inverse circuits, garbage recycling, feedback, traces, stream
+simulation, and physical conclusions remain later or out of scope. The
+focused audit commands are explicit because diagnostic leaves are
+intentionally not imported by the public root.
