@@ -1125,8 +1125,8 @@ proving corrected forms and recording exact resource assumptions.
 **Status:** Complete (2026-07-18), from clean synchronized baseline `29723da`.
 The paper text and Figures 3, 8--11, and 19 were re-audited before the corrected
 contract was fixed in `goal-1/10-SEQUENTIAL.md`.  The opt-in semantics, paper
-examples, audit, scans, and post-clean finite/sequential builds pass.  Stage 11
-has not started.
+examples, audit, scans, and post-clean finite/sequential builds pass.  At Stage
+10 completion, no Stage 11 work had begun.
 
 Current contract decisions:
 
@@ -1246,13 +1246,16 @@ Current corrected contract:
   sites and does not silently provide routing or continuous mechanics.
 - Model directed diagonal sampled routes, axis-mirror turns, finite detours,
   sampled clearance, and time-indexed crossover conflicts.  A delayed crossing
-  may be certified trivial only by an explicit no-same-place/same-time proof.
+  needs both an explicit no-same-place/same-time proof and the selected sampled
+  clearance threshold before it can support even a sampled-clearance claim;
+  neither establishes continuous clearance.
 - Reconstruct Figure 14 as four unit diagonal ticks and prove its complete
   input/output rail refinement, exact latency, ball count, legal sampled
   frames, and scheduled right-angle direction changes.
 - Record a checked under-specification boundary for raw illegal collision
-  states and for Figure 18's not-explicitly-indicated timing/layout data.  Do not claim the
-  radius-`1/√2` continuous dynamics, nontrivial bridge gadget, Figures 17--18,
+  states and for the timing/layout data that Figure 18 says are not explicitly
+  indicated.  Do not claim the radius-`1/√2` continuous dynamics, nontrivial
+  bridge gadget, Figures 17--18,
   arbitrary conservative-circuit layout, physical reversibility, or
   thermodynamics.
 

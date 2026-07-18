@@ -70,8 +70,9 @@ unresolved rather than reconstructed from missing data.
 Build the strongest honest reusable discrete abstraction supported by Section
 6: exact constrained interfaces, an executable legal collision-site step, and
 one machine-checked four-tick sampled collision layout.  Turn the missing
-global mechanics and not-explicitly-indicated layout data into checked boundary results rather
-than filling them in by convention.
+global mechanics and the layout data that Figure 18 says are not explicitly
+indicated into checked boundary results rather than filling them in by
+convention.
 
 ## Detailed Implementation Plan
 
@@ -157,9 +158,8 @@ lake build ConservativeLogic.Billiard.Figure14
 lake build ConservativeLogic.Billiard ConservativeLogic.Audit.Billiard
 ```
 
-The ordinary `lake build` must still omit the opt-in billiard leaf.  A clean
-default build followed by explicit umbrella/audit builds will verify that
-boundary if the stage implementation is accepted.
+The ordinary `lake build` omits the opt-in billiard leaf.  A clean default build
+followed by explicit umbrella/audit builds verified that boundary.
 
 ## Boundary Checks
 
@@ -172,8 +172,9 @@ boundary if the stage implementation is accepted.
   reflection, or continuous time.
 - Sampled clearance is checked only at integral frames.  Between-frame contact
   and finite-radius obstacle clearance remain outside the theorem.
-- A trivial crossover requires a theorem excluding the same coordinate at the
-  same global tick.  Spatial crossing alone is insufficient.
+- Excluding the same coordinate at the same global tick is necessary but not
+  sufficient for a sampled-clearance claim: the selected distance threshold
+  must also be proved.  Neither property proves continuous clearance.
 - Figure 14 is a stated coordinate reconstruction matching the four endpoint
   rows and latency.  It is not presented as extracted coordinates from the
   unscaled drawing.
@@ -208,8 +209,9 @@ boundary if the stage implementation is accepted.
   signatures; valid cardinalities and raw-interface impossibility are checked.
 - Figure 14 has a coordinate-level sampled refinement theorem and exact latency
   four, with sampled legality and all intermediate directions checked.
-- Routing examples distinguish mirrors, delay, spatial crossing, timing, and
-  sampled clearance.  Unsupported continuous/global claims remain explicit.
+- Routing examples distinguish mirrors, endpoint-position detour/latency,
+  spatial crossing, timing, and sampled clearance.  Unsupported
+  continuous/global claims remain explicit.
 - All focused, umbrella, audit, default, and post-clean builds; row tests;
   forbidden-shortcut/proof-hole scans; axiom audit; complete diff inspection;
   and `git diff --check` pass.
