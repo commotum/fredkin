@@ -18,13 +18,14 @@ open ConservativeLogic.Realization.Primitive
 
 /- A source-free, garbage-free one-to-two layout cannot balance. -/
 #guard_msgs (drop info) in
-def impossibleDirectFanoutLayout : Layout where
-  sourceWidth := 0
-  scratchWidth := 0
-  argumentWidth := 1
-  resultWidth := 2
-  garbageWidth := 0
-  balanced := rfl
+#check_failure ({
+    sourceWidth := 0
+    scratchWidth := 0
+    argumentWidth := 1
+    resultWidth := 2
+    garbageWidth := 0
+    balanced := rfl
+  } : Layout)
 
 private def argumentDependentSource : BitState 2 → BitState 1 :=
   fun argument => oneBit (argument 0)
@@ -75,9 +76,12 @@ theorem arbitrary_scratch_identity_realizes {width : Nat} (scratch : BitState wi
     Realizes (scratchOnlyLayout width) (Circuit.identity width)
       scratch noBits emptyTarget emptyGarbage := by
   intro argument
-  have argument_eq : argument = noBits := Subsingleton.elim _ _
-  simp [Layout.packInput, Layout.packOutput, scratchOnlyLayout, castState,
-    emptyTarget, emptyGarbage, argument_eq]
+  change BitState 0 at argument
+  have argument_eq : argument = noBits := by
+    funext i
+    exact Fin.elim0 i
+  subst argument
+  rfl
 
 /-! ## Exact physical input routing -/
 
@@ -206,9 +210,12 @@ theorem and_not_realizable_with_one_garbage
   intro realizes
   have bound := realizes.fiber_card_le (oneBit false)
   have fiberCard : Fintype.card (Fiber andTarget (oneBit false)) = 3 := by decide
-  have normalized : 3 ≤ 2 ^ 1 := by
-    simpa only [fiberCard] using bound
-  exact (by decide : ¬ 3 ≤ 2 ^ 1) normalized
+  have garbageCapacity : 2 ^ andOneGarbageLayout.garbageWidth = 2 := by decide
+  have normalized : 3 ≤ 2 := calc
+    3 = Fintype.card (Fiber andTarget (oneBit false)) := fiberCard.symm
+    _ ≤ 2 ^ andOneGarbageLayout.garbageWidth := bound
+    _ = 2 := garbageCapacity
+  exact (by decide : ¬ 3 ≤ 2) normalized
 
 /-- An argument-independent garbage bit cannot conceal AND's collisions. -/
 theorem and_not_realizable_with_argumentIndependent_garbage
@@ -231,15 +238,16 @@ theorem fanout_not_realizable_from_allZeroSource
     ¬ Realizes fanoutLayout circuit noBits allZeroFanoutSource fanoutTarget garbage := by
   intro realizes
   have balance := realizes.weight_balance (oneBit true)
-  have sourceWeight : hammingWeight allZeroFanoutSource = 0 := by decide
-  have argumentWeight : hammingWeight (oneBit true) = 1 := by decide
   have resultWeight : hammingWeight (fanoutTarget (oneBit true)) = 2 := by decide
-  have normalized : 0 + 1 = 2 + hammingWeight (garbage (oneBit true)) := by
-    simpa only [sourceWeight, argumentWeight, resultWeight] using balance
-  have lower : 2 ≤ 2 + hammingWeight (garbage (oneBit true)) :=
-    Nat.le_add_right 2 _
-  rw [← normalized] at lower
-  exact (by decide : ¬ 2 ≤ 0 + 1) lower
+  have impossible : 2 ≤ 1 := calc
+    2 ≤ hammingWeight (fanoutTarget (oneBit true)) +
+        hammingWeight (garbage (oneBit true)) := by
+      rw [resultWeight]
+      exact Nat.le_add_right 2 _
+    _ = hammingWeight allZeroFanoutSource + hammingWeight (oneBit true) :=
+      balance.symm
+    _ = 1 := by decide
+  exact (by decide : ¬ 2 ≤ 1) impossible
 
 /-! ## Public surfaces and axiom footprints -/
 
