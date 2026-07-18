@@ -11,10 +11,10 @@ Fredkins and structural routing.
 
 The complete state-first boundary is
 
-`(delayedX, delayedNotX, y ; x, 0, 1)`.
+`(delayedNotX, delayedX, y ; x, 0, 1)`.
 
 On the initialized slice `delayedNotX = !delayedX`, the next memory is
-`(x,!x,y xor delayedX)`.  All three external outputs remain visible: the first
+`(!x,x,y xor delayedX)`.  All three external outputs remain visible: the first
 gate's `x` garbage, the current `y`, and the complement of the next `y`.
 Supplying `(0,1)` is therefore an explicit per-tick source-stream assumption,
 not a reusable one-time ancilla claim.
@@ -40,11 +40,11 @@ private def fin6Perm (forward inverse : Fin 6 → Fin 6)
     (rightInverse : Function.RightInverse inverse forward) : WirePerm 6 :=
   Equiv.mk forward inverse leftInverse rightInverse
 
-/-- Route canonical input into physical gate blocks `(x,1,0 ; y,!dx,dx)`. -/
+/-- Route the boundary into the drawn gate blocks `(x,0,1 ; y,delayedNotX,delayedX)`. -/
 def inputWiring : WirePerm 6 :=
-  fin6Perm ![5, 4, 3, 0, 2, 1] ![3, 5, 4, 2, 1, 0] (by decide) (by decide)
+  fin6Perm ![4, 5, 3, 0, 1, 2] ![3, 4, 5, 2, 0, 1] (by decide) (by decide)
 
-/-- Route physical outputs into `(x,!x,nextY ; x,y,!nextY)`. -/
+/-- Route physical outputs into `(!x,x,nextY ; x,y,!nextY)`. -/
 def outputWiring : WirePerm 6 :=
   fin6Perm ![3, 0, 1, 4, 2, 5] ![1, 2, 4, 0, 3, 5] (by decide) (by decide)
 
@@ -70,7 +70,7 @@ def nextY (delayedX y : Bool) : Bool := Bool.xor y delayedX
 
 /-- Memory states satisfying the delayed copy/complement initialization. -/
 def initializedMemory (delayedX y : Bool) : BitState 3 :=
-  triple delayedX (!delayedX) y
+  triple (!delayedX) delayedX y
 
 /-- Fresh external Figure 11 source slice `(x,0,1)`. -/
 def sourceInput (x : Bool) : BitState 3 := triple x false true
@@ -83,6 +83,13 @@ def externalOutput (x delayedX y : Bool) : BitState 3 :=
 theorem tick_initialized (delayedX y x : Bool) :
     network.machine.tick (initializedMemory delayedX y) (sourceInput x) =
       (initializedMemory x (nextY delayedX y), externalOutput x delayedX y) := by
+  cases delayedX <;> cases y <;> cases x <;> decide
+
+/-- The same complete tick with all six coordinates and both Fredkin branches exposed. -/
+theorem tick_initialized_explicit (delayedX y x : Bool) :
+    network.machine.tick (triple (!delayedX) delayedX y) (triple x false true) =
+      (triple (!x) x (if y = true then !delayedX else delayedX),
+        triple x y (if y = true then delayedX else !delayedX)) := by
   cases delayedX <;> cases y <;> cases x <;> decide
 
 /-- The required `(x,0,1)` source values supplied at every natural tick. -/

@@ -1,6 +1,4 @@
-import ConservativeLogic.Sequential.Circuit
-import ConservativeLogic.Sequential.Figure8
-import ConservativeLogic.Sequential.SerialAdder
+import ConservativeLogic.Sequential
 
 /-!
 # Adversarial audit of discrete sequential semantics
@@ -10,6 +8,8 @@ degenerate widths, deterministic trace uniqueness and causality, open-system
 flux rather than memory-only conservation, explicit one-tick delay, and
 register-separated feedback.  It also checks every reconstructed Figure 8 row
 and keeps Figure 9's conventional recurrence outside the conservative type.
+The initialized source slice and printed recurrence of the conservative
+Figure 11 network are checked separately, including all three external outputs.
 
 The same-time equations below are deliberately propositions, not constructors:
 `x = !x` has no Boolean solution while `x = x` has multiple solutions.  The
@@ -25,13 +25,6 @@ open ConservativeLogic.Sequential
 private def noBits : BitState 0 := fun index => Fin.elim0 index
 
 private def bit (value : Bool) : BitState 1 := fun _ => value
-
-private def pair (first second : Bool) : BitState 2 :=
-  BitState.append (bit first) (bit second)
-
-private theorem bit_eta (value : BitState 1) : bit (value 0) = value := by
-  funext index
-  exact (congrArg value (Fin.eq_zero index)).symm
 
 /-! ## Zero-width machine boundaries -/
 
@@ -359,6 +352,46 @@ example : ¬ ∃ conservative : ConservativeMachine 1 1,
     conservative.machine = SerialAdder.machine :=
   SerialAdder.no_conservative_machine
 
+/-! ## Figure 11 initialized conservative recurrence -/
+
+example (delayedX y : Bool) :
+    Figure11.initializedMemory delayedX y =
+      Figure11.triple (!delayedX) delayedX y := by
+  rfl
+
+example (delayedX y x : Bool) :
+    Figure11.network.machine.tick (Figure11.initializedMemory delayedX y)
+        (Figure11.sourceInput x) =
+      (Figure11.initializedMemory x (Figure11.nextY delayedX y),
+        Figure11.externalOutput x delayedX y) :=
+  Figure11.tick_initialized delayedX y x
+
+example (x : Nat → Bool) (time : Nat) :
+    Figure11.sourceSignal x time = Figure11.triple (x time) false true := by
+  rfl
+
+example (x delayedX y : Bool) :
+    Figure11.externalOutput x delayedX y =
+      Figure11.triple x y (!(Figure11.nextY delayedX y)) := by
+  rfl
+
+example (initialDelayedX initialY : Bool) (x : Nat → Bool) (time : Nat) :
+    (Figure11.run initialDelayedX initialY x).output time 0 = x time :=
+  Figure11.fanoutGarbage initialDelayedX initialY x time
+
+example (initialDelayedX initialY : Bool) (x : Nat → Bool) (time : Nat) :
+    (Figure11.run initialDelayedX initialY x).output time 2 =
+      !(Figure11.nextY (Figure11.delayedX initialDelayedX x time)
+        (Figure11.yTrace initialDelayedX initialY x time)) :=
+  Figure11.xorGarbage initialDelayedX initialY x time
+
+example (initialDelayedX initialY : Bool) (x : Nat → Bool) (time : Nat) :
+    (Figure11.run initialDelayedX initialY x).output (time + 2) 1 =
+      Bool.xor
+        ((Figure11.run initialDelayedX initialY x).output (time + 1) 1)
+        (x time) :=
+  Figure11.paper_recurrence initialDelayedX initialY x time
+
 /-! ## Opt-in surface and axiom audit -/
 
 #check Signal
@@ -387,6 +420,10 @@ example : ¬ ∃ conservative : ConservativeMachine 1 1,
 #check Figure8.visibleGarbage
 #check SerialAdder.paper_recurrence
 #check SerialAdder.no_conservative_machine
+#check Figure11.tick_initialized
+#check Figure11.state_spec
+#check Figure11.output_spec
+#check Figure11.paper_recurrence
 
 #print axioms Machine.trace_unique
 #print axioms Machine.existsUnique_trace
@@ -399,6 +436,8 @@ example : ¬ ∃ conservative : ConservativeMachine 1 1,
 #print axioms ConservativeMachine.closedIterate_inverse_cancel
 #print axioms DelayCell.output_succ
 #print axioms DelayCell.unitWire_not_instantaneous
+#print axioms delay_memory_weight_changes
+#print axioms delay_fixed_input_state_not_injective
 #print axioms instantaneous_not_no_solution
 #print axioms instantaneous_identity_multiple_solutions
 #print axioms delayedNot_output_succ
@@ -407,5 +446,9 @@ example : ¬ ∃ conservative : ConservativeMachine 1 1,
 #print axioms Figure8.visibleGarbage
 #print axioms SerialAdder.paper_recurrence
 #print axioms SerialAdder.no_conservative_machine
+#print axioms Figure11.tick_initialized
+#print axioms Figure11.state_spec
+#print axioms Figure11.output_spec
+#print axioms Figure11.paper_recurrence
 
 end ConservativeLogic.Audit.Sequential

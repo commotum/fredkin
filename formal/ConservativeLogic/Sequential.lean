@@ -3,6 +3,7 @@ import ConservativeLogic.Sequential.Conservative
 import ConservativeLogic.Sequential.Circuit
 import ConservativeLogic.Sequential.Figure8
 import ConservativeLogic.Sequential.SerialAdder
+import ConservativeLogic.Sequential.Figure11
 
 /-!
 # Opt-in discrete sequential semantics
@@ -10,7 +11,7 @@ import ConservativeLogic.Sequential.SerialAdder
 This umbrella exports deterministic synchronous machines, explicit initial
 states and causal traces, complete-boundary conservative ticks, registered
 feedback and closed iteration, the zero-latency circuit bridge, the one-tick
-delay cell, and the checked Figure 8 and Figure 9 specifications.
+delay cell, and the checked Figure 8, Figure 9, and Figure 11 specifications.
 
 It is intentionally separate from `ConservativeLogic` and
 `ConservativeLogic.API`.  Importing the finite combinational library therefore

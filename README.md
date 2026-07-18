@@ -155,11 +155,15 @@ offset.  The Figure 8 reconstruction uses one paper Fredkin and explicit
 output routing, exposes arbitrary initialization, visible `Q`, and the `?`
 garbage wire, and proves its full tick and characteristic trace.  Figure 9's
 printed accumulator recurrence is checked separately and its complete tick is
-proved bijective but nonconservative.  Figure 10's factor-five slowdown,
-time-multiplexing schedule, the general sequential compiler, literal Figure 19
-graph inversion, NAND-comparable complexity, and physical conclusions remain
-documented rather than inferred.  The sequential umbrella is intentionally
-not imported by `ConservativeLogic` or `ConservativeLogic.API`.
+proved bijective but nonconservative.  Figure 11 is reconstructed as an actual
+six-wire, two-Fredkin zero-latency core with three explicit register bits; its
+per-tick `(x,0,1)` source, all three outputs, pipeline initialization, and
+printed `y(t+2)=y(t+1) xor x(t)` recurrence are checked.  Figure 10's
+factor-five slowdown, time-multiplexing schedule, the general sequential
+compiler, literal Figure 19 graph inversion, NAND-comparable complexity, and
+physical conclusions remain documented rather than inferred.  The sequential
+umbrella is intentionally not imported by `ConservativeLogic` or
+`ConservativeLogic.API`.
 
 The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.
