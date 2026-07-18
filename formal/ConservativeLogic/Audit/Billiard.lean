@@ -164,6 +164,12 @@ example : (Grid.fourTickDetour.start, Grid.fourTickDetour.finish) =
     (Grid.shortRoute.start, Grid.shortRoute.finish) :=
   Grid.fourTickDetour_same_endpoints
 
+example (turn : Fin 5) :
+    (Grid.fourTickDetourMirrors turn).reflect
+        (Grid.fourTickDetour.direction turn.castSucc) =
+      Grid.fourTickDetour.direction turn.succ :=
+  Grid.fourTickDetour_reflects turn
+
 example : ¬ Grid.TimedUse.ConflictFree
     ⟨Grid.northeastCrossing, 0⟩ ⟨Grid.southeastCrossing, 0⟩ :=
   Grid.simultaneous_crossing_conflict
