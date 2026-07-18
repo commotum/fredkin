@@ -326,7 +326,7 @@ example (initial : Bool) (time : Nat) :
       !((Figure8.run initial (fun _ => false) (fun _ => true)).output time 0) :=
   Figure8.toggle_visible_succ initial time
 
-/-! ## Figure 9 recurrence and its conservative boundary -/
+/-! ## Figure 9 recurrence and its complete nonconservative boundary -/
 
 example (initial : BitState 1) (input : Signal 1) (time : Nat) :
     (SerialAdder.machine.run initial input).output (time + 1) 0 =

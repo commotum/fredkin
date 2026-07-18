@@ -33,10 +33,13 @@ and 19 were read together before choosing the formal interface.
   `(state,input)` boundary, but it is not Hamming-weight preserving.  It is a
   source-machine specification, not by itself a conservative implementation.
 - Figures 10 and 11 motivate a conservative serial-adder simulation.  Figure
-  11 is readable as two Fredkins and three unit-wire state bits and prints
-  `y(t) = y(t-1) xor x(t-2)`.  The paper still gives no formal schedule or
-  simulation relation for Figure 10's factor-five slowdown and time
-  multiplexing claims.
+  11 is readable as two Fredkins and three unit-wire state bits.  In the
+  state-first order `(!delayedX,delayedX,y ; x,0,1)`, its complete initialized
+  slice advances to `(!x,x,y xor delayedX ; x,y,!(y xor delayedX))`.  Thus all
+  three outputs remain visible and the printed
+  `y(t) = y(t-1) xor x(t-2)` recurrence follows after the explicit pipeline
+  initialization.  The paper still gives no formal schedule or simulation
+  relation for Figure 10's factor-five slowdown and time multiplexing claims.
 - Section 4's general sequential translation is informal.  Constants and
   garbage used once per combinational invocation become source and drain
   streams in an unbounded execution; a one-time finite ancilla theorem cannot
@@ -153,10 +156,13 @@ trace for constant `(Kbar,J) = (0,1)`.
 
 Figure 9 will be checked separately as the conventional accumulator recurrence
 with explicit initialization.  A concrete failed flux equation will prevent
-it from being mislabeled a conservative implementation.  Figure 10's
-factor-five/time-multiplexing result and the general Section 4 compiler remain
-unresolved unless a schedule, stream-level simulation relation, and resource
-measure are actually supplied.
+it from being mislabeled a conservative implementation.  Figure 11 will then
+check the conservative realization against the literal straight `(x,0,1)`
+source routing, three explicit stored bits, all three external outputs, and
+the printed two-tick-input recurrence.  Figure 10's factor-five/time-
+multiplexing result and the general Section 4 compiler remain unresolved unless
+a schedule, stream-level simulation relation, and resource measure are actually
+supplied.
 
 ## Planned Module Boundary
 
@@ -166,6 +172,7 @@ Sequential/Conservative.lean  full-boundary conservation and delayed closure
 Sequential/Circuit.lean       zero-latency circuit-backed networks
 Sequential/Figure8.lean       complete J-Kbar reconstruction and trace
 Sequential/SerialAdder.lean   conventional Figure 9 recurrence and boundary
+Sequential/Figure11.lean      two-Fredkin conservative serial-adder trace
 Sequential.lean               opt-in sequential umbrella
 Audit/Sequential.lean         non-public edge cases and axiom audit
 ```
@@ -192,6 +199,8 @@ The implementation and audit must cover:
 - Figure 8's eight complete rows, hold/set/reset/toggle behavior, explicit
   initial state, and visible garbage;
 - Figure 9's recurrence together with a concrete conservation failure;
+- Figure 11's exact two-Fredkin source slice, three stored bits, three complete
+  outputs, pipeline warm-up, and printed delayed recurrence;
 - absence of hidden source streams, garbage drains, same-time fixed-point
   choice, factor-five scheduling, NAND-comparability, graph inversion, or
   physical time-reversal conclusions.
