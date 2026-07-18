@@ -684,7 +684,7 @@ cannot perform implicit fan-out.
 **Status:** Complete (2026-07-17), from clean baseline `16562ab`. The exhaustive
 interface, general constraints, exact routed Fredkin examples, negative
 boundaries, focused/public/clean builds, source scans, and axiom audits are
-recorded in `goal-1/5-REALIZATION.md`. Stage 6 has not started.
+recorded in `goal-1/5-REALIZATION.md`; Stage 6 builds on this completed boundary.
 
 #### Big Picture Objective
 
@@ -714,20 +714,26 @@ constant, argument, result, garbage, and scratch interfaces.
 
 ### 6-SIMULATION
 
+**Status:** Complete (2026-07-17). The closed finite source grammar, total
+Fredkin-plus-structural-reindexing compiler, exact resources and timing,
+complete Figure 7 reconstruction, adversarial audits, focused/public/full clean
+builds, source scans, and axiom audits are recorded in
+`goal-1/6-SIMULATION.md`.
+
 #### Big Picture Objective
 
-Prove a finite, honest universality result translating an explicitly defined
-ordinary Boolean circuit language to conservative circuits with constants and
-garbage.
+Prove a finite constructive simulation result translating an explicitly
+defined ordinary feed-forward Boolean circuit grammar to conservative circuits
+with constants and garbage.
 
 #### Detailed Implementation Plan
 
-- Define or reuse a small source circuit language with explicit fan-out and,
-  only if included, explicit delays/state.
+- Define a small indexed source circuit language with explicit constants,
+  discard, fan-out, serial composition, disjoint tensor, and no delay/state.
 - Translate each source primitive through the stage-5 realizations, threading
   all wire blocks one-to-one.
-- Prove semantic simulation and state exact source, garbage, gate-count, depth,
-  and latency consequences supported by the construction.
+- Prove complete semantic simulation and exact source, garbage, Fredkin-count,
+  and abstract latency consequences supported by the construction.
 - Handle combinational circuits first; do not infer the sequential theorem
   until stage 10 supplies feedback semantics.
 
@@ -736,8 +742,10 @@ garbage.
 - A structural induction proves the translation simulates every supported
   source circuit and exposes all ancilla/garbage widths.
 - Fan-out in the source is translated to an explicit Fredkin construction.
-- Any delay balancing algorithm terminates and proves equal-latency output.
-- The theorem is labeled existential unless verified cost bounds are included.
+- No delay-balancing algorithm is claimed: the source has no delay node and
+  this compiler emits no unit wire, so the proved abstract latency is zero.
+- The compiler is constructive and its exact Fredkin count is proved; no
+  optimality, depth, physical routing, or asymptotic claim is inferred.
 - Focused/full builds, scans, representative evaluation tests, and diff check
   pass.
 

@@ -11,10 +11,10 @@ six-wire boundary
 
 All three zero sources and both garbage outputs are explicit.  The syntax also
 contains exactly the seven unit-wire nodes drawn in Figure 7.  The timing
-theorem below establishes a delay-two path for each argument/result port pair;
-it is deliberately an existence theorem, not a uniqueness assertion.  A
-separate zero-delay source/result path proves that the complete six-wire term
-does not satisfy the library's stronger global equal-path criterion.
+theorems below establish a delay-two path for each argument/result port pair
+and prove that every grammar-induced path between such a pair has delay two.
+A separate zero-delay source/result path proves that the complete six-wire
+term does not satisfy the library's stronger global equal-path criterion.
 
 The active `WirePerm` nodes only encode the drawing's structural port routes;
 they are zero-delay syntax here and are not a synthesis claim for physical
@@ -316,6 +316,79 @@ private theorem assembleDemuxPath
     (Circuit.PathDelay.seq delay1
       (Circuit.PathDelay.seq gate2 (Circuit.PathDelay.seq delay2 gate3)))
 
+/-!
+The following private invariant assigns an absolute phase to every port at
+each boundary between the five routed layers.  `RespectsPhase` says that a
+grammar-induced path advances from its input phase to its output phase by
+exactly its unit-wire delay.  This proves route-independent timing without
+enumerating whole-circuit paths.
+-/
+
+private def RespectsPhase (circuit : Circuit 6)
+    (before after : Fin 6 → Nat) : Prop :=
+  ∀ {input output delay}, Circuit.PathDelay circuit input output delay →
+    before input + delay = after output
+
+private theorem RespectsPhase.seq {first second : Circuit 6}
+    {before middle after : Fin 6 → Nat}
+    (firstPhase : RespectsPhase first before middle)
+    (secondPhase : RespectsPhase second middle after) :
+    RespectsPhase (.seq first second) before after := by
+  rintro input output delay
+    ⟨wire, firstDelay, secondDelay, firstPath, secondPath, rfl⟩
+  calc
+    before input + (firstDelay + secondDelay) =
+        (before input + firstDelay) + secondDelay := by omega
+    _ = middle wire + secondDelay := by rw [firstPhase firstPath]
+    _ = after output := secondPhase secondPath
+
+private theorem gate1_respectsPhase :
+    RespectsPhase (routedGate g1InputWiring g1OutputWiring)
+      ![0, 1, 2, 0, 0, 0] ![1, 2, 0, 0, 0, 0] := by
+  intro input output delay path
+  fin_cases input <;> fin_cases output <;>
+    simp_all [routedGate, Circuit.PathDelay, g1InputWiring, g1OutputWiring,
+      fin6Perm]
+
+private theorem delay1_respectsPhase :
+    RespectsPhase routedDelay1
+      ![1, 2, 0, 0, 0, 0] ![1, 2, 1, 0, 1, 1] := by
+  intro input output delay path
+  fin_cases input <;> fin_cases output <;>
+    simp_all [routedDelay1, threeUnitWires, Circuit.PathDelay,
+      delay1InputWiring, delay1OutputWiring, fin6Perm, UnitWire.delay]
+
+private theorem gate2_respectsPhase :
+    RespectsPhase (routedGate g2InputWiring g2OutputWiring)
+      ![1, 2, 1, 0, 1, 1] ![2, 1, 0, 1, 1, 1] := by
+  intro input output delay path
+  fin_cases input <;> fin_cases output <;>
+    simp_all [routedGate, Circuit.PathDelay, g2InputWiring, g2OutputWiring,
+      fin6Perm]
+
+private theorem delay2_respectsPhase :
+    RespectsPhase routedDelay2
+      ![2, 1, 0, 1, 1, 1] ![2, 2, 0, 2, 2, 2] := by
+  intro input output delay path
+  fin_cases input <;> fin_cases output <;>
+    simp_all [routedDelay2, fourUnitWires, Circuit.PathDelay,
+      delay2InputWiring, delay2OutputWiring, fin6Perm, UnitWire.delay]
+
+private theorem gate3_respectsPhase :
+    RespectsPhase (routedGate g3InputWiring g3OutputWiring)
+      ![2, 2, 0, 2, 2, 2] ![2, 2, 2, 2, 0, 2] := by
+  intro input output delay path
+  fin_cases input <;> fin_cases output <;>
+    simp_all [routedGate, Circuit.PathDelay, g3InputWiring, g3OutputWiring,
+      fin6Perm]
+
+private theorem demuxCircuit_respectsPhase :
+    RespectsPhase demuxCircuit
+      ![0, 1, 2, 0, 0, 0] ![2, 2, 2, 2, 0, 2] := by
+  simpa [demuxCircuit] using gate1_respectsPhase.seq
+    (delay1_respectsPhase.seq
+      (gate2_respectsPhase.seq (delay2_respectsPhase.seq gate3_respectsPhase)))
+
 private theorem a0Y0Path :
     Circuit.PathDelay demuxCircuit (3 : Fin 6) (0 : Fin 6) 2 := by
   have p1 : Circuit.PathDelay (routedGate g1InputWiring g1OutputWiring)
@@ -521,6 +594,16 @@ theorem argument_to_result_path (input : Fin 3) (output : Fin 4) :
   · exact xY1Path
   · exact xY2Path
   · exact xY3Path
+
+/-- Every grammar-induced argument/result path has delay exactly two. -/
+theorem argument_to_result_path_delay_two (input : Fin 3) (output : Fin 4)
+    {actual : Nat}
+    (path : Circuit.PathDelay demuxCircuit
+      (argumentPort input) (resultPort output) actual) :
+    actual = 2 := by
+  have timing := demuxCircuit_respectsPhase path
+  fin_cases input <;> fin_cases output <;>
+    simpa [argumentPort, resultPort] using timing
 
 /-- The third zero source has a zero-delay grammar path to `Y₀`. -/
 theorem zero_source_to_y0_path :
