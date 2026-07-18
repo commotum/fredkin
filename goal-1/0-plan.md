@@ -109,6 +109,9 @@ Lean results as the work proceeds.
   coordinatewise-XOR interpretation of linearity, and
   `PaperFredkin.map_not_xorLinear` proves failure by a named concrete
   additivity counterexample.
+- Stage 4 began from clean synchronized commit `50c1269`; the cached default
+  build still succeeds with 707 jobs. No `Circuit` source, evaluator, path
+  timing relation, or circuit diagnostic exists yet.
 
 ### Checked Paper Facts
 
@@ -146,6 +149,19 @@ Lean results as the work proceeds.
 - The paper's circuit model is time-discrete. Wires carry delay; feedback gives
   sequential behavior. Its definition of a combinational network additionally
   requires no feedback and equal unit-wire path lengths from inputs to outputs.
+- Section 2.5's literal circuit is a directed gate/wire graph that permits
+  feedback and memory. A serial/tensor expression language is therefore only a
+  corrected feed-forward fragment unless a graph correspondence theorem is
+  separately proved.
+- Section 7.1 calls a network combinational only when it has no feedback and
+  every existing path from any external input to any external output traverses
+  the same number of unit wires. Figure 7 states only the narrower fact that
+  distinguished argument-to-result paths have equal length and explicitly
+  calls that diagram formally sequential.
+- The paper treats gates and the identity gate as instantaneous while each
+  unit wire contributes one delay step. It does not name arbitrary wire
+  permutations as free primitives; structural boundary reindexing must remain
+  distinct from physically routed, delay-bearing wire circuits.
 - The interaction gate in the billiard model has constrained four-rail outputs:
   only four of the sixteen Boolean states are valid. Its inverse therefore has
   a partial/constrained input interface.
@@ -163,10 +179,16 @@ Lean results as the work proceeds.
 
 ### Assumptions to Test, Not Yet Facts
 
-- A typed circuit syntax indexed by input/output arity, with explicit wire
-  permutations and tensor/serial composition, is expected to prevent implicit
-  fan-out. Stage 1 fixed the boundary constraints, but the exact syntax remains
-  deliberately unsettled until stage 4.
+- Stage 4 will test a single-width balanced `Circuit n` syntax with only
+  structural identity, unit wire, paper Fredkin, bijective structural
+  permutation, exact-width serial composition, and disjoint tensor. The one
+  index denotes both external boundaries, matching the paper's equal port
+  count; no arbitrary function/equivalence/conservative-map injection belongs
+  in the fixed circuit basis.
+- A relational external-path timing semantics is expected to distinguish
+  feed-forward syntax from the paper's stricter equal-latency combinational
+  condition. A scalar maximum depth or locally balanced-only recursion is not
+  sufficient: later serial wires can compensate earlier branch imbalance.
 - Combinational semantic maps may be modeled separately from timed graphs; a
   semantics-first core plus a realizability relation may be more reusable than
   making all proofs depend on graph syntax.
@@ -480,7 +502,7 @@ table, ordering, reversibility, and conservation without convention drift.
 
 ### 4-CIRCUITS
 
-**Status:** Next incomplete stage.
+**Status:** In progress (2026-07-17), from clean baseline `50c1269`.
 
 #### Big Picture Objective
 
