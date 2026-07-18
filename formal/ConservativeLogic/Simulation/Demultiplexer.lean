@@ -15,6 +15,10 @@ theorem below establishes a delay-two path for each argument/result port pair;
 it is deliberately an existence theorem, not a uniqueness assertion.  A
 separate zero-delay source/result path proves that the complete six-wire term
 does not satisfy the library's stronger global equal-path criterion.
+
+The active `WirePerm` nodes only encode the drawing's structural port routes;
+they are zero-delay syntax here and are not a synthesis claim for physical
+permutation hardware.
 -/
 
 namespace ConservativeLogic.Simulation.Demultiplexer

@@ -195,7 +195,6 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
       simp [middleSwapWiring, fourDecompose, fourCompose]
     rw [route]
     simp
-
   · simp [fourDecompose] at taggedBack
     subst input
     have route :
@@ -659,7 +658,7 @@ private def compileCore : {inputWidth outputWidth : Nat} →
   | _, _, .identity width => Circuit.identity (0 + width)
   | _, _, .permute wiring =>
       castCircuit (Nat.zero_add _).symm (Circuit.permute wiring)
-  | _, _, .constant value => Circuit.identity (_ + 0)
+  | _, _, .constant _ => Circuit.identity (_ + 0)
   | _, _, .discard width => Circuit.identity (0 + width)
   | _, _, .andGate => fredkinAndCircuit
   | _, _, .orGate => fredkinOrCircuit
@@ -897,10 +896,16 @@ private theorem routedFredkin_hasLatency_zero
     Circuit.HasLatency
       (Realization.Primitive.routedFredkin inputWiring outputWiring) 0 := by
   unfold Realization.Primitive.routedFredkin
-  simpa using
-    (Circuit.HasLatency.seq (Circuit.hasLatency_permute inputWiring)
+  have timed : Circuit.HasLatency
+      (Circuit.seq (Circuit.permute inputWiring)
+        (Circuit.seq Circuit.fredkin (Circuit.permute outputWiring)))
+      (0 + (0 + 0)) :=
+    Circuit.HasLatency.seq (Circuit.hasLatency_permute inputWiring)
       (Circuit.HasLatency.seq Circuit.hasLatency_fredkin
-        (Circuit.hasLatency_permute outputWiring)))
+        (Circuit.hasLatency_permute outputWiring))
+  intro input output actual path
+  have delay : actual = 0 + (0 + 0) := timed path
+  simpa using delay
 
 private theorem serialCircuit_hasLatency_zero {s₁ a b g₁ s₂ : Nat}
     (firstBalance : s₁ + a = b + g₁)
@@ -912,15 +917,31 @@ private theorem serialCircuit_hasLatency_zero {s₁ a b g₁ s₂ : Nat}
   have firstStage : Circuit.HasLatency
       (Circuit.tensor (Circuit.identity s₂) first) 0 :=
     Circuit.HasLatency.tensor (Circuit.hasLatency_identity s₂) firstTimed
-  have firstStageCast := hasLatency_castCircuit
-    (Nat.add_assoc s₂ s₁ a).symm firstStage
+  have firstStageCast : Circuit.HasLatency
+      (Simulation.castCircuit (Nat.add_assoc s₂ s₁ a).symm
+        (Circuit.tensor (Circuit.identity s₂) first)) 0 :=
+    hasLatency_castCircuit (Nat.add_assoc s₂ s₁ a).symm firstStage
   have secondStage : Circuit.HasLatency
       (Circuit.tensor second (Circuit.identity g₁)) 0 :=
     Circuit.HasLatency.tensor secondTimed (Circuit.hasLatency_identity g₁)
-  have secondStageCast := hasLatency_castCircuit
-    (Simulation.serialSecondWidth (s₂ := s₂) firstBalance) secondStage
+  have secondStageCast : Circuit.HasLatency
+      (Simulation.castCircuit
+        (Simulation.serialSecondWidth (s₂ := s₂) firstBalance)
+        (Circuit.tensor second (Circuit.identity g₁))) 0 :=
+    hasLatency_castCircuit
+      (Simulation.serialSecondWidth (s₂ := s₂) firstBalance) secondStage
+  have timed : Circuit.HasLatency
+      (Circuit.seq
+        (Simulation.castCircuit (Nat.add_assoc s₂ s₁ a).symm
+          (Circuit.tensor (Circuit.identity s₂) first))
+        (Simulation.castCircuit
+          (Simulation.serialSecondWidth (s₂ := s₂) firstBalance)
+          (Circuit.tensor second (Circuit.identity g₁)))) (0 + 0) :=
+    Circuit.HasLatency.seq firstStageCast secondStageCast
   unfold Simulation.serialCircuit
-  simpa using Circuit.HasLatency.seq firstStageCast secondStageCast
+  intro input output actual path
+  have delay : actual = 0 + 0 := timed path
+  simpa using delay
 
 private theorem tensorCircuit_hasLatency_zero
     {s₁ a₁ r₁ g₁ s₂ a₂ r₂ g₂ : Nat}
@@ -936,16 +957,48 @@ private theorem tensorCircuit_hasLatency_zero
     Circuit.hasLatency_permute _
   have body : Circuit.HasLatency (Circuit.tensor left right) 0 :=
     Circuit.HasLatency.tensor leftTimed rightTimed
-  have bodyCast := hasLatency_castCircuit
-    (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂) body
+  have bodyCast : Circuit.HasLatency
+      (Simulation.castCircuit
+        (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂)
+        (Circuit.tensor left right)) 0 :=
+    hasLatency_castCircuit
+      (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂) body
   have outputRouting : Circuit.HasLatency
       (Circuit.permute (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)) 0 :=
     Circuit.hasLatency_permute _
-  have outputRoutingCast := hasLatency_castCircuit
-    (Simulation.tensorOutputWidth leftBalance rightBalance) outputRouting
-  have processThenRoute := Circuit.HasLatency.seq bodyCast outputRoutingCast
+  have outputRoutingCast : Circuit.HasLatency
+      (Simulation.castCircuit
+        (Simulation.tensorOutputWidth leftBalance rightBalance)
+        (Circuit.permute (Simulation.middleSwapWiring r₁ g₁ r₂ g₂))) 0 :=
+    hasLatency_castCircuit
+      (Simulation.tensorOutputWidth leftBalance rightBalance) outputRouting
+  have processThenRoute : Circuit.HasLatency
+      (Circuit.seq
+        (Simulation.castCircuit
+          (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂)
+          (Circuit.tensor left right))
+        (Simulation.castCircuit
+          (Simulation.tensorOutputWidth leftBalance rightBalance)
+          (Circuit.permute
+            (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)))) (0 + 0) :=
+    Circuit.HasLatency.seq bodyCast outputRoutingCast
+  have timed : Circuit.HasLatency
+      (Circuit.seq
+        (Circuit.permute (Simulation.middleSwapWiring s₁ s₂ a₁ a₂))
+        (Circuit.seq
+          (Simulation.castCircuit
+            (Simulation.tensorProcessWidth s₁ s₂ a₁ a₂)
+            (Circuit.tensor left right))
+          (Simulation.castCircuit
+            (Simulation.tensorOutputWidth leftBalance rightBalance)
+            (Circuit.permute
+              (Simulation.middleSwapWiring r₁ g₁ r₂ g₂)))))
+      (0 + (0 + 0)) :=
+    Circuit.HasLatency.seq inputRouting processThenRoute
   unfold Simulation.tensorCircuit
-  simpa using Circuit.HasLatency.seq inputRouting processThenRoute
+  intro input output actual path
+  have delay : actual = 0 + (0 + 0) := timed path
+  simpa using delay
 
 private theorem compileCore_hasLatency_zero {inputWidth outputWidth : Nat}
     (source : SourceCircuit inputWidth outputWidth) :
@@ -958,24 +1011,35 @@ private theorem compileCore_hasLatency_zero {inputWidth outputWidth : Nat}
   | constant value => exact Circuit.hasLatency_identity (_ + 0)
   | discard width => exact Circuit.hasLatency_identity (0 + width)
   | andGate =>
-      simpa [compileCore, Realization.Primitive.fredkinAndCircuit] using
-        routedFredkin_hasLatency_zero
+      change Circuit.HasLatency
+        (Realization.Primitive.routedFredkin
           Realization.Primitive.andInputWiring
-          Realization.Primitive.resultFromDataOneWiring
+          Realization.Primitive.resultFromDataOneWiring) 0
+      exact routedFredkin_hasLatency_zero
+        Realization.Primitive.andInputWiring
+        Realization.Primitive.resultFromDataOneWiring
   | orGate =>
-      simpa [compileCore, Realization.Primitive.fredkinOrCircuit] using
-        routedFredkin_hasLatency_zero
+      change Circuit.HasLatency
+        (Realization.Primitive.routedFredkin
           Realization.Primitive.orInputWiring
-          Realization.Primitive.resultFromDataOneWiring
+          Realization.Primitive.resultFromDataOneWiring) 0
+      exact routedFredkin_hasLatency_zero
+        Realization.Primitive.orInputWiring
+        Realization.Primitive.resultFromDataOneWiring
   | notGate =>
-      simpa [compileCore, Realization.Primitive.fredkinNotCircuit] using
-        routedFredkin_hasLatency_zero
+      change Circuit.HasLatency
+        (Realization.Primitive.routedFredkin
           Realization.Primitive.notFanoutInputWiring
-          Realization.Primitive.resultFromDataTwoWiring
+          Realization.Primitive.resultFromDataTwoWiring) 0
+      exact routedFredkin_hasLatency_zero
+        Realization.Primitive.notFanoutInputWiring
+        Realization.Primitive.resultFromDataTwoWiring
   | fanout =>
-      simpa [compileCore, Realization.Primitive.fredkinFanoutCircuit] using
-        routedFredkin_hasLatency_zero
-          Realization.Primitive.notFanoutInputWiring (Equiv.refl _)
+      change Circuit.HasLatency
+        (Realization.Primitive.routedFredkin
+          Realization.Primitive.notFanoutInputWiring (Equiv.refl _)) 0
+      exact routedFredkin_hasLatency_zero
+        Realization.Primitive.notFanoutInputWiring (Equiv.refl _)
   | seq first second firstIH secondIH =>
       exact serialCircuit_hasLatency_zero
         (source_garbage_balance first) firstIH secondIH
