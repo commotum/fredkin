@@ -436,13 +436,15 @@ placeholders to refine during stage work.
   `Layout.packOutput_resultGarbage_injective`,
   `Layout.hammingWeight_packInput`, and `Layout.hammingWeight_packOutput`:
   packing loses no named data and preserves exact block-weight accounting.
-- `Realizes.targetGarbage_injective`, `garbage_separates_collisions`,
-  `garbage_injectiveOn_fiber`, `fiber_card_le`,
-  `card_argument_le_resultGarbage`,
-  `target_injective_of_resultDeterminesGarbage`,
-  `target_injective_of_argumentIndependentGarbage`,
-  `target_injective_of_noGarbage`, and `weight_balance`: necessary information
-  and conservation constraints on a full-state initialized-slice realization.
+- `Realizes.targetGarbage_injective`,
+  `Realizes.garbage_separates_collisions`,
+  `Realizes.garbage_injectiveOn_fiber`, `Realizes.fiber_card_le`,
+  `Realizes.card_argument_le_resultGarbage`,
+  `Realizes.target_injective_of_resultDeterminesGarbage`,
+  `Realizes.target_injective_of_argumentIndependentGarbage`,
+  `Realizes.target_injective_of_noGarbage`, and `Realizes.weight_balance`:
+  necessary information and conservation constraints on a full-state
+  initialized-slice realization.
 - `fredkin_and_complete`, `fredkin_or_complete`, `fredkin_not_complete`, and
   `fredkin_fanout_complete`: exact complete Section 3 boundary equations.
 - `fredkin_realizes_and`, `fredkin_realizes_or`, `fredkin_realizes_not`, and
