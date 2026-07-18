@@ -172,10 +172,10 @@ Stage 12 completes the goal.
 
 ### Correspondence result
 
-- Every paper-map row and every CL-001--CL-024 correction row now has one of
-  five explicit dispositions: proved, corrected, disproved, open, or
-  out-of-model.  Exact fully qualified declarations are used where Lean owns a
-  result; commentary is not presented as a theorem.
+- Every paper-map row now has a final prose disposition.  Every CL-001--CL-024
+  correction row uses one of five explicit statuses: proved, corrected,
+  disproved, open, or out-of-model.  Canonical declaration names are used
+  where Lean owns a result; commentary is not presented as a theorem.
 - The two narrow correspondence gaps found by the review are closed:
   `ConservativeLogic.zeroCount` and
   `ConservativeLogic.WeightPreserving.zeroCount` expose the derived fixed-width
@@ -188,12 +188,12 @@ Stage 12 completes the goal.
 - The final unresolved inventory is deliberate: all-zero workspace conversion
   and the paper's global scratch bounds (CL-011/CL-012); a general sequential
   compiler and delay normalization (CL-006); the cited reversible-only
-  all-zero result-register construction; fixed-CPU/Turing universality and
+  all-zero result-register construction; fixed-CPU encoding/simulation and
   complexity bounds; P8 geometry; continuous billiard dynamics, the Figure 15
   bridge, Figures 17--18, arbitrary delay/layout composition, and physical
-  clearance; and the B./D. Silver attribution (CL-024).  Infinite reservoirs
-  and thermodynamic conclusions remain out-of-model rather than unresolved
-  finite-circuit theorems.
+  clearance; and the B./D. Silver attribution (CL-024).  Infinite reservoirs,
+  Turing/CA universality, and thermodynamic conclusions remain out-of-model
+  rather than unresolved finite-circuit theorems.
 
 ### API and ownership result
 
@@ -253,7 +253,7 @@ From the synchronized working tree:
   and collision-fallback reviews passed.  The full diff from `1047322` was
   reviewed, and `git diff --check 1047322 --` passed.
 
-A fresh local clone at synchronized source commit `2837e62` then ran
+A fresh local clone at synchronized Lean-source commit `adf79d1` then ran
 `lake update`, materialized the pinned mathlib commit
 `81a5d257c8e410db227a6665ed08f64fea08e997`, and passed the default build (998
 reported jobs) plus the same complete opt-in/audit target set (1,030 reported

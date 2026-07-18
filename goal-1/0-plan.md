@@ -304,8 +304,8 @@ Lean results as the work proceeds.
   structural induction using the Stage 5 primitive witnesses and proved
   four-block reindexings.
 - `SourceCircuit.compile_fredkinCount` proves one target Fredkin per named
-  source logic node, and `compile_hasLatency_zero` proves only the abstract
-  Stage 4 zero-unit-wire path metric. Neither theorem assigns physical routing
+  source logic node, and `SourceCircuit.compile_hasLatency_zero` proves only
+  the abstract Stage 4 zero-unit-wire path metric. Neither theorem assigns physical routing
   cost to `WirePerm` or establishes graph, sequential, optimization, or
   arbitrary-function completeness.
 - Section 7.1 defines the inverse first for the paper's directed network model
@@ -423,7 +423,7 @@ Lean results as the work proceeds.
 
 ## Success Metrics and Verification Requirements
 
-The eventual goal is complete only when all of the following hold:
+The completed goal satisfies all of the following:
 
 - A pinned Lean 4/mathlib project builds from a clean checkout.
 - Public APIs cover finite Boolean functions, reversible equivalences,
@@ -475,7 +475,7 @@ The eventual goal is complete only when all of the following hold:
 | §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | `ConservativeLogic.Realization.Primitive.fredkin_realizes_and`, `ConservativeLogic.Realization.Primitive.fredkin_realizes_or`, `ConservativeLogic.Realization.Primitive.fredkin_realizes_not`, and `ConservativeLogic.Realization.Primitive.fredkin_realizes_fanout` prove the exact complete tuples using named active port permutations; FAN-OUT is constrained by source `(0,1)` and retains `¬a` as garbage |
 | §3, Fig. 7 | Demultiplexer semantics include the complete output and address-echo garbage; distinguished argument-to-result routes have delay two | 4, 6 | `ConservativeLogic.Simulation.Demultiplexer.demux_realizes` checks the full six-wire initialized slice with source `000`, four binary-addressed outputs, and garbage `(A₁,A₀)`; the term has three Fredkins and seven unit wires. `ConservativeLogic.Simulation.Demultiplexer.argument_to_result_path` constructs a delay-two path for every named argument/result pair, while `ConservativeLogic.Simulation.Demultiplexer.argument_to_result_path_delay_two` proves every such grammar-induced path has delay two. `ConservativeLogic.Simulation.Demultiplexer.zero_source_to_y0_path` and `ConservativeLogic.Simulation.Demultiplexer.demuxCircuit_not_meetsPaperCombinationalTiming` prove that the full boundary is not globally equal-latency |
 | §3, Fig. 8 | Reconstruct a transition/trace specification for the asserted `J-K̄` flip-flop realization | 10 | Resolved by an actual Fredkin-plus-output-routing `Network 1 2`. `ConservativeLogic.Sequential.Figure8.tick` proves `(q,K̄,J) ↦ (if q then K̄ else J,q,if q then J else K̄)` with next state, visible `Q`, and explicit `?` garbage; initialization, `ConservativeLogic.Sequential.Figure8.characteristic`, all eight rows, and hold/set/reset/toggle behavior are checked |
-| §4 | Conventional finite combinational networks can be translated to conservative networks using constants and garbage | 6 | Proved constructively for the explicit indexed `ConservativeLogic.Simulation.SourceCircuit` grammar by `ConservativeLogic.Simulation.SourceCircuit.compile_realizes`, with exact fixed sources, complete garbage, zero scratch, exact count from `compile_fredkinCount`, and abstract latency zero from `compile_hasLatency_zero`. The target basis is Fredkin plus explicit structural reindexing. This is not a graph-encoding, arbitrary-function-completeness, delay-normalization, or sequential theorem |
+| §4 | Conventional finite combinational networks can be translated to conservative networks using constants and garbage | 6 | Proved constructively for the explicit indexed `ConservativeLogic.Simulation.SourceCircuit` grammar by `ConservativeLogic.Simulation.SourceCircuit.compile_realizes`, with exact fixed sources, complete garbage, zero scratch, exact count from `ConservativeLogic.Simulation.SourceCircuit.compile_fredkinCount`, and abstract latency zero from `ConservativeLogic.Simulation.SourceCircuit.compile_hasLatency_zero`. The target basis is Fredkin plus explicit structural reindexing. This is not a graph-encoding, arbitrary-function-completeness, delay-normalization, or sequential theorem |
 | §4 | Arbitrary conventional sequential networks can be simulated by conservative sequential networks | 10 | Open beyond the implemented semantic/example fragment (CL-006). Stage 10 supplies explicit initialization, causal traces, and Figures 9/11, but installs no general compiler. Constant sources and garbage are per-tick streams; delay normalization, scheduling, time multiplexing, and a general stream simulation relation remain open |
 | §4, Figs. 9–11 | Serial-adder simulation includes initialization and stream semantics | 10 | `ConservativeLogic.Sequential.SerialAdder.paper_recurrence` checks Figure 9 with explicit initial accumulator, while `ConservativeLogic.Sequential.SerialAdder.completeTickEquiv` and `ConservativeLogic.Sequential.SerialAdder.no_conservative_machine` separate bijectivity from conservation. Figure 11 is an exact two-Fredkin `Network 3 3` on the literal `(x,0,1)` source slice; `ConservativeLogic.Sequential.Figure11.tick_initialized`, `ConservativeLogic.Sequential.Figure11.state_spec`, `ConservativeLogic.Sequential.Figure11.output_spec`, and `ConservativeLogic.Sequential.Figure11.paper_recurrence` prove all stored/output wires and `Y(t+2)=Y(t+1) xor X(t)`. Figure 10's dense routing, factor-five schedule, multiplexing, and source/sink counts remain unresolved |
 | §4 | Turing-machine/cellular-automaton universality | — | Out-of-model for this finite library. No indefinitely extendible tape/environment, universal machine, cellular automaton, or infinite constant/garbage reservoir is formalized |
@@ -543,7 +543,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 12:
+Checked module-ownership layout through Stage 12:
 
 ```text
 ConservativeLogic/
@@ -617,7 +617,7 @@ The adjacent-synthesis implementation is canonically owned by
 `ConservativeLogic.*` root spelling from that module remains a compatibility
 export for existing consumers.
 
-## Proposed Theorem Outline
+## Theorem Outline
 
 Names below are final declaration names; namespace prefixes are shown where
 they disambiguate ownership.
