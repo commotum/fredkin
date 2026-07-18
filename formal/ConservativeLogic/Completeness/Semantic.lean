@@ -79,6 +79,8 @@ theorem onWeightLayer_ofWeightLayers {n : Nat}
     (layers : ∀ weight, Equiv.Perm (WeightLayer n weight)) (weight : Nat) :
     (ofWeightLayers layers).onWeightLayer weight = layers weight := by
   ext state
+  rcases state with ⟨state, stateWeight⟩
+  subst weight
   rfl
 
 /-- Reassembling all restrictions of a conservative map recovers that map. -/
