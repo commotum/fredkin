@@ -7,6 +7,7 @@ import ConservativeLogic.Gate.Fredkin.Nonlinear
 import ConservativeLogic.Circuit.Syntax
 import ConservativeLogic.Circuit.Semantics
 import ConservativeLogic.Circuit.Timed
+import ConservativeLogic.Circuit.Inverse
 import ConservativeLogic.Realization.Core
 import ConservativeLogic.Realization.Primitive
 import ConservativeLogic.Simulation.Source

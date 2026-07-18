@@ -47,8 +47,9 @@ Lean results as the work proceeds.
 - Never duplicate a wire in Lean by reusing a variable where the circuit model
   requires a physical copy. Prove copy constructions only on their constrained
   interfaces.
-- An inverse network theorem must require enough structural and timing data to
-  make reversal well-defined.
+- Static inverse correctness must require a structurally reversible circuit
+  representation; any claim matching the paper's *combinational inverse* must
+  additionally preserve its equal-path timing certificate.
 - Physical claims about energy, entropy, heat, dissipation, noise, microscopic
   reversibility, or actual hard-ball mechanics are documentation only unless a
   corresponding formal physical model is introduced.
@@ -784,8 +785,9 @@ boundary tests, and required verification are recorded in
 
 #### Big Picture Objective
 
-Define inverse feed-forward networks and prove that reversal really implements
-the inverse semantic map under explicit structural/timing hypotheses.
+Define inverse feed-forward networks, prove unconditional static inverse
+correctness for every balanced `Circuit` term, and separately preserve exact
+path and equal-latency certificates.
 
 #### Detailed Implementation Plan
 
@@ -798,8 +800,8 @@ the inverse semantic map under explicit structural/timing hypotheses.
 
 #### Completion Requirements
 
-- `eval (inverse c)` is proved equal to `(eval c).symm` for all supported
-  well-formed reversible combinational circuits.
+- `eval (inverse c)` is proved equal to `(eval c).symm` for every supported
+  balanced feed-forward `Circuit` term.
 - Double inversion and both cancellation laws are proved.
 - Equal-path/timing requirements are preserved or a precisely weaker corrected
   theorem is recorded.
