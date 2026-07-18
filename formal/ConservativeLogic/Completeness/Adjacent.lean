@@ -412,8 +412,7 @@ abbrev edgeWidth {m : Nat} (pattern : BitState m) : Nat :=
 
 private theorem controlled_to_edge_width {m : Nat} (pattern : BitState m) :
     controlledWidth (edgeSource pattern) = edgeWidth pattern := by
-  simp [controlledWidth, markerLayout, edgeSource, edgeWidth,
-    SourceCircuit.simulationLayout, Realization.Layout.width]
+  simp [controlledWidth, edgeSource, edgeWidth, Realization.Layout.width]
   omega
 
 def edgeClean {m : Nat} (pattern : BitState m) :
@@ -527,7 +526,7 @@ private theorem adjacentData_ne {m : Nat} (pattern : BitState m) :
     edgeData pattern false true ≠ edgeData pattern true false := by
   intro equality
   have coordinate := congrFun equality (Fin.natAdd m 0)
-  simpa [edgeData_first_eq] using coordinate
+  simp [edgeData_first_eq] at coordinate
 
 private theorem edgeData_conditional_swap {m : Nat}
     (pattern head : BitState m) (first second : Bool) :
@@ -538,28 +537,27 @@ private theorem edgeData_conditional_swap {m : Nat}
         (edgeData head first second) := by
   by_cases head_eq : head = pattern
   · subst head
-    cases first <;> cases second <;>
-      simp only [if_pos rfl]
+    cases first <;> cases second
     · rw [Equiv.swap_apply_of_ne_of_ne]
-      · rfl
+      · simp
       · intro equality
         have coordinate := congrFun equality (Fin.natAdd m 1)
-        simpa [edgeData_second_eq] using coordinate
+        simp [edgeData_second_eq] at coordinate
       · intro equality
         have coordinate := congrFun equality (Fin.natAdd m 0)
-        simpa [edgeData_first_eq] using coordinate
+        simp [edgeData_first_eq] at coordinate
     · rw [Equiv.swap_apply_left]
       simp
     · rw [Equiv.swap_apply_right]
       simp
     · rw [Equiv.swap_apply_of_ne_of_ne]
-      · rfl
+      · simp
       · intro equality
         have coordinate := congrFun equality (Fin.natAdd m 0)
-        simpa [edgeData_first_eq] using coordinate
+        simp [edgeData_first_eq] at coordinate
       · intro equality
         have coordinate := congrFun equality (Fin.natAdd m 1)
-        simpa [edgeData_second_eq] using coordinate
+        simp [edgeData_second_eq] at coordinate
   · simp only [if_neg head_eq]
     rw [Equiv.swap_apply_of_ne_of_ne]
     · intro equality
@@ -712,7 +710,103 @@ theorem adjacentTranspositionCircuit_fredkinCount {m : Nat}
     Circuit.fredkinCount (adjacentTranspositionCircuit pattern) =
       4 * SourceCircuit.logicGateCount (patternMatch pattern) + 3 := by
   unfold adjacentTranspositionCircuit edgeRoute edgeControlled
-  simp [Circuit.fredkinCount, controlledSwap_fredkinCount,
-    fredkinCount_inverse]
+  simp [Circuit.fredkinCount, controlledSwap_fredkinCount]
+
+/--
+The adjacent equal-prefix state swap has a finite paper-Fredkin realization
+with one explicit ancillary prefix returned exactly.
+-/
+theorem adjacentTranspositionClean {m : Nat} (pattern : BitState m) :
+    CleanFredkinRealizable
+      (Equiv.swap (edgeData pattern false true)
+        (edgeData pattern true false)) := by
+  refine ⟨{
+    ancillaWidth := SourceCircuit.sourceWidth (edgeSource pattern) + 2
+    ancillaInit := edgeClean pattern
+    circuit := adjacentTranspositionCircuit pattern
+    structural := Circuit.fredkinStructural_of_hasLatency_zero _
+      (adjacentTranspositionCircuit_hasLatency_zero pattern)
+    latencyZero := adjacentTranspositionCircuit_hasLatency_zero pattern
+    realizes := adjacentTranspositionCircuit_spec pattern
+  }⟩
+
+namespace CleanFredkinRealization
+
+/-- Conjugate a clean realization by an explicit structural data-wire route. -/
+def wireConjugate {width : Nat} {gate : Reversible width}
+    (realization : CleanFredkinRealization gate) (wiring : WirePerm width) :
+    CleanFredkinRealization
+      ((WirePerm.onState wiring).trans gate |>.trans
+        (WirePerm.onState wiring).symm) where
+  ancillaWidth := realization.ancillaWidth
+  ancillaInit := realization.ancillaInit
+  circuit := .seq
+    (.tensor (.identity realization.ancillaWidth) (.permute wiring))
+    (.seq realization.circuit
+      (.tensor (.identity realization.ancillaWidth) (.permute wiring.symm)))
+  structural := by simp [realization.structural]
+  latencyZero := by
+    apply hasLatency_seq_zero
+    · exact hasLatency_tensor_zero (Circuit.hasLatency_identity _)
+        (Circuit.hasLatency_permute wiring)
+    · apply hasLatency_seq_zero
+      · exact realization.latencyZero
+      · exact hasLatency_tensor_zero (Circuit.hasLatency_identity _)
+          (Circuit.hasLatency_permute wiring.symm)
+  realizes state := by
+    simp only [Circuit.eval_seq, Circuit.eval_tensor_append,
+      Circuit.eval_identity, Circuit.eval_permute]
+    rw [realization.realizes]
+    rw [Circuit.eval_tensor_append, Circuit.eval_identity,
+      Circuit.eval_permute]
+    rw [WirePerm.onState_inverse]
+    rfl
+
+end CleanFredkinRealization
+
+private def finalDataSwap (m : Nat) : WirePerm (m + 2) :=
+  Equiv.swap (Fin.natAdd m (0 : Fin 2)) (Fin.natAdd m (1 : Fin 2))
+
+private theorem finalDataSwap_edgeData {m : Nat} (head : BitState m)
+    (first second : Bool) :
+    WirePerm.onState (finalDataSwap m) (edgeData head first second) =
+      edgeData head second first := by
+  funext output
+  refine Fin.addCases ?_ ?_ output
+  · intro index
+    rw [WirePerm.onState_apply]
+    have neFirst : Fin.castAdd 2 index ≠ Fin.natAdd m (0 : Fin 2) := by
+      intro equality
+      have values := congrArg Fin.val equality
+      simp at values
+      omega
+    have neSecond : Fin.castAdd 2 index ≠ Fin.natAdd m (1 : Fin 2) := by
+      intro equality
+      have values := congrArg Fin.val equality
+      simp at values
+      omega
+    rw [show (finalDataSwap m).symm = finalDataSwap m by rfl]
+    unfold finalDataSwap
+    rw [Equiv.swap_apply_of_ne_of_ne neFirst neSecond]
+    simp [edgeData]
+  · intro index
+    refine Fin.cases ?_ ?_ index
+    · rw [WirePerm.onState_apply]
+      rw [show (finalDataSwap m).symm = finalDataSwap m by rfl]
+      rw [show finalDataSwap m (Fin.natAdd m (0 : Fin 2)) =
+          Fin.natAdd m (1 : Fin 2) by
+        exact Equiv.swap_apply_left _ _]
+      rw [edgeData_second_eq, edgeData_first_eq]
+    · intro tail
+      refine Fin.cases ?_ ?_ tail
+      · rw [show (Fin.succ (0 : Fin 1) : Fin 2) = 1 by rfl]
+        rw [WirePerm.onState_apply]
+        rw [show (finalDataSwap m).symm = finalDataSwap m by rfl]
+        rw [show finalDataSwap m (Fin.natAdd m (1 : Fin 2)) =
+            Fin.natAdd m (0 : Fin 2) by
+          exact Equiv.swap_apply_right _ _]
+        rw [edgeData_first_eq, edgeData_second_eq]
+      · intro impossible
+        exact Fin.elim0 impossible
 
 end ConservativeLogic
