@@ -27,14 +27,20 @@ lake update
 lake exe cache get
 lake build ConservativeLogic.Audit.Guardrails
 lake build ConservativeLogic.Audit.Finite
+lake build ConservativeLogic.Audit.Fredkin
 lake build
 ```
 
-Stages 1 and 2 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 3 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
-reversible/conservative maps, and conservative wire permutations. It also
-contains checked one- and two-bit semantic witnesses showing that reversibility
-and Hamming-weight preservation are independent. The focused audit commands are
-explicit because diagnostic leaves are intentionally not imported by the
-public root. The paper-convention Fredkin gate begins in Stage 3.
+reversible/conservative maps, conservative wire permutations, the unit wire's
+identity-on-values semantics with separate one-step delay metadata, and the
+paper-convention Fredkin gate. The Fredkin API fixes port order `(u,x₁,x₂)`,
+uses the paper's zero-controlled swap, proves involution and conservation, and
+includes an explicit coordinatewise-XOR counterexample for a precisely selected
+meaning of nonlinearity. It also contains checked semantic witnesses showing
+that reversibility and Hamming-weight preservation are independent. The focused
+audit commands are explicit because diagnostic leaves are intentionally not
+imported by the public root. Arity-safe one-to-one circuit syntax begins in
+Stage 4; the unit-wire delay metadata is not yet a timed transition semantics.

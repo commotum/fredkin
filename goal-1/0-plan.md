@@ -70,13 +70,16 @@ Lean results as the work proceeds.
 - The unrelated placeholder Python project (`pyproject.toml`, `main.py`) remains
   untouched. Stage 1 added the isolated `formal/` Lake project and private
   representation probe. Stage 2 replaced the empty public root with finite
-  state, reversible-map, independence-witness, and thin API modules.
+  state, reversible-map, independence-witness, and thin API modules. Stage 3
+  added separate unit-wire value/delay declarations, the exact paper Fredkin
+  gate, its selected XOR-nonlinearity theorem, and a non-public Fredkin audit.
   `formal/lake-manifest.json` locks mathlib `v4.32.0` to commit
   `81a5d257c8e410db227a6665ed08f64fea08e997`.
 - Direct invocation under `formal/` selects Lean `v4.32.0` at commit
-  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, the guardrail and
-  finite audit targets, every Stage 2 leaf, and an uncontended clean default
-  `lake build` succeeded against the locked dependency tree.
+  `8c9756b28d64dab099da31a4c09229a9e6a2ef35`. On 2026-07-17, the guardrail,
+  finite, and Fredkin audit targets, every Stage 2 and Stage 3 stable leaf, and
+  an uncontended clean default `lake build` succeeded against the locked
+  dependency tree.
 - The in-project private probe compile-checks `Fin n → Bool`, filtered
   `Finset.univ` cardinality, `Equiv.Perm` identity/inverse/serial composition,
   serial application order, `Fin.addCases`, and the candidate `Vector` and
@@ -94,6 +97,18 @@ Lean results as the work proceeds.
 - `Independence.flipOne` is reversible but not weight-preserving, while
   `Independence.sortTwo` is weight-preserving but noninjective. The latter is
   explicitly only a semantic endomap; it is not a circuit or fan-out claim.
+- `UnitWire.value : Conservative 1` is the identity-on-values map, while
+  `UnitWire.delay = 1` is separate metadata measured in the paper's abstract
+  discrete time steps. No Stage 3 declaration turns that metadata into a trace,
+  path, feedback, oriented-inverse, or time-reversal semantics.
+- `PaperFredkin.state` fixes coordinates `(u,x₁,x₂)`, and
+  `PaperFredkin.map` implements Table (2)'s zero-controlled swap.
+  `PaperFredkin.map_involutive`, `equiv`, `map_isReversible`,
+  `map_weightPreserving`, and `conservative` prove its static inverse and
+  conservation properties independently. `XorLinear` makes one precise
+  coordinatewise-XOR interpretation of linearity, and
+  `PaperFredkin.map_not_xorLinear` proves failure by a named concrete
+  additivity counterexample.
 
 ### Checked Paper Facts
 
@@ -110,8 +125,9 @@ Lean results as the work proceeds.
   `100→100`, `101→101`, `110→110`, and `111→111`. Section 2.5 treats gates as
   instantaneous combinational elements and wires as delay elements.
 - Section 2.4 calls Fredkin nonlinear but supplies no algebraic definition.
-  Stage 3 must label any coordinatewise-XOR/`F₂` interpretation as a precise
-  reconstruction rather than a quoted definition or physical conclusion.
+  Stage 3 therefore labels its coordinatewise-XOR/`F₂` interpretation as a
+  precise reconstruction rather than a quoted definition or physical
+  conclusion.
 - A conservative gate is described as an invertible Boolean function that
   preserves the number of ones. The paper explicitly notes that reversibility
   and conservation are independent.
@@ -204,11 +220,11 @@ The eventual goal is complete only when all of the following hold:
 |---|---|---:|---|
 | §2.2, P4–P6 | Separate delayed identity, reversible maps, and one-to-one composition | 2–5, 10 | Formalize the discrete content separately; the paper's physical motivations are not consequences of these definitions |
 | §2.2, P7 | The abstract model should have at least one additive conserved quantity | — | Generic physical/mathematical motivation only; P7 itself does not select Hamming weight |
-| §§2.3–2.5 | In the Boolean model, `N₁`/Hamming weight is additive across wire portions and preserved by unit wires, gates, and closed transitions | 2–4, 10 | Stage 2 proves only static block additivity; gate and trajectory preservation require their later semantics |
+| §§2.3–2.5 | In the Boolean model, `N₁`/Hamming weight is additive across wire portions and preserved by unit wires, gates, and closed transitions | 2–4, 10 | Stage 2 proves static block additivity; Stage 3 proves static preservation by `UnitWire.value` and `PaperFredkin.map`; circuit composition and closed trajectories remain Stage 4/10 obligations |
 | §2.2, P8 | Local-Euclidean/layout constraint on circuit connectivity | 11 or — | The paper explicitly does not develop P8; require an actual geometry model or keep the claim out of scope |
-| §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4 | Precise after choosing time semantics |
-| §2.4, Table (2) | Paper-convention Fredkin semantics, involution, bijection, weight preservation | 3 | Truth table checked; proof pending |
-| §2.4 | Fredkin is nonlinear under an explicitly selected coordinatewise-XOR/`F₂` notion | 3 | “Nonlinear” needs a definition and concrete additivity counterexample |
+| §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4 | `UnitWire.value_apply`, `value_isReversible`, and `value_weightPreserving` prove the aligned identity-on-values claim; `UnitWire.delay_eq_one` records one abstract time step only, while timed composition and oriented reversal remain later semantics |
+| §2.4, Table (2) | Paper-convention Fredkin semantics, involution, bijection, weight preservation | 3 | `PaperFredkin.table` fixes the port order and convention; all eight rows are independently audited; `map_involutive`, `equiv`, `map_isReversible`, `map_weightPreserving`, and `conservative` prove the separate static properties |
+| §2.4 | Fredkin is nonlinear under an explicitly selected coordinatewise-XOR/`F₂` notion | 3 | `XorLinear` states the selected reconstruction; the `PaperFredkin.map_xor_counterexample_*` equations and `map_not_xorLinear` prove a concrete failure of additivity, without attributing that definition to the paper |
 | §2.5, Fig. 3 | Literal directed-graph open/closed transition semantics, feedback, memory, balanced external ports, and closed-system weight conservation | 10 | The paper's graph model is not feed-forward; it needs explicit state and feedback semantics |
 | §§2.5, 7.1 | Acyclic/equal-latency combinational fragment and one-to-one composition | 4, 7 | Typed syntax may be a corrected fragment, not the literal graph model, absent a proved correspondence |
 | §2.5 | Reversibility and conservation are independent | 2 | Proved semantically for ordinary Boolean endomaps by `Independence.reversible_not_weightPreserving` and `Independence.weightPreserving_not_reversible`; this does not assert a literal circuit realization |
@@ -243,8 +259,8 @@ disposition.
 
 | ID | Issue | Required disposition |
 |---|---|---|
-| CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Name the convention, prove the table row-by-row, and provide an explicit conjugacy theorem if an alternate convention is exposed. |
-| CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Keep `Equiv`, involutivity/self-inverse behavior, value semantics, delay, oriented network reversal, and time-reversal symmetry as distinct notions and theorems. |
+| CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Resolved for the Stage 3 default by the explicit `PaperFredkin` namespace, public coordinate laws, `PaperFredkin.table`, and all eight audited rows. No one-controlled alternate is exposed; any future alternate still requires a separately named control-negation conjugacy theorem. |
+| CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Partially resolved in Stage 3: `UnitWire.value` and `UnitWire.delay` separate aligned value identity from one-step metadata, while `PaperFredkin.map_involutive` concerns only a static gate map. Oriented network reversal and physical time-reversal symmetry remain explicit later obligations. |
 | CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Resolved for the semantic predicate claim in Stage 2 by one-bit negation and two-bit Boolean sorting. The latter is documented only as an ordinary endomap, not a conservative-logic gate or literal circuit realization. |
 | CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | State a constrained ancilla interface and account for every output. |
 | CL-005 | Figure 7 states equal delay only from argument to result, whereas §7.1 defines a combinational network using equal delay from any input to any output. | Decide whether all-path equal latency is intrinsic syntax, a well-formedness predicate, or a retiming theorem; do not promote Figure 7's narrower statement to source/sink paths without checking them. |
@@ -260,7 +276,7 @@ disposition.
 | CL-015 | Claims about infinite blank tape/environment supplying constants and garbage space are not finite-circuit theorems. | Exclude or formalize in a separately scoped infinite model. |
 | CL-016 | Physical reversibility, entropy, and zero-dissipation conclusions do not follow from finite bijections alone. | Keep them non-theorem commentary unless physical state and dynamics are formalized. |
 | CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Either prove a graph-fragment normalization/correspondence theorem or label the syntax as a corrected feed-forward semantic model; expose which wire permutations are free versus synthesized in completeness theorems. |
-| CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Define coordinatewise XOR/`F₂` linearity and prove a concrete failure of additivity, or explicitly exclude the adjective from the formal claim map. |
+| CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Resolved for one explicit reconstruction by `BitState.xor`, `BitState.falseState`, `XorLinear`, the named `PaperFredkin.map_xor_counterexample_*` equations, and `PaperFredkin.map_not_xorLinear`. This is not presented as the paper's missing definition or as physical nonlinearity. |
 | CL-019 | Figure 8 is asserted to realize a `J-K̄` flip-flop, but the paper gives no transition equation, initialization condition, or trace specification. | Reconstruct and verify an exact sequential specification from the diagram, or leave the example explicitly unresolved. |
 
 ## Dependency Notes and Tentative Module Direction
@@ -279,7 +295,9 @@ Tentative low-to-high dependency layout (names provisional):
 ConservativeLogic/
   State/Core.lean           -- `Fin n → Bool` states and Hamming weight
   Reversible/Core.lean      -- finite reversible and conservative maps
-  Gate/Fredkin.lean         -- exact primitive semantics and audits
+  Gate/UnitWire.lean        -- aligned identity value map and delay metadata
+  Gate/Fredkin.lean         -- exact paper primitive semantics and properties
+  Gate/Fredkin/Nonlinear.lean -- selected XOR interpretation and counterexample
   Circuit/Syntax.lean       -- arity-safe linear wiring and composition
   Circuit/Semantics.lean    -- evaluation and preservation theorems
   Circuit/Timed.lean        -- delays/equal-latency feed-forward networks
@@ -312,10 +330,21 @@ placeholders to refine during stage work.
 - `Independence.reversible_not_weightPreserving` and
   `Independence.weightPreserving_not_reversible`: concrete semantic
   independence witnesses for the two standalone predicates.
-- `fredkin_apply_zero`, `fredkin_apply_one`: exact control behavior.
-- `fredkin_involutive`, `fredkin_equiv`, `fredkin_conservative`: core primitive
-  properties.
-- `fredkin_table`: equivalence with all eight rows in the paper.
+- `UnitWire.value_apply`, `UnitWire.value_isReversible`, and
+  `UnitWire.value_weightPreserving`: static identity, reversibility, and
+  conservation of the unit-wire value map; `UnitWire.delay_eq_one` records its
+  separate one-step metadata.
+- `PaperFredkin.map_state_false` and `PaperFredkin.map_state_true`: exact
+  zero-controlled behavior in the paper's ordered ports.
+- `PaperFredkin.table`: parametric form of all eight rows in Table (2), whose
+  literal rows are also checked independently by the Fredkin audit.
+- `PaperFredkin.map_involutive`, `PaperFredkin.equiv`,
+  `PaperFredkin.map_isReversible`, `PaperFredkin.map_weightPreserving`, and
+  `PaperFredkin.conservative`: separate inverse, bijection, and conservation
+  results for the primitive.
+- `PaperFredkin.map_xor_counterexample` and
+  `PaperFredkin.map_not_xorLinear`: concrete failure of the selected
+  `XorLinear` predicate.
 - `Circuit.eval_id`, `Circuit.eval_seq`, `Circuit.eval_tensor`, and
   `Circuit.eval_permute`: compositional semantics.
 - `Circuit.eval_reversible` and `Circuit.eval_conservative`: preservation from
@@ -415,6 +444,12 @@ formally separating reversibility from conservation.
 
 ### 3-FREDKIN
 
+**Status:** Complete (2026-07-17). The separate unit-wire value/delay surface,
+paper-ordered zero-controlled Fredkin map, structural inverse and conservation
+proofs, eight-row regression audit, selected XOR-nonlinearity reconstruction,
+focused/full clean builds, source scans, and axiom audits are recorded in
+`goal-1/3-FREDKIN.md`.
+
 #### Big Picture Objective
 
 Formalize the unit wire and the paper's exact Fredkin gate and settle its truth
@@ -444,6 +479,8 @@ table, ordering, reversibility, and conservation without convention drift.
 - Focused/full builds, scans, and diff check pass.
 
 ### 4-CIRCUITS
+
+**Status:** Next incomplete stage.
 
 #### Big Picture Objective
 
