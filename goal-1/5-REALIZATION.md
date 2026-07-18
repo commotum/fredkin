@@ -45,9 +45,10 @@
 
 - Use one explicit `Layout` with widths for source, clean scratch, argument,
   result, and garbage. Canonical input order is
-  `(source,scratch,argument)` and canonical output order is
-  `(result,scratch,garbage)`. A stored equality between those total widths
-  accounts for every wire.
+  `(scratch,source,argument)` and canonical output order is
+  `(scratch,result,garbage)`. The stored equality
+  `source + argument = result + garbage` accounts for every non-scratch wire;
+  total width is derived by prefixing the explicit scratch width.
 - A basic Figure 5 source/sink realization is the specialization with scratch
   width zero. Keeping scratch in the general interface makes restoration a
   full-state equality rather than prose, but Stage 5 does not construct the
@@ -62,8 +63,10 @@
   layouts.
 - General reversibility should imply that `(target argument, garbage argument)`
   is injective; clean scratch cannot distinguish arguments because it is fixed
-  and returned. Consequently argument-independent garbage forces the target
-  itself to be injective and yields the corresponding finite-cardinality bound.
+  and returned. Garbage must therefore be injective within each target fiber,
+  bounding every fiber by `2^garbageWidth`. If result equality determines
+  garbage equality—including argument-independent and zero-width garbage—the
+  target itself must be injective.
 - General conservation should imply
   `weight source + weight argument = weight result + weight garbage`; restored
   scratch cancels from both sides. This is static Hamming-weight accounting,
@@ -99,11 +102,14 @@ garbage output made explicit—especially the constrained nature of FAN-OUT.
   Layout.packInput_argument_injective
   Layout.hammingWeight_packInput
   Layout.hammingWeight_packOutput
-  Realizes.completeOutput_injective
   Realizes.targetGarbage_injective
+  Realizes.garbage_separates_collisions
+  Realizes.garbage_injectiveOn_fiber
+  Realizes.fiber_card_le
   Realizes.card_argument_le_resultGarbage
+  Realizes.target_injective_of_resultDeterminesGarbage
   Realizes.target_injective_of_argumentIndependentGarbage
-  Realizes.card_argument_le_result_of_argumentIndependentGarbage
+  Realizes.target_injective_of_noGarbage
   Realizes.weight_balance
   ```
 
@@ -242,10 +248,11 @@ whitespace.
   but no diagnostic module.
 - The type/equality surface accounts for every input and output wire and works
   when any or all blocks have width zero.
-- General proofs establish complete-output and target/garbage injectivity,
-  both cardinality bounds, the target-injectivity consequence for
-  argument-independent garbage, and exact Hamming-weight balance with restored
-  scratch cancelled.
+- General proofs establish target/garbage injectivity, collision separation,
+  garbage injectivity and a power-of-two bound on every target fiber, the
+  global result/garbage cardinality bound, target-injectivity consequences when
+  result determines garbage (including argument-independent and zero-width
+  garbage), and exact Hamming-weight balance with restored scratch cancelled.
 - AND, OR, NOT, and FAN-OUT theorems state every fixed source bit, physical
   routing permutation, selected result, returned-scratch block, and garbage
   output under the paper's printed convention.

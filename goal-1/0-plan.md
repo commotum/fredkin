@@ -219,14 +219,18 @@ Lean results as the work proceeds.
 
 ### Assumptions to Test, Not Yet Facts
 - Stage 5 will test a five-block interface with fixed source, returned-clean
-  scratch, argument, result, and explicit argument-indexed garbage. Its input
-  and output width equation must account for every circuit wire; primitive
-  Figure 5 realizations use scratch width zero.
+  scratch, argument, result, and explicit argument-indexed garbage. Canonical
+  boundaries use `(scratch,source,argument)` and `(scratch,result,garbage)`;
+  `source + argument = result + garbage` accounts for every non-scratch wire,
+  and scratch is the same explicit state on both sides. Primitive Figure 5
+  realizations use scratch width zero.
 - `Realizes` should be a full boundary-state equation with an explicit garbage
   function, not a result projection or existential witness. General theorems
-  should derive injectivity and cardinality of `(target,garbage)`, target
-  injectivity when garbage is argument-independent, and source/result/garbage
-  Hamming-weight balance after cancelling restored scratch.
+  should derive injectivity of `(target,garbage)`, a garbage-cardinality bound
+  on every target fiber, target injectivity when result determines garbage (in
+  particular for argument-independent or zero-width garbage), and exact
+  source/result/garbage Hamming-weight balance after cancelling restored
+  scratch.
 - Fredkin completeness for all weight-preserving permutations may require
   clean ancillas that are returned, arbitrary wire permutations, or both. The
   no-ancilla fixed-width interpretation must not be assumed.
