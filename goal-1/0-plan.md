@@ -157,6 +157,10 @@ Lean results as the work proceeds.
   footprints, parametric port routing, every primitive row, zero-width and
   arbitrary restored-scratch cases, and negative capacity/conservation
   boundaries. It is not imported by the public root.
+- Stage 6 begins from clean synchronized commit `e65f939`. The cached default
+  build succeeds with 773 jobs. There is no `Simulation` module, conventional
+  source-circuit datatype, structural translation, demultiplexer
+  reconstruction, or simulation audit at this baseline.
 
 ### Checked Paper Facts
 
@@ -234,9 +238,39 @@ Lean results as the work proceeds.
   function is realizable without garbage using Fredkin gates. The paper
   attributes this to B. Silver but does not give the proof or state the ancilla
   convention with enough precision in the immediate claim.
+- Section 4's construction replaces conventional AND, OR, NOT, and FAN-OUT
+  elements one-for-one by the Section 3 realizations while supplying constants
+  and accepting garbage. It explicitly calls this an existence proof and
+  disclaims optimization in gate count, delay stages, and source/sink lines.
+- Section 4 states the construction for arbitrary conventional *sequential*
+  networks and discusses delay elements, slowdown, time multiplexing, streams,
+  and external constant/garbage reservoirs only informally. A finite
+  feed-forward translation cannot establish those stateful or resource claims;
+  they remain obligations for an explicit sequential semantics in Stage 10.
+- Figure 7 is a no-feedback 1-to-4 demultiplexer whose selected result routes
+  data `X` according to address `(A₀,A₁)` and whose sink outputs echo the
+  address. The paper nevertheless calls it formally sequential because of its
+  wires, and states equal delay only from the argument to the result, not from
+  every external source to every sink required by its later global
+  combinational criterion.
 
 ### Assumptions to Test, Not Yet Facts
 
+- Stage 6 can use a deliberately finite feed-forward source language indexed by
+  input/output width, with constants, discard, FAN-OUT, AND, OR, NOT, bijective
+  structural reindexing, serial composition, and disjoint tensor all explicit.
+  Delay elements, feedback, streams, and sequential state must be absent rather
+  than silently treated as identities.
+- A constructive translation should expose recursively computed source and
+  garbage widths, use each Stage 5 primitive realization at an actual source
+  node, and insert only named bijective block reindexings when composing. Serial
+  and tensor proofs must account for every prior garbage block instead of
+  projecting it away or reusing it as a constant.
+- Because Stage 4 assigns zero path delay to Fredkin, identity, and structural
+  permutations, a translation containing no `unitWire` may support a static
+  `HasLatency 0` theorem. Such a theorem would concern only the abstract grammar
+  and must not be presented as physical routing or the paper's sequential
+  slowdown result.
 - Fredkin completeness for all weight-preserving permutations may require
   clean ancillas that are returned, arbitrary wire permutations, or both. The
   no-ancilla fixed-width interpretation must not be assumed.
