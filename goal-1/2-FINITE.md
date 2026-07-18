@@ -126,9 +126,9 @@ lake build
   fan-out or a conservative-logic gate.
 - Wire boundary: `WirePerm.onState` accepts only an index equivalence and states
   its direction with application lemmas; no nonbijective reindexing is accepted.
-- Proof boundary: exhaustive `decide` proofs are allowed only for the fixed
-  one- and two-bit witnesses/tests, never for arbitrary-width closure or weight
-  additivity.
+- Proof boundary: exhaustive `decide` proofs are allowed only for fixed bounded
+  witness/audit rows (widths one through three here), never for arbitrary-width
+  closure or weight additivity.
 - Import boundary: foundational leaves use narrow mathlib imports and do not
   import `Mathlib`, `Mathlib.Tactic`, an audit leaf, or the public API.
 - Stage boundary: no Fredkin, circuit, realization, ancilla, sequential,
@@ -146,8 +146,8 @@ lake build
   output; do not call the map a conservative gate.
 - Check all two-bit sorting rows and both one-bit negation rows so a coordinate
   order change cannot leave only the existential headline green.
-- Audit `WirePerm.onState` on a nontrivial swap and check both the documented
-  direction equation and total weight.
+- Audit `WirePerm.onState` on a nontrivial swap and a non-self-inverse cycle;
+  check the documented direction equation and total weight.
 - Scan stable Lean sources for `sorry`, `admit`, project `axiom`, `unsafe`,
   `opaque`, hidden fallback/reference implementations, and later-stage terms.
 - Record `#print axioms` output for the general additivity/closure theorems and
