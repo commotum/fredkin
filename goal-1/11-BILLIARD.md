@@ -75,22 +75,26 @@ than filling them in by convention.
    interaction and switch range predicates/subtypes, selected inverses,
    equivalences, all-row laws, count preservation, exact valid-state counts,
    and impossibility of raw `2<->4` and `2<->3` equivalences.
-2. Add `Billiard/Discrete.lean` with the explicit incoming/outgoing legal
-   collision-site state, its involutive step, independent finite-site global
-   configurations, and total ball-count preservation.  Include a concrete
-   illegal three-rail event boundary.
-3. Add `Billiard/Geometry.lean` with integer grid points, four directed diagonal
+2. Add `Billiard/Collision.lean` with the selected four-channel
+   `0110 <-> 1001` scattering permutation, its explicitly admitted local
+   subtype, count preservation, and exact initialized interaction slice.  Its
+   total identity fallback outside the subtype must be labeled algebraic only.
+3. Add `Billiard/Discrete.lean` with independent finite-site products of the
+   admitted local collision state, an involutive simultaneous step, commuting
+   single-site updates, total ball-count preservation, and an illegal
+   three-ball boundary.
+4. Add `Billiard/Geometry.lean` with integer grid points, four directed diagonal
    velocities, certified finite routes, horizontal/vertical mirror reflection,
    a finite delay detour, sampled clearance, and time-indexed route conflict.
    Check a simultaneous crossing conflict and a staggered conflict-free use.
-4. Add `Billiard/Figure14.lean` with four explicit directed routes, the active
+5. Add `Billiard/Figure14.lean` with four explicit directed routes, the active
    sampled configuration for each `(p,q)`, exact start/end observation, latency
    four, frame legality/clearance, count preservation, and a right-angle-turn
    certificate used exactly when both inputs are true.
-5. Add a thin opt-in `ConservativeLogic.Billiard` umbrella and a non-public
+6. Add a thin opt-in `ConservativeLogic.Billiard` umbrella and a non-public
    `Audit/Billiard.lean`.  Do not import either from the finite API or sequential
    umbrella.
-6. Update the README, paper map, correction log, dependency map, and this report
+7. Update the README, paper map, correction log, dependency map, and this report
    only after the focused implementation and adversarial checks pass.
 
 Expected principal declarations:
@@ -106,10 +110,14 @@ Billiard.Switch.equiv
 Billiard.Switch.weightPreserving
 Billiard.Switch.validOutput_card
 Billiard.Switch.no_raw_equiv
-Billiard.CollisionSite.State
-Billiard.CollisionSite.stepEquiv
-Billiard.CollisionSite.step_involutive
-Billiard.CollisionSite.totalBallCount_step
+Billiard.Collision.map
+Billiard.Collision.conservative
+Billiard.Collision.AllowedState
+Billiard.Collision.allowedEquiv
+Billiard.Collision.map_embed
+Billiard.ScatteringLayer.Configuration.stepEquiv
+Billiard.ScatteringLayer.Configuration.stepAt_commute
+Billiard.ScatteringLayer.Configuration.totalBallCount_step
 Billiard.Grid.Route
 Billiard.Grid.Mirror.reflect
 Billiard.Grid.simultaneous_crossing_conflict
@@ -123,7 +131,8 @@ Billiard.Figure14.sampled_clearance
 
 ```text
 Billiard/Interface.lean  exact heterogeneous rail interfaces
-Billiard/Discrete.lean   legal local/global event-step abstraction
+Billiard/Collision.lean  selected local permutation and admitted subtype
+Billiard/Discrete.lean   independent simultaneous scattering layers
 Billiard/Geometry.lean   directed sampled routes and timing conflicts
 Billiard/Figure14.lean   selected coordinate/timing refinement
 Billiard.lean            opt-in umbrella
@@ -183,8 +192,10 @@ boundary if the stage implementation is accepted.
 
 ## Completion Requirements
 
-- A total deterministic step exists only on an explicit legal collision-site
-  subset, is involutive, and preserves the stated total ball count.
+- The selected local collision is restricted to an explicit admitted subtype;
+  its step and every independent finite-site product are deterministic,
+  involutive, and preserve the stated ball count.  Any total raw fallback is
+  exposed as algebraic completion rather than physical semantics.
 - Interaction and switch inverses have the exact valid-output subtype in their
   signatures; valid cardinalities and raw-interface impossibility are checked.
 - Figure 14 has a coordinate-level sampled refinement theorem and exact latency

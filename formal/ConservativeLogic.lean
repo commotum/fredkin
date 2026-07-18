@@ -42,7 +42,9 @@ time-reversal semantics,
 traces, sequential execution, physical routing, or thermodynamic conclusion
 is claimed by this finite root.  Corrected registered transition and trace
 semantics are available only through the separate opt-in import
-`ConservativeLogic.Sequential`.
+`ConservativeLogic.Sequential`.  Constrained collision interfaces and sampled
+Figure 14 geometry are likewise available only through the separate opt-in
+`ConservativeLogic.Billiard`, which does not assert continuous mechanics.
 -/
 
 namespace ConservativeLogic

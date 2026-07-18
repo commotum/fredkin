@@ -67,7 +67,11 @@ global linear workspace bound, delay padding, feedback-graph inverse, oriented
 wire execution, ticks, traces, sequential simulation, physical routing, or
 physical time reversal is claimed.  The separately buildable opt-in module
 `ConservativeLogic.Sequential` supplies corrected discrete registered
-semantics without becoming a dependency of this finite API.
+semantics without becoming a dependency of this finite API.  The separate
+opt-in `ConservativeLogic.Billiard` module supplies constrained rail
+interfaces, admitted local scattering, sampled routes, and a Figure 14 trace;
+it likewise remains outside this finite API and makes no continuous-mechanics
+claim.
 -/
 
 namespace ConservativeLogic

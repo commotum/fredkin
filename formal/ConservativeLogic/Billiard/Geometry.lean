@@ -155,6 +155,21 @@ theorem fourTickDetour_same_endpoints :
 /-- The selected detour adds exactly four sampled ticks. -/
 theorem fourTickDetour_extra_latency : 6 = 2 + 4 := rfl
 
+/-- Fixed sampled mirror orientation at each of the detour's five direction changes. -/
+def fourTickDetourMirrors : Fin 5 → Mirror
+  | ⟨0, _⟩ => .vertical
+  | ⟨1, _⟩ => .horizontal
+  | ⟨2, _⟩ => .vertical
+  | ⟨3, _⟩ => .horizontal
+  | ⟨4, _⟩ => .horizontal
+
+/-- Every direction change in the selected detour is certified by its fixed mirror. -/
+theorem fourTickDetour_reflects (turn : Fin 5) :
+    (fourTickDetourMirrors turn).reflect
+        (fourTickDetour.direction turn.castSucc) =
+      fourTickDetour.direction turn.succ := by
+  fin_cases turn <;> rfl
+
 /-- A route crossing the origin in the northeast direction. -/
 def northeastCrossing : Route 2 where
   position

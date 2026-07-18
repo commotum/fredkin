@@ -16,6 +16,10 @@ realization theorem.
 
 namespace ConservativeLogic.Billiard
 
+/-- Number of unoccupied rails at a fixed-width Boolean boundary. -/
+def vacancies {width : Nat} (value : BitState width) : Nat :=
+  width - hammingWeight value
+
 namespace Interaction
 
 /-- An explicitly ordered interaction-gate input `(p,q)`. -/
@@ -93,6 +97,18 @@ def encode (value : BitState 2) : BitState 4 :=
 theorem encode_input (p q : Bool) :
     encode (input p q) = output (p && q) (!p && q) (p && !q) (p && q) := rfl
 
+/-- The `A` output is the selected logical AND coordinate. -/
+@[simp]
+theorem encode_a (value : BitState 2) : encode value 0 = (value 0 && value 1) := rfl
+
+/--
+Supplying one ball on `q` exposes `p` and `¬p` on named rails, with the full
+four-rail output retained.  This is a fixed occupied source, not a free mirror.
+-/
+theorem not_with_true_source (p : Bool) :
+    encode (input p true) = output p (!p) false p := by
+  cases p <;> rfl
+
 /-- Raw coordinate decoder; it is an inverse only on valid outputs. -/
 def decodeRaw (value : BitState 4) : BitState 2 :=
   input (value 0 || value 2) (value 0 || value 1)
@@ -152,6 +168,12 @@ theorem encode_weightPreserving : WeightPreserving encode := by
   intro value
   rw [← input_eta value]
   cases value 0 <;> cases value 1 <;> rfl
+
+/-- Unequal arity adds two vacant rails even though occupied-ball count is preserved. -/
+theorem encode_vacancies (value : BitState 2) :
+    vacancies (encode value) = vacancies value + 2 := by
+  rw [← input_eta value]
+  cases value 0 <;> cases value 1 <;> decide
 
 /-- A constructive finite enumeration transported through `equiv`. -/
 instance validOutputFintype : Fintype ValidOutput :=
@@ -319,6 +341,12 @@ theorem encode_weightPreserving : WeightPreserving encode := by
   intro value
   rw [← input_eta value]
   cases value 0 <;> cases value 1 <;> rfl
+
+/-- Unequal arity adds one vacant rail even though occupied-ball count is preserved. -/
+theorem encode_vacancies (value : BitState 2) :
+    vacancies (encode value) = vacancies value + 1 := by
+  rw [← input_eta value]
+  cases value 0 <;> cases value 1 <;> decide
 
 /-- A constructive finite enumeration transported through `equiv`. -/
 instance validOutputFintype : Fintype ValidOutput :=

@@ -36,11 +36,13 @@ lake build ConservativeLogic.Audit.Uncompute
 lake build ConservativeLogic.Audit.Completeness
 lake build ConservativeLogic.Sequential
 lake build ConservativeLogic.Audit.Sequential
+lake build ConservativeLogic.Billiard
+lake build ConservativeLogic.Audit.Billiard
 python3 ConservativeLogic/Audit/completeness_groups.py
 lake build
 ```
 
-Stages 1 through 10 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 11 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -164,6 +166,38 @@ compiler, literal Figure 19 graph inversion, NAND-comparable complexity, and
 physical conclusions remain documented rather than inferred.  The sequential
 umbrella is intentionally not imported by `ConservativeLogic` or
 `ConservativeLogic.API`.
+
+Stage 11 adds the separate opt-in import `ConservativeLogic.Billiard`.  The
+paper's interaction and switch tables are unequal-width maps, so each is an
+equivalence from two input bits onto an explicit four-state valid-output
+subtype—not an ordinary balanced `Conservative` gate.  Their selected inverses,
+ball-count preservation, valid cardinalities, raw-interface cardinality
+obstructions, and increases in vacant rails are checked.  A four-channel local
+collision exchanges only the straight pair `0110` and deflected pair `1001`;
+its total identity behavior on other masks is labeled an algebraic completion,
+while its admitted subtype excludes unselected multi-ball events.  The
+initialized `(0,q,p,0)` slice refines the complete interaction output.
+
+Finite products of admitted collision sites provide deterministic,
+involutive, count-preserving simultaneous scattering only for independent
+owned channels.  Directed routes use a rotated integer lattice, with explicit
+sampled mirror turns, a four-tick detour, and global-time crossover predicates.
+The naked crossing conflicts when simultaneous and is certified clear for one
+specific staggered schedule.  Figure 14 has a complete coordinate trace: every
+active ball makes four unit lattice moves, all integral frames preserve ball
+count and meet the sampled squared-distance threshold, the right-angle turn
+occurs exactly on input `11`, and the full final frame observes
+`(pq,!p q,p !q,pq)`.  These are discrete sampled certificates, not continuous
+hard-ball, swept-clearance, elastic, mirror-mechanics, or physical-energy
+theorems.
+
+Figures 15 and 17 provide no coordinates or numerical latency, while Figure
+18 explicitly omits steering/timing mirrors and unit wires and leaves its
+bridge/trivial crossover obligations unproved.  Accordingly, the library does
+not claim Figure 17/18 physical refinement, arbitrary mirror delay, a general
+billiard layout compiler, P8 packing bounds, physical time reversal, or any
+thermodynamic conclusion.  The billiard umbrella is not imported by the finite
+or sequential APIs.
 
 The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.
