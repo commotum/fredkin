@@ -28,19 +28,24 @@ lake exe cache get
 lake build ConservativeLogic.Audit.Guardrails
 lake build ConservativeLogic.Audit.Finite
 lake build ConservativeLogic.Audit.Fredkin
+lake build ConservativeLogic.Audit.Circuit
 lake build
 ```
 
-Stages 1 through 3 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 4 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
 identity-on-values semantics with separate one-step delay metadata, and the
-paper-convention Fredkin gate. The Fredkin API fixes port order `(u,x₁,x₂)`,
-uses the paper's zero-controlled swap, proves involution and conservation, and
-includes an explicit coordinatewise-XOR counterexample for a precisely selected
-meaning of nonlinearity. It also contains checked semantic witnesses showing
-that reversibility and Hamming-weight preservation are independent. The focused
-audit commands are explicit because diagnostic leaves are intentionally not
-imported by the public root. Arity-safe one-to-one circuit syntax begins in
-Stage 4; the unit-wire delay metadata is not yet a timed transition semantics.
+paper-convention Fredkin gate. It also exports a balanced feed-forward circuit
+grammar with only identity, unit wire, Fredkin, explicit bijective structural
+reindexing, exact-width serial composition, and disjoint tensor composition.
+Circuit evaluation is a conservative equivalence, and a separate static
+`PathDelay` relation certifies when every existing boundary path has one common
+unit-wire latency. Structural permutations are zero-delay meta-level port
+reindexings, not synthesized routing circuits. The grammar is not claimed to
+be the paper's feedback-capable directed-graph model, and the timing layer is
+not a tick, trace, transition, stream, or physical-routing semantics. Explicit
+constants, garbage, and initialized auxiliary wires enter next through the
+Stage 5 realization interface. The focused audit commands are explicit because
+diagnostic leaves are intentionally not imported by the public root.
