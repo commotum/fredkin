@@ -177,6 +177,10 @@ Lean results as the work proceeds.
   latency-additive round trips. The uncontended clean default build succeeds
   with 778 jobs; the non-public inverse audit succeeds with 777 jobs, with full
   completion evidence recorded in `goal-1/7-INVERSE.md`.
+- Stage 8 begins from clean synchronized commit `ccab07c`. The cached default
+  build succeeds with 778 jobs. There is no `Ancilla/Uncompute.lean`,
+  `Audit/Uncompute.lean`, multi-bit spy layer, or complete
+  compute-copy-uncompute theorem at this baseline.
 
 ### Checked Paper Facts
 
@@ -237,6 +241,12 @@ Lean results as the work proceeds.
   `(a, not a)` from data inputs `(1, 0)`. Figures 6(c) and 22 route one `0` and
   one `1` graphically without making this port ordering locally obvious, so the
   later circuit must state the wiring permutation explicitly.
+- Figure 22 draws its side inputs top-to-bottom as `(0,1)` and its side outputs
+  as `(a,not a)`. Read literally as Table (2)'s `(x₁,x₂)` and `(y₁,y₂)`
+  ports, that row is reversed: zero-controlled Fredkin sends
+  `(a,0,1)` to `(a,not a,a)`. The Stage 8 reconstruction must therefore route
+  the canonical result-register pair `(0,1)` to physical data ports `(1,0)`
+  before claiming output order `(a,a,not a)`.
 - Direct inspection of PDF pp. 229–230 and Figures 4–6 fixes the complete
   primitive slices. AND uses `(a,b,0) ↦ (a,a∧b,¬a∧b)` and selects `y₁`;
   OR uses `(a,1,b) ↦ (a,a∨b,¬a∨b)` and selects `y₁`; NOT and FAN-OUT both use
@@ -304,6 +314,12 @@ Lean results as the work proceeds.
   inverse path retains the same nonnegative unit-wire count while exchanging
   its endpoints; this is not a `t ↦ -t` execution theorem or physical
   time-reversal invariance.
+- Adding an unpadded result register and zero-delay spy layer does not generally
+  preserve the paper's global equal-path criterion when the forward circuit has
+  positive latency: main-register and result-register routes traverse different
+  numbers of unit wires. Stage 8 may prove the complete static initialized-slice
+  equation unconditionally, but any timing theorem needs zero latency or an
+  explicit delay-balancing construction; the figures do not supply one.
 - `Circuit.inverse` now covers all six balanced feed-forward constructors. It
   keeps identity, unit wire, and paper Fredkin syntax; uses `wiring.symm` for an
   active structural permutation; reverses serial order; and retains tensor
@@ -418,7 +434,7 @@ disposition.
 | CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Resolved only for the finite feed-forward fragment by the explicit `SourceCircuit` compiler and full-state `compile_realizes` theorem. Source delay, feedback, transition/initialization semantics, slowdown, scheduling, streams, and time-multiplexing remain Stage 10 obligations and are not inferred. |
 | CL-007 | The interaction and switch gates use constrained, unequal-width rail encodings. They preserve balls/ones but not the number of zero-valued physical rails and are exceptions to the ordinary balanced-port gate type. | Model each valid-state subtype explicitly; never claim `Bool² ≃ Bool⁴`, `Bool² ≃ Bool³`, or an ordinary equal-width conservative-gate instance. Qualify port-balance claims accordingly. |
 | CL-008 | Figure 18 explicitly omits steering/timing mirrors and unit wires, but identifies bridge crossovers and calls the others trivial; clearance and simultaneous collision scheduling are additional formalization obligations rather than quoted omissions. | Model the stated omissions, crossover cases, clearance, and event scheduling explicitly in a discrete geometry semantics. |
-| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; with Table (2)'s `(u,x1,x2)` order, `(x1,x2)=(1,0)` yields `(y1,y2)=(a,not a)`. | Advanced in Stage 5: `notFanoutInputWiring` explicitly maps canonical `(0,1,a)` to physical `(a,1,0)`, and the one-bit complete equation returns `(a,a,¬a)`. The multi-bit §7 copy layer and chosen `2n`-wire result encoding remain Stage 8 obligations. |
+| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; Figure 22's drawn top-to-bottom `(0,1) → (a,not a)` data order conflicts with Table (2)'s zero-controlled swap. | Advanced through the Stage 8 contract: `notFanoutInputWiring` already checks physical `(a,1,0)`, while the multi-bit reconstruction must explicitly route canonical `(a,0,1)` to those physical ports before returning `(a,a,¬a)`. No literal-port reading of Figure 22 is accepted without that permutation. |
 | CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Advanced through Stage 7: `Realizes` distinguishes the five interface blocks and `Circuit.inverse_eval` supplies complete target-circuit inversion. No spy/copy layer, compute-copy-uncompute composition, restoration theorem, or garbage-recycling result is claimed before Stage 8. |
 | CL-011 | All-zero scratch sufficiency is attributed to Margolus without proof. | Reconstruct a proof, cite a verifiable source, or leave the stronger version unresolved. |
 | CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model. | Define a circuit family and asymptotic measure before formalizing them. |
@@ -429,6 +445,7 @@ disposition.
 | CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Stages 4, 6, and 7 consistently use corrected feed-forward expression grammars. `Circuit.inverse` and its exact path theorem cover those terms only; Figure 19 itself includes feedback, so no graph-reversal or open-transducer theorem follows. Feedback semantics, physical routing, and synthesis of permutations remain open. |
 | CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Resolved for one explicit reconstruction by `BitState.xor`, `BitState.falseState`, `XorLinear`, the named `PaperFredkin.map_xor_counterexample_*` equations, and `PaperFredkin.map_not_xorLinear`. This is not presented as the paper's missing definition or as physical nonlinearity. |
 | CL-019 | Figure 8 is asserted to realize a `J-K̄` flip-flop, but the paper gives no transition equation, initialization condition, or trace specification. | Reconstruct and verify an exact sequential specification from the diagram, or leave the example explicitly unresolved. |
+| CL-020 | Figures 20–23 assume a combinational forward network but do not specify delay balancing for the enlarged boundary after adding result-register constants and spy outputs. | Prove the complete compute-copy-uncompute equation statically. Claim the paper's global equal-path timing only for a proved zero-latency or explicitly padded construction, and retain a positive-latency counterexample for the unpadded generic circuit. |
 
 ## Dependency Notes and Module Direction
 
@@ -845,6 +862,11 @@ path and equal-latency certificates.
 
 ### 8-UNCOMPUTE
 
+**Status:** In progress (2026-07-17), from clean synchronized baseline
+`ccab07c`. Checked paper facts, the corrected port/timing boundaries, exact
+public theorem contract, adversarial tests, and required verification are
+recorded in `goal-1/8-UNCOMPUTE.md`.
+
 #### Big Picture Objective
 
 Formalize the paper's garbageless compute-copy-uncompute construction with
@@ -870,8 +892,10 @@ complete ancilla accounting and restoration guarantees.
   includes the wiring between register order and each Fredkin gate's data-port
   order.
 - The construction uses no hidden fan-out and works for `n = 0`.
-- “Garbageless” is documented as restored scratch/no argument-dependent garbage,
-  not absence of all ancillary wires.
+- “Garbageless” is documented as restoration of the supplied workspace and
+  absence of the unnamed transient `g`; the intentionally returned argument
+  and documented `(f x,not (f x))` encoding remain argument-dependent, and
+  ancillary result-register wires are not absent.
 - Focused/full builds, scans, axiom audit, and diff check pass.
 
 ### 9-COMPLETENESS
