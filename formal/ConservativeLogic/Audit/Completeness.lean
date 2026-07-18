@@ -195,6 +195,8 @@ example : ¬ ∃ circuit : Circuit 4,
 #check CleanFredkinRealization
 #check adjacentTranspositionCircuit_spec
 #check singleExchangeClean
+#check ConservativeLogic.adjacentTranspositionCircuit_spec
+#check ConservativeLogic.singleExchangeClean
 #check Conservative.weightLayer_hammingTwo_connected
 #check fredkin_complete_conservative
 #check clean_fredkin_realizable_iff

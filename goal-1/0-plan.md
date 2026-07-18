@@ -612,6 +612,10 @@ incremental build discipline.
 `Simulation.middleSwapWiring_on_append` remain compatibility forwarders.
 Canonical ownership is `Circuit.cast`, `Circuit.eval_cast`,
 `Circuit.middleSwapWiring`, and `Circuit.middleSwapWiring_on_append`.
+The adjacent-synthesis implementation is canonically owned by
+`ConservativeLogic.Completeness.Adjacent`; every former
+`ConservativeLogic.*` root spelling from that module remains a compatibility
+export for existing consumers.
 
 ## Proposed Theorem Outline
 
@@ -1397,10 +1401,11 @@ model and prove refinement of selected collision networks to conservative gates.
 
 ### 12-AUDIT
 
-**Status:** In progress (2026-07-18), from clean synchronized baseline
-`1047322`.  Repository-wide paper/correction, API/import, and adversarial audit
-passes are complete; the public examples and aggregate axiom leaves build, and
-final clean-tree and clean-checkout verification is underway.
+**Status:** Complete (2026-07-18), from clean synchronized baseline `1047322`.
+The paper/correction, API/import, adversarial, resource, and physical-scope
+audits pass; public examples and aggregate axiom inspection build; and clean
+dependency-tree plus clean-checkout verification is recorded in
+`goal-1/12-AUDIT.md`.
 
 #### Big Picture Objective
 

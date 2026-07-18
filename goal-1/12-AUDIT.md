@@ -2,11 +2,11 @@
 
 ## Status
 
-In progress on 2026-07-18 from clean synchronized baseline `1047322`.
+Complete on 2026-07-18 from clean synchronized baseline `1047322`.
 
 ## Current Facts
 
-- Stages 1--11 are complete.  The default root `ConservativeLogic` imports the
+- Stages 1--12 are complete.  The default root `ConservativeLogic` imports the
   finite API only; registered execution and billiard sampling remain separate
   opt-in umbrellas at `ConservativeLogic.Sequential` and
   `ConservativeLogic.Billiard`.
@@ -90,9 +90,14 @@ goal-1/12-AUDIT.md                    final evidence and unresolved inventory
 
 The examples leaf imports only `ConservativeLogic`.  The diagnostic axiom leaf
 explicitly imports the finite, sequential, and billiard umbrellas and remains
-outside every public import graph.  Generic `Circuit.cast`, structural block
+outside every public import graph.  Generic width transport, structural block
 routing, Fredkin counting, and result-register states were moved below the
-compiler/uncompute layers without changing their stable public names.
+compiler/uncompute layers.  `Circuit.cast`, `Circuit.eval_cast`,
+`Circuit.middleSwapWiring`, and `Circuit.middleSwapWiring_on_append` are the new
+canonical names; the former `Simulation.castCircuit`,
+`Simulation.eval_castCircuit`, `Simulation.middleSwapWiring`, and
+`Simulation.middleSwapWiring_on_append` names remain exact compatibility
+forwarders.
 `Completeness.Adjacent` now contains the specialized local-synthesis helpers;
 generic `CleanFredkinRealization.wireConjugate` is owned with its witness type.
 
@@ -163,4 +168,93 @@ lake build ConservativeLogic.Sequential ConservativeLogic.Billiard
 
 ## Stage Results
 
-Pending implementation and final verification.
+Stage 12 completes the goal.
+
+### Correspondence result
+
+- Every paper-map row and every CL-001--CL-024 correction row now has one of
+  five explicit dispositions: proved, corrected, disproved, open, or
+  out-of-model.  Exact fully qualified declarations are used where Lean owns a
+  result; commentary is not presented as a theorem.
+- The two narrow correspondence gaps found by the review are closed:
+  `ConservativeLogic.zeroCount` and
+  `ConservativeLogic.WeightPreserving.zeroCount` expose the derived fixed-width
+  `N₀`, while `ConservativeLogic.Circuit.wireOfLength`,
+  `ConservativeLogic.Circuit.eval_wireOfLength`, and
+  `ConservativeLogic.Circuit.wireOfLength_hasLatency` give every nonnegative
+  integral abstract one-wire length its value and exact latency theorem.
+  Neither result asserts an independent conserved quantity, spatial layout, or
+  continuous mechanics.
+- The final unresolved inventory is deliberate: all-zero workspace conversion
+  and the paper's global scratch bounds (CL-011/CL-012); a general sequential
+  compiler and delay normalization (CL-006); the cited reversible-only
+  all-zero result-register construction; fixed-CPU/Turing universality and
+  complexity bounds; P8 geometry; continuous billiard dynamics, the Figure 15
+  bridge, Figures 17--18, arbitrary delay/layout composition, and physical
+  clearance; and the B./D. Silver attribution (CL-024).  Infinite reservoirs
+  and thermodynamic conclusions remain out-of-model rather than unresolved
+  finite-circuit theorems.
+
+### API and ownership result
+
+- The local import graph is acyclic.  The finite root and `API` have no reverse
+  dependency on `Audit`, `Examples`, `Sequential`, or `Billiard`; the latter
+  two remain independent opt-in umbrellas.  A clean default-build artifact
+  check found none of those opt-in leaves.
+- `Circuit.Structural`, `Circuit.Resources`, and `Ancilla.Register` now own
+  generic structural semantics, syntax-only Fredkin counts, and
+  circuit-independent register states respectively.  `NoAncilla` no longer
+  imports realization.  The adjacent-transposition implementation is
+  canonically contained in `ConservativeLogic.Completeness.Adjacent`; all of
+  its former root names remain compatibility exports, so the namespace repair
+  does not break existing consumers.
+- `ConservativeLogic.Examples` imports only the stable finite root and checks
+  ordinary Boolean compilation, complete compute-copy-uncompute, and clean
+  Fredkin realization.  `ConservativeLogic.Audit.Axioms` is an explicit
+  diagnostic leaf importing the finite and opt-in umbrellas; no public module
+  imports it.
+- The baseline diff contains a pre-existing tracked `.DS_Store` deletion.  It
+  was treated as unrelated user state and was not restored or otherwise
+  modified during this stage.
+
+### Trust and resource result
+
+- Source review found no proof holes, project `axiom` or `constant`
+  declarations, `opaque`, `unsafe`, `partial`, `noncomputable`,
+  `native_decide`, `Lean.ofReduceBool`, direct choice extractor, unsafe option
+  extractor, or hidden collision/event fallback.  The documented classical
+  sites select finite noncanonical completeness witnesses; they are not
+  executable compilation or physical dynamics.
+- Circuit syntax remains balanced and disjoint.  Fan-out consumes explicit
+  initialized wires and exposes complement garbage; compilation and
+  compute-copy-uncompute retain their exact source, scratch, result, garbage,
+  latency, and Fredkin-count qualifications.  Sequential conservation remains
+  complete-boundary flux/closed-state conservation, and billiard results remain
+  selected legal interfaces and sampled routes.
+- The eleven stage-specific audit leaves contain 225 `#print axioms` targets;
+  the aggregate leaf contains 47, for 272 total, alongside 23 guarded
+  `#check_failure` probes.  Built output reports only the expected Lean/mathlib
+  `propext`, `Classical.choice`, and `Quot.sound` dependencies, with several
+  results depending on fewer or no axioms.  No project assumption appears.
+
+### Reproduction evidence
+
+From the synchronized working tree:
+
+- `lake clean && lake build` completed successfully with 1,006 jobs.
+- The combined examples, all eleven stage audits, aggregate audit, sequential
+  umbrella/audit, and billiard umbrella/audit build completed successfully with
+  1,030 jobs.
+- `python3 ConservativeLogic/Audit/completeness_groups.py` independently
+  obtained generated/full group sizes `1/1`, `2/2`, `36/36`, and
+  `207360/414720` at widths one through four.  The width-four target swap
+  `1100 <-> 1010` is conservative and absent from the generated group.
+- Import-boundary, proof-hole, forbidden-shortcut, direct-choice, physical-word,
+  and collision-fallback reviews passed.  The full diff from `1047322` was
+  reviewed, and `git diff --check 1047322 --` passed.
+
+A fresh local clone at synchronized source commit `2837e62` then ran
+`lake update`, materialized the pinned mathlib commit
+`81a5d257c8e410db227a6665ed08f64fea08e997`, and passed the default build (998
+reported jobs) plus the same complete opt-in/audit target set (1,030 reported
+jobs).  This clone shared no project build artifacts with the working tree.

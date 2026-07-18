@@ -982,4 +982,50 @@ theorem singleExchangeClean {n : Nat} (x y : BitState n) (i j : Fin n)
   · exact (different (firstValue.trans secondValue.symm)).elim
 
 end Completeness.Adjacent
+
+/-!
+Legacy root aliases are retained for source compatibility.  New code should
+use the canonical `ConservativeLogic.Completeness.Adjacent` namespace.
+-/
+
+export Completeness.Adjacent (
+  markerLayout
+  markerCoreWidth
+  controlledWidth
+  markerComputation
+  controlledSwap
+  pair
+  bit
+  pair_zero
+  pair_one
+  controlledInput
+  literal
+  literal_spec
+  patternMatch
+  patternMatch_spec
+  patternMatch_sourceWidth_le
+  controlledSwap_spec
+  patternControlledSwap_spec
+  edgeSource
+  edgeWidth
+  edgeClean
+  edgeClean_width_le
+  edgeWidth_le
+  edgeData
+  edgeState
+  edgeRouteWiring
+  edgeRoute
+  edgeControlled
+  edgeControlledState
+  edgeRoute_spec
+  edgeControlled_spec
+  adjacentTranspositionCircuit
+  adjacentTranspositionCircuit_structured_spec
+  adjacentTranspositionCircuit_spec
+  adjacentTranspositionCircuit_hasLatency_zero
+  adjacentTranspositionCircuit_fredkinCount
+  adjacentTranspositionClean
+  singleExchangeClean
+)
+
 end ConservativeLogic
