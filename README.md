@@ -76,7 +76,8 @@ paper's sequential universality claim.
 The public Figure 7 reconstruction separately checks the complete map
 `(0,0,0,A₀,A₁,X) ↦ (Y₀,Y₁,Y₂,Y₃,A₁,A₀)` with three Fredkins and seven unit
 wires. It constructs a delay-two route for every distinguished
-argument/result pair and a zero-delay source/result counterroute, proving that
+argument/result pair and proves that every grammar-induced route between those
+ports has delay two. A zero-delay source/result counterroute then proves that
 the full six-wire boundary does not satisfy the later global equal-latency
 criterion. Inverse circuits, garbage recycling, feedback, traces, stream
 simulation, and physical conclusions remain later or out of scope. The

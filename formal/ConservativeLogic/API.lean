@@ -35,8 +35,9 @@ Fredkin circuits plus structural reindexing. The compiler has zero scratch,
 states its complete fixed source and argument-dependent garbage, and proves
 the full initialized-slice equation with exact Fredkin count. The separate
 Figure 7 reconstruction includes all three zero sources, address-echo garbage,
-seven unit wires, selected delay-two argument/result paths, and a proof that
-the complete boundary does not have one global latency. It does not construct
+seven unit wires, existence and exact delay two for every distinguished
+argument/result path, and a proof that the complete boundary does not have one
+global latency. It does not construct
 inverse circuits, garbage recycling, graph/feedback semantics, or sequential
 simulation.
 -/

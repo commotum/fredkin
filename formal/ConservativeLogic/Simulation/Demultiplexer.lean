@@ -324,13 +324,37 @@ exactly its unit-wire delay.  This proves route-independent timing without
 enumerating whole-circuit paths.
 -/
 
-private def RespectsPhase (circuit : Circuit 6)
-    (before after : Fin 6 → Nat) : Prop :=
+private def RespectsPhase {n : Nat} (circuit : Circuit n)
+    (before after : Fin n → Nat) : Prop :=
   ∀ {input output delay}, Circuit.PathDelay circuit input output delay →
     before input + delay = after output
 
-private theorem RespectsPhase.seq {first second : Circuit 6}
-    {before middle after : Fin 6 → Nat}
+private theorem RespectsPhase.identity {n : Nat} (phase : Fin n → Nat) :
+    RespectsPhase (.identity n) phase phase := by
+  rintro input output delay ⟨rfl, rfl⟩
+  simp
+
+private theorem RespectsPhase.unitWire (phase : Nat) :
+    RespectsPhase .unitWire (fun _ ↦ phase) (fun _ ↦ phase + 1) := by
+  intro input output delay path
+  change delay = UnitWire.delay at path
+  rw [path, UnitWire.delay_eq_one]
+
+private theorem RespectsPhase.fredkin (phase : Nat) :
+    RespectsPhase .fredkin (fun _ ↦ phase) (fun _ ↦ phase) := by
+  intro input output delay path
+  change delay = 0 at path
+  omega
+
+private theorem RespectsPhase.permute {n : Nat} (wiring : WirePerm n)
+    {before after : Fin n → Nat}
+    (route : ∀ input, before input = after (wiring input)) :
+    RespectsPhase (.permute wiring) before after := by
+  rintro input output delay ⟨rfl, rfl⟩
+  simpa using route input
+
+private theorem RespectsPhase.seq {n : Nat} {first second : Circuit n}
+    {before middle after : Fin n → Nat}
     (firstPhase : RespectsPhase first before middle)
     (secondPhase : RespectsPhase second middle after) :
     RespectsPhase (.seq first second) before after := by
@@ -342,50 +366,127 @@ private theorem RespectsPhase.seq {first second : Circuit 6}
     _ = middle wire + secondDelay := by rw [firstPhase firstPath]
     _ = after output := secondPhase secondPath
 
+private theorem RespectsPhase.tensor {m n : Nat}
+    {left : Circuit m} {right : Circuit n}
+    {leftBefore leftAfter : Fin m → Nat}
+    {rightBefore rightAfter : Fin n → Nat}
+    (leftPhase : RespectsPhase left leftBefore leftAfter)
+    (rightPhase : RespectsPhase right rightBefore rightAfter) :
+    RespectsPhase (.tensor left right)
+      (Fin.append leftBefore rightBefore) (Fin.append leftAfter rightAfter) := by
+  intro input output delay path
+  rcases path with ⟨leftInput, leftOutput, rfl, rfl, leftPath⟩ |
+    ⟨rightInput, rightOutput, rfl, rfl, rightPath⟩
+  · simpa using leftPhase leftPath
+  · simpa using rightPhase rightPath
+
+private theorem routedGate_respectsPhase (inputWiring outputWiring : WirePerm 6)
+    (gatePhase : Nat) (bypassPhase : Fin 3 → Nat)
+    (before after : Fin 6 → Nat)
+    (inputRoute : ∀ input,
+      before input =
+        Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase (inputWiring input))
+    (outputRoute : ∀ input,
+      Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase input =
+        after (outputWiring input)) :
+    RespectsPhase (routedGate inputWiring outputWiring) before after := by
+  have inputPhase := RespectsPhase.permute inputWiring inputRoute
+  have corePhase := (RespectsPhase.fredkin gatePhase).tensor
+    (RespectsPhase.identity bypassPhase)
+  have outputPhase := RespectsPhase.permute outputWiring outputRoute
+  simpa [routedGate] using inputPhase.seq (corePhase.seq outputPhase)
+
+private def threeWirePhase (phase : Nat) : Fin 3 → Nat :=
+  Fin.append (Fin.append (fun _ : Fin 1 ↦ phase) (fun _ : Fin 1 ↦ phase))
+    (fun _ : Fin 1 ↦ phase)
+
+private theorem threeUnitWires_respectsPhase (phase : Nat) :
+    RespectsPhase threeUnitWires (threeWirePhase phase) (threeWirePhase (phase + 1)) := by
+  have one := RespectsPhase.unitWire phase
+  simpa [threeUnitWires, threeWirePhase, Nat.add_assoc] using (one.tensor one).tensor one
+
+private def fourWirePhase (phase : Nat) : Fin 4 → Nat :=
+  Fin.append
+    (Fin.append (Fin.append (fun _ : Fin 1 ↦ phase) (fun _ : Fin 1 ↦ phase))
+      (fun _ : Fin 1 ↦ phase))
+    (fun _ : Fin 1 ↦ phase)
+
+private theorem fourUnitWires_respectsPhase (phase : Nat) :
+    RespectsPhase fourUnitWires (fourWirePhase phase) (fourWirePhase (phase + 1)) := by
+  have one := RespectsPhase.unitWire phase
+  simpa [fourUnitWires, fourWirePhase, Nat.add_assoc] using
+    ((one.tensor one).tensor one).tensor one
+
 private theorem gate1_respectsPhase :
     RespectsPhase (routedGate g1InputWiring g1OutputWiring)
       ![0, 1, 2, 0, 0, 0] ![1, 2, 0, 0, 0, 0] := by
-  intro input output delay path
-  fin_cases input <;> fin_cases output <;>
-    simp_all [routedGate, Circuit.PathDelay, g1InputWiring, g1OutputWiring,
-      fin6Perm]
+  apply routedGate_respectsPhase g1InputWiring g1OutputWiring 0 ![1, 2, 0]
+  · intro input
+    fin_cases input <;> decide
+  · intro input
+    fin_cases input <;> decide
 
 private theorem delay1_respectsPhase :
     RespectsPhase routedDelay1
       ![1, 2, 0, 0, 0, 0] ![1, 2, 1, 0, 1, 1] := by
-  intro input output delay path
-  fin_cases input <;> fin_cases output <;>
-    simp_all [routedDelay1, threeUnitWires, Circuit.PathDelay,
-      delay1InputWiring, delay1OutputWiring, fin6Perm, UnitWire.delay]
+  have inputPhase : RespectsPhase (.permute delay1InputWiring)
+      ![1, 2, 0, 0, 0, 0]
+      (Fin.append (threeWirePhase 0) ![1, 2, 0]) := by
+    apply RespectsPhase.permute
+    intro input
+    fin_cases input <;> decide
+  have corePhase := (threeUnitWires_respectsPhase 0).tensor
+    (RespectsPhase.identity ![1, 2, 0])
+  have outputPhase : RespectsPhase (.permute delay1OutputWiring)
+      (Fin.append (threeWirePhase 1) ![1, 2, 0])
+      ![1, 2, 1, 0, 1, 1] := by
+    apply RespectsPhase.permute
+    intro input
+    fin_cases input <;> decide
+  simpa [routedDelay1] using inputPhase.seq (corePhase.seq outputPhase)
 
 private theorem gate2_respectsPhase :
     RespectsPhase (routedGate g2InputWiring g2OutputWiring)
       ![1, 2, 1, 0, 1, 1] ![2, 1, 0, 1, 1, 1] := by
-  intro input output delay path
-  fin_cases input <;> fin_cases output <;>
-    simp_all [routedGate, Circuit.PathDelay, g2InputWiring, g2OutputWiring,
-      fin6Perm]
+  apply routedGate_respectsPhase g2InputWiring g2OutputWiring 1 ![2, 0, 1]
+  · intro input
+    fin_cases input <;> decide
+  · intro input
+    fin_cases input <;> decide
 
 private theorem delay2_respectsPhase :
     RespectsPhase routedDelay2
       ![2, 1, 0, 1, 1, 1] ![2, 2, 0, 2, 2, 2] := by
-  intro input output delay path
-  fin_cases input <;> fin_cases output <;>
-    simp_all [routedDelay2, fourUnitWires, Circuit.PathDelay,
-      delay2InputWiring, delay2OutputWiring, fin6Perm, UnitWire.delay]
+  have inputPhase : RespectsPhase (.permute delay2InputWiring)
+      ![2, 1, 0, 1, 1, 1]
+      (Fin.append (fourWirePhase 1) ![2, 0]) := by
+    apply RespectsPhase.permute
+    intro input
+    fin_cases input <;> decide
+  have corePhase := (fourUnitWires_respectsPhase 1).tensor
+    (RespectsPhase.identity ![2, 0])
+  have outputPhase : RespectsPhase (.permute delay2OutputWiring)
+      (Fin.append (fourWirePhase 2) ![2, 0])
+      ![2, 2, 0, 2, 2, 2] := by
+    apply RespectsPhase.permute
+    intro input
+    fin_cases input <;> decide
+  simpa [routedDelay2] using inputPhase.seq (corePhase.seq outputPhase)
 
 private theorem gate3_respectsPhase :
     RespectsPhase (routedGate g3InputWiring g3OutputWiring)
       ![2, 2, 0, 2, 2, 2] ![2, 2, 2, 2, 0, 2] := by
-  intro input output delay path
-  fin_cases input <;> fin_cases output <;>
-    simp_all [routedGate, Circuit.PathDelay, g3InputWiring, g3OutputWiring,
-      fin6Perm]
+  apply routedGate_respectsPhase g3InputWiring g3OutputWiring 2 ![2, 2, 0]
+  · intro input
+    fin_cases input <;> decide
+  · intro input
+    fin_cases input <;> decide
 
 private theorem demuxCircuit_respectsPhase :
     RespectsPhase demuxCircuit
       ![0, 1, 2, 0, 0, 0] ![2, 2, 2, 2, 0, 2] := by
-  simpa [demuxCircuit] using gate1_respectsPhase.seq
+  change ∀ {_ _ _}, _ → _
+  exact gate1_respectsPhase.seq
     (delay1_respectsPhase.seq
       (gate2_respectsPhase.seq (delay2_respectsPhase.seq gate3_respectsPhase)))
 
