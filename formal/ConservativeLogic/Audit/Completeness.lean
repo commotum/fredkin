@@ -38,6 +38,22 @@ example : DirectlyRealizable (id : BitState 0 → BitState 0) := by
   rw [direct_realization_iff]
   exact ⟨IsReversible.identity 0, WeightPreserving.identity 0⟩
 
+example : hammingWeight (pair false true) =
+    hammingWeight (pair true false) := by
+  decide
+
+example : hammingWeight (oneBit false) ≠
+    hammingWeight (oneBit true) := by
+  decide
+
+example : ¬ ∃ gate : Conservative 1,
+    gate (oneBit false) = oneBit true := by
+  rintro ⟨gate, equality⟩
+  have preserved := gate.weight_preserving (oneBit false)
+  rw [equality] at preserved
+  exact (by decide : hammingWeight (oneBit true) ≠
+    hammingWeight (oneBit false)) preserved
+
 /-! ## Control convention and explicit pattern marker -/
 
 example : Circuit.eval oneControlledFredkin
@@ -84,6 +100,18 @@ example : Circuit.eval (adjacentTranspositionCircuit noBits)
   rw [show edgeData noBits false true = pair false true by decide]
   rw [show edgeData noBits true false = pair true false by decide]
   rw [Equiv.swap_apply_of_ne_of_ne] <;> decide
+
+example : Circuit.eval (adjacentTranspositionCircuit noBits)
+    (BitState.append (edgeClean noBits) (pair true false)) =
+      BitState.append (edgeClean noBits) (pair false true) := by
+  rw [adjacentTranspositionCircuit_spec]
+  rw [show edgeData noBits false true = pair false true by decide]
+  rw [show edgeData noBits true false = pair true false by decide]
+  rw [Equiv.swap_apply_right]
+
+example : WirePerm.onState (Equiv.swap (0 : Fin 2) 1)
+    (pair false true) = pair true false := by
+  decide
 
 example : CleanFredkinRealizable
     (Equiv.swap (pair false true) (pair true false)) := by

@@ -2,14 +2,20 @@ import Mathlib.GroupTheory.Perm.Sign
 import ConservativeLogic.Completeness.Semantic
 
 /-!
-# The minimal no-ancilla obstruction
+# A width-four no-ancilla obstruction
 
 Fredkin completeness is false if it is read as a same-width theorem with no
-ancillary wires.  This module proves the first obstruction for the repository's
+ancillary wires.  This module proves an obstruction for the repository's
 actual circuit grammar, including its arbitrary structural wire
 reindexings.  Every four-wire circuit induces an even permutation of all
 sixteen states, while one transposition inside the weight-two layer is an odd
 conservative permutation.
+
+The separate dependency-free audit `Audit/completeness_groups.py` exhaustively
+checks that the generated group is the full conservative group at widths one
+through three and has index two at width four.  Thus minimality is a
+reproducible finite computation; the theorem below supplies the general
+structural parity proof at the obstructed width.
 
 The circuit theorem is structural and covers infinitely many syntax trees.
 Only the finite base fact that all 24 `WirePerm 4` values act evenly on
@@ -155,7 +161,7 @@ theorem middleLayerSwap_weightPreserving : WeightPreserving middleLayerSwap := b
     · rw [show middleLayerSwap state = state by
           exact Equiv.swap_apply_of_ne_of_ne ha hb]
 
-/-- The minimal counterexample bundled as a total conservative permutation. -/
+/-- The width-four counterexample bundled as a total conservative permutation. -/
 def middleLayerSwapConservative : Conservative 4 where
   toEquiv := middleLayerSwap
   weight_preserving := middleLayerSwap_weightPreserving

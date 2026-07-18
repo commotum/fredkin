@@ -2,9 +2,9 @@
 
 ## Status
 
-In progress from clean synchronized baseline `5b28ef8` on 2026-07-17.
-This document fixes the proof contract before implementation. Stage 10 has not
-started.
+Complete from clean synchronized baseline `5b28ef8` on 2026-07-17.  The
+semantic completion, corrected fixed-basis theorem, explicit clean workspace,
+and width-four no-ancilla obstruction are checked.  Stage 10 has not started.
 
 ## Re-Audited Paper Claims
 
@@ -43,13 +43,14 @@ read together.
   paragraph recycles scratch constants. Consequently, “without garbage” is
   not safely readable as “without returned clean ancillary wires.”
 
-Modern primary literature confirms why this qualification matters. Aaronson,
-Grier, and Schaeffer prove Fredkin completeness with five returned ancillas
-under explicitly free swaps and note that the 1982 Silver result was stated
-without proof and with an unknown ancilla count. Xu later gives a one-ancilla
+Modern primary literature confirms why this qualification matters. [Aaronson,
+Grier, and Schaeffer](https://arxiv.org/abs/1504.05155) prove Fredkin
+completeness with five returned ancillas under explicitly free swaps and note
+that the 1982 Silver result was stated without proof and with an unknown
+ancilla count. [Xu](https://arxiv.org/abs/1506.03777) later gives a one-ancilla
 construction and proves an ancilla-free reading false even with borrowed bits.
-Those external results guide adversarial checks; no unformalized external
-construction will be installed as a Lean theorem.
+Those external results guided adversarial checks; no unformalized external
+construction is installed as a Lean theorem.
 
 ## Current Repository Boundary
 
@@ -68,21 +69,22 @@ construction will be installed as a Lean theorem.
 
 ### Hamming layers
 
-Add a semantic completeness leaf defining
+The semantic completeness leaf defines
 
 - `WeightLayer n weight := {x : BitState n // hammingWeight x = weight}`;
 - restriction of a `Conservative n` to every `WeightLayer n weight`;
 - assembly of independent layer permutations into a `Conservative n` through
   an explicit sigma decomposition of all states by their exact weight.
 
-Prove that two finite, injective state families paired pointwise at equal
-weight extend to a total conservative permutation. The construction will use
-`Equiv.Perm.exists_extending_pair` separately in every layer and will be
-documented as classical and noncanonical.
+`exists_conservative_extending_pair` proves that two finite, injective state
+families paired pointwise at equal weight extend to a total conservative
+permutation. The construction uses `Equiv.Perm.exists_extending_pair`
+separately in every layer and is classical and noncanonical.
 
 ### Figure 25
 
-For every finite `f : BitState m -> BitState n`, prove existence of a total
+For every finite `f : BitState m -> BitState n`,
+`exists_figure25_conservative` supplies a total
 `Conservative (m + (n + n))` extending exactly
 
 `(x, resultRegisterInput n) -> (x, resultRegisterOutput (f x))`.
@@ -91,7 +93,8 @@ This is semantic gate existence, not yet fixed-basis synthesis.
 
 ### Direct semantic realization
 
-Define direct realization by one arbitrary conservative gate, and prove
+`DirectlyRealizable` names realization by one arbitrary conservative gate, and
+`direct_realization_iff` proves
 
 `DirectlyRealizable f <-> IsReversible f and WeightPreserving f`
 
@@ -100,8 +103,8 @@ must not be presented as Fredkin synthesis.
 
 ### Fixed-basis completeness
 
-Prove a general theorem named `fredkin_complete_conservative` for arbitrary
-data width `n` and `gate : Conservative n`.  Its witness is a
+The general theorem `fredkin_complete_conservative` holds for arbitrary data
+width `n` and `gate : Conservative n`.  Its witness is a
 `CleanFredkinRealization gate.toEquiv`, whose public fields expose:
 
 - a concrete finite `ancillaWidth` selected by the proof;
@@ -139,19 +142,19 @@ an external Fredkin-completeness theorem:
    permutation.  Clean composition concatenates independently returned
    ancillary blocks.
 
-The common one-controlled Fredkin convention will not be smuggled in. It is
+The common one-controlled Fredkin convention is not smuggled in. It is
 implemented as the paper's zero-controlled Fredkin followed by the explicit
 data-wire swap; the theorem therefore remains about the repository basis.
 
 This route proves existence of a concrete finite clean block but does not expose
 a useful uniform closed-form bound for the final group-closure witness: the
-subgroup proof may concatenate blocks for multiple transpositions.  The earlier
-direct `2*n + 7` marker design remains a checked design sketch, not the theorem
-installed in Lean.  No optimality claim is made.
+subgroup proof may concatenate blocks for multiple transpositions.  In
+particular, an earlier proposed direct `2*n + 7` marker sketch was not
+installed as a theorem.  No optimality claim is made.
 
 ### False no-ancilla reading
 
-Add a separate parity leaf and prove:
+The separate parity leaf proves:
 
 - every `Circuit 4` evaluation has global permutation sign `+1`, including
   arbitrary structural `WirePerm 4` nodes;
@@ -164,17 +167,22 @@ that all 24 structural four-wire reindexings induce even state permutations is
 kernel-checked by exhaustive `decide`; the circuit theorem itself is not an
 enumeration of syntax.
 
-External generator enumeration is a redundant audit, not the proof. With
-paper Fredkin plus structural wire permutations, widths one, two, and three
-generate the full conservative group; widths four, five, and six have indices
-`2`, `4`, and `8`. Hence width four is the minimal counterexample.
+The dependency-free exact audit
+`ConservativeLogic/Audit/completeness_groups.py` exhaustively closes the
+finite generator groups at widths one through four.  Paper Fredkin plus
+structural wire permutations generates the full conservative group at widths
+one, two, and three and an index-two subgroup at width four.  It also checks
+that `1100 <-> 1010` is outside that subgroup.  Hence width four is the first
+counterexample in this checked range.  This computation establishes
+minimality; the Lean theorem supplies the non-enumerative structural
+obstruction at width four.
 
 ### Figure 25 fixed-basis corollary
 
-Combine the noncanonical Figure 25 extension with
-`fredkin_complete_conservative`. The corollary must expose both the
+`figure25_fredkin_complete` combines the noncanonical Figure 25 extension with
+`fredkin_complete_conservative`. The corollary exposes both the
 `m + 2n` visible Figure 25 register and the completeness workspace, and must
-return the latter exactly. It may not call the extension canonical or claim
+return the latter exactly. It does not call the extension canonical or claim
 that Figure 25 itself supplied a small circuit.
 
 ## Resource and Terminology Decisions
@@ -199,13 +207,12 @@ that Figure 25 itself supplied a small circuit.
   iterative computer with feedback, initialization, and delay remains Stage
   10.
 
-## Planned Public Surface
+## Implemented Public Surface
 
-The names may be refined for Lean elaboration, but the distinctions may not be
-collapsed:
+The principal declarations are:
 
 ```text
-Completeness.WeightLayer
+WeightLayer
 Conservative.onWeightLayer
 Conservative.ofWeightLayers
 exists_conservative_extending_pair
@@ -221,7 +228,10 @@ patternMatch
 adjacentTranspositionCircuit
 adjacentTranspositionClean
 Conservative.weightLayer_exchange_connected
+Conservative.weightLayer_hammingTwo_connected
+singleExchangeClean
 fredkin_complete_conservative
+clean_fredkin_realizable_iff
 figure25_fredkin_complete
 
 middleLayerSwapConservative
@@ -229,14 +239,15 @@ circuit_four_even
 middleLayerSwap_not_circuit
 ```
 
-The parity counterexample may remain in a separate public correction leaf,
-but the exhaustive group harness stays under `ConservativeLogic.Audit`.
+The parity counterexample is in a separate public correction leaf.  The exact
+small-width group harness remains a diagnostic under `ConservativeLogic.Audit`.
 
 ## Adversarial Matrix
 
-The audit must cover at least:
+The Lean audit and its exact-group companion cover:
 
-- widths `0`, `1`, `2`, `3`, and the minimal obstructed width `4`;
+- the positive theorem at widths `0`, `1`, `2`, `3`, and `4`, plus exact
+  same-width generator closure through the first obstructed width `4`;
 - result width zero in Figure 25;
 - a noninjective arbitrary `f` in Figure 25, confirming that retained `x`, not
   injectivity of `f`, makes the initialized slice injective;
