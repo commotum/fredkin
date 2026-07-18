@@ -8,7 +8,7 @@
 - No `Gate` module, unit-wire declaration, Fredkin declaration, coordinatewise
   XOR predicate, or Stage 3 diagnostic currently exists.
 - Direct inspection of PDF pp. 226–227 and the extracted Markdown confirms the
-  unit-wire table `xᵗ = yᵗ⁺¹` and Table (2)'s port order
+  unit-wire table `xᵗ ↦ yᵗ⁺¹` with equal bit value and Table (2)'s port order
   `(u,x₁,x₂) → (v,y₁,y₂)`.
 - The eight printed Fredkin rows are `000→000`, `001→010`, `010→001`,
   `011→011`, `100→100`, `101→101`, `110→110`, and `111→111`. Thus Boolean
@@ -60,7 +60,7 @@ meaning of Fredkin nonlinearity without crossing into circuit or timed dynamics.
   equation, structural involution, `Reversible`/`Conservative` bundles, and
   separate reversibility/conservation theorems.
 - Add `ConservativeLogic.Gate.Fredkin.Nonlinear` with lightweight
-  `BitState.xor`, `BitState.xorZero`, `XorLinear`, explicit intermediate
+  `BitState.xor`, `BitState.falseState`, `XorLinear`, explicit intermediate
   counterexample equations, and `PaperFredkin.map_not_xorLinear`.
 - Extend the thin public API/root imports with the three stable leaves. Do not
   import diagnostics publicly.
@@ -74,17 +74,70 @@ meaning of Fredkin nonlinearity without crossing into circuit or timed dynamics.
 Expected stable declarations include:
 
 - `UnitWire.value`, `UnitWire.delay`, `UnitWire.value_apply`,
-  `UnitWire.value_isReversible`, and `UnitWire.value_weightPreserving`.
+  `UnitWire.delay_eq_one`, `UnitWire.value_isReversible`, and
+  `UnitWire.value_weightPreserving`.
 - `PaperFredkin.state` with `state_control`, `state_data₁`, `state_data₂`, and
-  `state_ext`.
+  `state_ext`, plus the explicitly semantic `PaperFredkin.dataSwap`.
 - `PaperFredkin.map`, `map_control`, `map_data₁`, `map_data₂`,
-  `map_of_control_false`, `map_of_control_true`, `map_control_false`,
-  `map_control_true`, and `table`.
+  `map_of_control_false`, `map_of_control_true`, `map_state_false`,
+  `map_state_true`, and `table`.
 - `PaperFredkin.map_involutive`, `equiv`, `map_isReversible`,
-  `map_weightPreserving`, and `conservative`.
-- `BitState.xor`, `BitState.xorZero`, `XorLinear`, the explicit
-  `PaperFredkin.map_xor_counterexample_*` equations, and
+  `map_weightPreserving`, `conservative`, `equiv_apply`, and
+  `conservative_apply`.
+- `BitState.xor`, `BitState.falseState`, `XorLinear`, the explicit
+  `PaperFredkin.map_xor_counterexample_*` equations, the direct
+  `PaperFredkin.map_xor_counterexample`, and
   `PaperFredkin.map_not_xorLinear`.
+
+The required statement shapes are:
+
+```text
+UnitWire.value : Conservative 1
+UnitWire.delay : Nat
+UnitWire.delay_eq_one : UnitWire.delay = 1
+UnitWire.value_apply (x : BitState 1) : UnitWire.value x = x
+
+PaperFredkin.state (u x₁ x₂ : Bool) : BitState 3
+PaperFredkin.dataSwap : WirePerm 3
+PaperFredkin.map (x : BitState 3) : BitState 3
+PaperFredkin.map_of_control_false (h : x 0 = false) :
+  PaperFredkin.map x = WirePerm.onState PaperFredkin.dataSwap x
+PaperFredkin.map_of_control_true (h : x 0 = true) :
+  PaperFredkin.map x = x
+PaperFredkin.table (u x₁ x₂ : Bool) :
+  PaperFredkin.map (PaperFredkin.state u x₁ x₂) =
+    PaperFredkin.state u (if u = true then x₁ else x₂)
+      (if u = true then x₂ else x₁)
+PaperFredkin.map_involutive : Function.Involutive PaperFredkin.map
+PaperFredkin.equiv : Reversible 3
+PaperFredkin.map_isReversible : IsReversible PaperFredkin.map
+PaperFredkin.map_weightPreserving : WeightPreserving PaperFredkin.map
+PaperFredkin.conservative : Conservative 3
+
+XorLinear (f : BitState m → BitState n) : Prop
+PaperFredkin.map_xor_counterexample_left :
+  PaperFredkin.map
+      (BitState.xor (PaperFredkin.state true false false)
+        (PaperFredkin.state false true false)) =
+    PaperFredkin.state true true false
+PaperFredkin.map_xor_counterexample_right :
+  BitState.xor
+      (PaperFredkin.map (PaperFredkin.state true false false))
+      (PaperFredkin.map (PaperFredkin.state false true false)) =
+    PaperFredkin.state true false true
+PaperFredkin.map_xor_counterexample :
+  PaperFredkin.map
+      (BitState.xor (PaperFredkin.state true false false)
+        (PaperFredkin.state false true false)) ≠
+    BitState.xor
+      (PaperFredkin.map (PaperFredkin.state true false false))
+      (PaperFredkin.map (PaperFredkin.state false true false))
+PaperFredkin.map_not_xorLinear : ¬ XorLinear PaperFredkin.map
+```
+
+`PaperFredkin.dataSwap` is a public semantic coordinate equivalence so the
+false-control theorem has an accessible statement. It is not evidence that a
+wire-permutation circuit is free or synthesized.
 
 ## Build Structure
 
@@ -110,6 +163,12 @@ lake build ConservativeLogic.Gate.Fredkin.Nonlinear
 lake build ConservativeLogic.API ConservativeLogic
 lake build ConservativeLogic.Audit.Fredkin
 lake build
+lake clean
+lake build
+lake build ConservativeLogic.Audit.Fredkin
+rg -n "sorry|admit|axiom|unsafe|opaque|partial|noncomputable" \
+  ConservativeLogic ConservativeLogic.lean
+git diff --check
 ```
 
 ## Boundary Checks
@@ -152,8 +211,13 @@ lake build
   `partial`, `noncomputable`, fallback/reference implementations, implicit
   fan-out/circuit claims, alternate-control declarations, and later-stage terms.
 - Inspect imports and every bounded `decide` occurrence. Run `#print axioms` on
-  unit value facts, control/table/involution/reversibility/conservation facts,
-  both bundles' application laws, and the XOR results.
+  `UnitWire.value_apply`, `UnitWire.delay_eq_one`,
+  `UnitWire.value_isReversible`, `UnitWire.value_weightPreserving`,
+  `PaperFredkin.state_ext`, both tuple control laws, `PaperFredkin.table`,
+  `PaperFredkin.map_involutive`, `PaperFredkin.map_isReversible`,
+  `PaperFredkin.map_weightPreserving`, both bundles' application laws, both
+  counterexample intermediate equations, `PaperFredkin.map_xor_counterexample`,
+  and `PaperFredkin.map_not_xorLinear`.
 
 ## Completion Requirements
 
