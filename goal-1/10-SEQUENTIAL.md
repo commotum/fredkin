@@ -95,6 +95,14 @@ law is the flux equation
 Internal memory weight alone need not be invariant.  The full tick is
 reversible only when both `nextMemory` and the complete output are retained;
 fixing an external input need not leave an injective state update.
+Summing the tick law over a finite prefix must telescope to
+
+`weight(finalMemory) + sum(weight(outputs))
+  = weight(initialMemory) + sum(weight(inputs))`.
+
+This is the corrected open-system reading of Section 2.5's `N1` discussion.
+It must not be weakened to a claim that the state of an open transducer is
+independently invariant.
 
 ### Accepted feedback and closed execution
 
