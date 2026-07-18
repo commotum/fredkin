@@ -181,8 +181,8 @@ obstruction at width four.
 
 `figure25_fredkin_complete` combines the noncanonical Figure 25 extension with
 `fredkin_complete_conservative`. The corollary exposes both the
-`m + 2n` visible Figure 25 register and the completeness workspace, and must
-return the latter exactly. It does not call the extension canonical or claim
+`m + 2n` visible Figure 25 register and the completeness workspace, and returns
+the latter exactly. It does not call the extension canonical or claim
 that Figure 25 itself supplied a small circuit.
 
 ## Resource and Terminology Decisions
@@ -191,7 +191,8 @@ that Figure 25 itself supplied a small circuit.
   reindexing. It does not mean physical permutation routing has been compiled.
 - Identity nodes are structural. Unit wires are excluded from the synthesis
   witness, rather than being silently included through Section 2.5.
-- “Clean” means one exact known mixed Boolean state, not necessarily all zero.
+- “Clean” means one exact known Boolean state, possibly mixed and not required
+  to be all zero.
 - “No garbage” means the complete ancillary register is returned bit for bit.
 - The returned scratch is visible in the theorem even though Figure 26 omits
   it from the drawing.

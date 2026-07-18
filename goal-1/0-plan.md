@@ -417,7 +417,7 @@ The eventual goal is complete only when all of the following hold:
 | §6.4, Figs. 16–18 | The switch `(c,x) ↦ (c,cx,¬c x)` is an equivalence onto four valid three-rail states, and collision layouts refine switch/Fredkin semantics | 11 | Switch inverse is constrained; Fig. 18 omits steering/timing mirrors and unit wires while explicitly classifying bridge versus trivial crossovers |
 | §7.1 | Reversing gates and wires yields a semantic inverse for combinational networks | 7 | Proved for the corrected feed-forward grammar by `Circuit.inverse_eval`, `Circuit.pathDelay_inverse_iff`, and `Circuit.meetsPaperCombinationalTiming_inverse_iff`. The full directed-graph reversal shown in Figure 19, including feedback, remains outside this theorem and requires Stage 10 semantics |
 | §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | `copyPair_spec` explicitly routes canonical `(a,0,1)` to physical `(a,1,0)`, `copyRegister_spec` proves `(y,0ⁿ,1ⁿ) ↦ (y,y,¬y)`, and `compute_copy_uncompute_spec` restores the complete packed scratch/source/argument state from any supplied `Realizes` witness. The result register is exactly `2n` wires and no transient midpoint garbage remains |
-| §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Stage 8 proves the exact finite restoration transformation and Fredkin count `2·count(circuit)+resultWidth`. Stage 9 proves finite clean Fredkin-plus-structural-reindexing existence with an exactly returned mixed ancillary prefix, but deliberately installs no global closed-form workspace, line-count, or time bound. The paper's asymptotic endpoints remain unresolved without a cost model |
+| §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Stage 8 proves the exact finite restoration transformation and Fredkin count `2·count(circuit)+resultWidth`. Stage 9 proves finite clean Fredkin-plus-structural-reindexing existence with an exactly returned, possibly mixed ancillary prefix, but deliberately installs no global closed-form workspace, line-count, or time bound. The paper's asymptotic endpoints remain unresolved without a cost model |
 | §7.1, Fig. 24(b) | The paper's restored `c` source/workspace can start all zero without loss of generality | 9 | Stage 9 re-audits this as an unresolved Margolus attribution with no precise proof or source. In the library layout, paper `c` is the consumed `source` later restored by compute-copy-uncompute; the separate already-returned `scratch` field is a stronger interface. No all-zero conversion theorem is claimed |
 | §7.2, Fig. 25 | For any `f`, the initialized-slice map `(x,0ⁿ,1ⁿ) ↦ (x,f x,¬f x)` extends to a total conservative permutation | 5, 9 | Resolved semantically by the classical noncanonical Hamming-layer theorem `exists_figure25_conservative`; `figure25_fredkin_complete` then supplies a separate returned clean workspace and a paper-Fredkin-plus-structural-reindexing realization. The drawing itself still specifies only the initialized slice and no small canonical circuit |
 | §7.2 | Worst-case synthesis of arbitrary `f` from a fixed bounded primitive basis may require scratch; claimed endpoint size/time tradeoffs | 9 | Stage 9 proves only finite existential clean synthesis and a linear local bound for one Johnson-graph edge macro. The asserted `exp(m)` sufficient and proportional-to-`m` least-usable endpoints remain unresolved because they omit family quantifiers, constants, output-width dependence, initialization/return conventions, and a formal cost model |
@@ -433,7 +433,7 @@ disposition.
 
 | ID | Issue | Required disposition |
 |---|---|---|
-| CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Resolved for the Stage 3 default by the explicit `PaperFredkin` namespace, public coordinate laws, `PaperFredkin.table`, and all eight audited rows. No one-controlled alternate is exposed; any future alternate still requires a separately named control-negation conjugacy theorem. |
+| CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Resolved for the Stage 3 default by the explicit `PaperFredkin` namespace, public coordinate laws, `PaperFredkin.table`, and all eight audited rows. Stage 9 adds the separately named `oneControlledFredkin`: paper Fredkin followed by an explicit data-wire swap, with its own truth-table, structural-basis, and zero-latency theorems. The paper convention remains the primitive default. |
 | CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Advanced through Stage 7: `Circuit.PathDelay.inverse` reverses route endpoints while retaining the same nonnegative delay, and `HasLatency.seq_inverse` records `L + L` rather than delay cancellation. `inverse_unitWire` is explicitly only the static grammar proxy. Oriented execution, `t ↦ -t`, and physical time-reversal symmetry remain later obligations. |
 | CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Resolved for the semantic predicate claim in Stage 2 by one-bit negation and two-bit Boolean sorting. The latter is documented only as an ordinary endomap, not a conservative-logic gate or literal circuit realization. |
 | CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | Resolved for the one-bit Stage 5 example: `fredkin_realizes_fanout` is a width-three circuit with fixed source `(0,1)`, selected result `(a,a)`, and explicit garbage `¬a`; `fredkinFanoutCircuit_isReversible` and `fredkinFanoutCircuit_weightPreserving` concern the complete map. Guarded failures reject a source-free unequal-width copier and an equal-width reversible interpretation of the selected target. |
@@ -443,13 +443,13 @@ disposition.
 | CL-008 | Figure 18 explicitly omits steering/timing mirrors and unit wires, but identifies bridge crossovers and calls the others trivial; clearance and simultaneous collision scheduling are additional formalization obligations rather than quoted omissions. | Model the stated omissions, crossover cases, clearance, and event scheduling explicitly in a discrete geometry semantics. |
 | CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; Figure 22's drawn top-to-bottom `(0,1) → (a,not a)` data order conflicts with Table (2)'s zero-controlled swap. | Resolved for the Stage 8 reconstruction: `copyPairInputWiring = PaperFredkin.dataSwap`, `copyPair_physical_spec` checks `(a,1,0)`, and `copyPair_spec` checks canonical `(a,0,1) ↦ (a,a,¬a)`. `copyRegister_spec` lifts the corrected order to disjoint all-width spies, including width zero. |
 | CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Resolved for a supplied finite `Realizes` witness by `compute_copy_uncompute_spec`: the exact packed scratch, source, and argument are returned, the named transient garbage is uncomputed, and the separate ancillary register contains `(target,bitwiseNot target)`. This does not mean absence of ancillary or argument-dependent output wires. |
-| CL-011 | All-zero workspace sufficiency is attributed to Margolus without proof. The paper's Figure 24 scratchpad is the `c` source consumed into `g` and later restored, not the library's separate already-returned `scratch` block. | Unresolved after Stage 9. The corrected completeness theorem exposes an exact mixed clean initialization and does not imply an all-zero conversion. Any future conversion must cite or prove the construction and state its effects on width, count, and delay. |
+| CL-011 | All-zero workspace sufficiency is attributed to Margolus without proof. The paper's Figure 24 scratchpad is the `c` source consumed into `g` and later restored, not the library's separate already-returned `scratch` block. | Unresolved after Stage 9. The corrected completeness theorem exposes an exact, possibly mixed clean initialization and does not imply an all-zero conversion. Any future conversion must cite or prove the construction and state its effects on width, count, and delay. |
 | CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model: `exp(m)` sufficiency at a least-time extreme and least usable Fredkin scratch proportional to `m`. | Unresolved after Stage 9. The local adjacent-transposition macro has proved linear bounds and an exact gate count, but the final classical group-closure witness has no installed global closed form. A stronger theorem still needs circuit families, scratch/line and time measures, constants, output-width dependence, basis, initialization, and restoration. |
 | CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to B. Silver in §7.3 but D. Silver in the acknowledgments, with no proof or bibliography entry. Ancilla and routing conventions are unclear; Figure 26 explicitly omits scratch for clarity, and §2.5 tacitly includes unit wires and identity. | Resolved in corrected form by `fredkin_complete_conservative`, whose witness records exact clean initialization/restoration, excludes `unitWire`, and permits explicit structural `WirePerm` routing. `middleLayerSwap_not_circuit` refutes the no-ancilla reading, while a dependency-free exact group audit establishes width-four minimality through widths one to four. Structural reindexing is not called physical Fredkin synthesis, and the B./D. attribution discrepancy remains unresolved from the paper. |
 | CL-014 | Figure 25 specifies `F0` only on initialized inputs `(x,0ⁿ,1ⁿ)`; total invertibility and conservation do not follow “by definition,” and arbitrary-gate existence would not imply fixed-basis synthesis. | Resolved by `exists_conservative_extending_pair` and `exists_figure25_conservative`, which perform a classical noncanonical extension inside each finite Hamming layer. `figure25_fredkin_complete` separately applies corrected fixed-basis synthesis and exposes the additional returned clean workspace. |
 | CL-015 | Claims about infinite blank tape/environment supplying constants and garbage space are not finite-circuit theorems. | Exclude or formalize in a separately scoped infinite model. |
 | CL-016 | Physical reversibility, entropy, and zero-dissipation conclusions do not follow from finite bijections alone. | Keep them non-theorem commentary unless physical state and dynamics are formalized. |
-| CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Stages 4, 6, and 7 consistently use corrected feed-forward expression grammars. `Circuit.inverse` and its exact path theorem cover those terms only; Figure 19 itself includes feedback, so no graph-reversal or open-transducer theorem follows. Feedback semantics, physical routing, and synthesis of permutations remain open. |
+| CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Stages 4, 6, 7, and 9 consistently use corrected feed-forward expression grammars. `Circuit.inverse` and its exact path theorem cover those terms only, while Stage 9 explicitly treats `WirePerm` as free structural reindexing rather than physical synthesis. Figure 19 itself includes feedback, so no graph-reversal or open-transducer theorem follows. Feedback semantics and physical routing remain open. |
 | CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Resolved for one explicit reconstruction by `BitState.xor`, `BitState.falseState`, `XorLinear`, the named `PaperFredkin.map_xor_counterexample_*` equations, and `PaperFredkin.map_not_xorLinear`. This is not presented as the paper's missing definition or as physical nonlinearity. |
 | CL-019 | Figure 8 is asserted to realize a `J-K̄` flip-flop, but the paper gives no transition equation, initialization condition, or trace specification. | Reconstruct and verify an exact sequential specification from the diagram, or leave the example explicitly unresolved. |
 | CL-020 | Figures 20–23 assume a combinational forward network but do not specify delay balancing for the enlarged boundary after adding result-register constants and spy outputs. | Resolved with a corrected split result: `compute_copy_uncompute_spec` is unconditional and static, while `computeCopyUncompute_hasLatency_zero` requires a zero-latency supplied circuit. The non-public `unitWireUncompute_not_meetsPaperCombinationalTiming` exhibits delay-two and delay-zero paths through the actual unpadded builder. No positive-latency or padding theorem is claimed. |
@@ -923,10 +923,9 @@ complete ancilla accounting and restoration guarantees.
 
 ### 9-COMPLETENESS
 
-**Status:** In progress (2026-07-17), from clean synchronized baseline
-`5b28ef8`. The paper text and Figures 24--26 have been re-audited visually.
-The implementation contract and adversarial matrix are being recorded in
-`goal-1/9-COMPLETENESS.md` before public declarations are added.
+**Status:** Complete (2026-07-17), from clean synchronized baseline `5b28ef8`.
+The paper text and Figures 24--26 were re-audited visually before the formal
+contract was fixed in `goal-1/9-COMPLETENESS.md`.  Stage 10 has not started.
 
 Current checked facts shaping the contract:
 
@@ -937,15 +936,14 @@ Current checked facts shaping the contract:
   sufficiency is definition-level, whereas the Fredkin-only statement is an
   unproved Silver attribution with unresolved returned-scratch and routing
   conventions.
-- Exhaustive generator calculations at widths one through six give the full
-  conservative group through width three, then indices `2`, `4`, and `8` at
-  widths four, five, and six. Width four is therefore the minimal false
-  no-ancilla reading.
-- The minimal obstruction can be proved structurally: every `Circuit 4`, even
+- A dependency-free exact closure audit gives the full conservative group at
+  widths one through three and index `2` at width four. Width four is therefore
+  the first false no-ancilla reading in the exhaustively checked range.
+- The width-four obstruction is proved structurally: every `Circuit 4`, even
   with arbitrary structural `WirePerm 4`, has global permutation sign `+1`,
   while the conservative transposition `1100 ↔ 1010` has sign `-1`.
-- The positive theorem will use an explicit returned clean workspace and will
-  say "paper Fredkin plus structural reindexing." Structural permutations are
+- The positive theorem uses an explicit returned clean workspace and says
+  "paper Fredkin plus structural reindexing." Structural permutations are
   zero-delay syntax in this library, not claimed to be synthesized physical
   Fredkin routing.
 
@@ -954,17 +952,28 @@ Current checked facts shaping the contract:
 Resolve the paper's strongest finite Fredkin-basis and scratch-space claims,
 proving corrected forms and recording exact resource assumptions.
 
-#### Detailed Implementation Plan
+#### Implemented Result
 
-- Characterize finite conservative equivalences as permutations within Hamming
-  weight layers.
-- Analyze the group generated by embedded Fredkin gates and explicit wire
-  permutations at fixed width; search for small counterexamples to overly strong
-  no-ancilla readings.
-- Construct a synthesis proof for the strongest valid theorem, exposing clean
-  ancilla initialization/restoration and any constants or permutations.
-- Separately investigate all-zero scratch conversion and claimed asymptotic
-  scratch bounds after defining a cost model.
+- `Conservative.onWeightLayer` and `Conservative.ofWeightLayers` characterize
+  finite conservative equivalences by Hamming-layer permutations;
+  `exists_conservative_extending_pair` supplies the classical noncanonical
+  completion used by `exists_figure25_conservative`.
+- `CleanFredkinRealization` exposes a finite ancillary width, exact Boolean
+  initialization, complete initialized-state equation, exact restoration,
+  exclusion of `unitWire`, and zero path latency.
+- An explicit pattern predicate, compute-copy-uncompute marker, one paper
+  Fredkin, and structural routing realize each Johnson-graph edge.  Layer
+  connectivity and finite permutation-group closure prove
+  `fredkin_complete_conservative` at every finite width.
+- `clean_fredkin_realizable_iff` records the corrected semantic boundary, and
+  `figure25_fredkin_complete` keeps Figure 25's visible register separate from
+  the additional returned completeness workspace.
+- `circuit_four_even` and `middleLayerSwap_not_circuit` refute the false
+  same-width/no-ancilla reading.  The exact group companion establishes the
+  width-four minimality check through widths one to four.
+- All-zero scratch conversion and the paper's asymptotic scratch/time claims
+  remain explicitly unresolved because no supporting construction or cost
+  model was available.
 
 #### Completion Requirements
 

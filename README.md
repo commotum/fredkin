@@ -34,6 +34,7 @@ lake build ConservativeLogic.Audit.Simulation
 lake build ConservativeLogic.Audit.Inverse
 lake build ConservativeLogic.Audit.Uncompute
 lake build ConservativeLogic.Audit.Completeness
+python3 ConservativeLogic/Audit/completeness_groups.py
 lake build
 ```
 
@@ -116,11 +117,13 @@ classical Hamming-layer construction supplies Figure 25's suppressed total
 conservative extension and proves that direct same-register realization by an
 arbitrary conservative gate is exactly bijectivity plus Hamming-weight
 preservation.  Independently, an explicit pattern-controlled last-pair swap is
-compiled to paper Fredkin gates, uses a visible mixed clean ancillary prefix,
-returns that prefix exactly, excludes every `unitWire`, and has zero path
-latency.  Structural conjugation realizes every one-true/one-false coordinate
-exchange; Johnson-graph connectivity and finite permutation-group closure then
-give `fredkin_complete_conservative` for every finite conservative
+compiled to paper Fredkin gates plus structural reindexing, uses a visible
+mixed clean ancillary prefix, returns that prefix exactly, excludes every
+`unitWire`, and has zero path
+latency.  Structural conjugation realizes every transposition between states
+that differ by exchanging one true and one false coordinate; Johnson-graph
+connectivity and finite permutation-group closure then give
+`fredkin_complete_conservative` for every finite conservative
 permutation.  The witness exposes its selected finite ancilla width and exact
 initialization, but the final group proof does not claim a global linear or
 optimal width bound.  Finally, every width-four circuit is proved even as a

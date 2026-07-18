@@ -87,10 +87,10 @@ private theorem conservative_clean_of_exchange_clean {width : Nat}
 Every finite conservative permutation has a clean realization using paper
 Fredkin gates and explicit structural wire reindexing.
 
-The witness exposes its finite ancillary width, exact mixed Boolean
-initialization, complete circuit, exact restoration equation, no-`unitWire`
-syntax certificate, and zero-latency certificate through the fields of
-`CleanFredkinRealization`.
+The witness exposes its finite ancillary width, exact Boolean initialization
+(not constrained to all zero), complete circuit, exact restoration equation,
+no-`unitWire` syntax certificate, and zero-latency certificate through the
+fields of `CleanFredkinRealization`.
 -/
 theorem fredkin_complete_conservative {width : Nat}
     (gate : Conservative width) :
