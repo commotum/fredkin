@@ -1,4 +1,6 @@
 import ConservativeLogic.Completeness.Fredkin
+import ConservativeLogic.Simulation.Fredkin
+import ConservativeLogic.Ancilla.Uncompute
 
 /-!
 # Clean realization of one Hamming-layer exchange
@@ -16,6 +18,7 @@ reindexings, not synthesized physical permutation networks.
 -/
 
 namespace ConservativeLogic
+namespace Completeness.Adjacent
 
 open ConservativeLogic.Ancilla
 open ConservativeLogic.Realization
@@ -1011,4 +1014,5 @@ theorem singleExchangeClean {n : Nat} (x y : BitState n) (i j : Fin n)
     exact realization
   · exact (different (firstValue.trans secondValue.symm)).elim
 
+end Completeness.Adjacent
 end ConservativeLogic

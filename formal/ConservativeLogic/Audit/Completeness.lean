@@ -14,6 +14,7 @@ namespace ConservativeLogic.Audit.Completeness
 
 open ConservativeLogic
 open ConservativeLogic.Ancilla
+open ConservativeLogic.Completeness.Adjacent
 open ConservativeLogic.Simulation
 
 private def noBits : BitState 0 := fun index => Fin.elim0 index

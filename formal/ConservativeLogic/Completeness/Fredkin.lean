@@ -1,5 +1,6 @@
 import Mathlib.GroupTheory.Perm.ClosureSwap
-import ConservativeLogic.Ancilla.Uncompute
+import ConservativeLogic.Circuit.Inverse
+import ConservativeLogic.Circuit.Structural
 
 /-!
 # Clean Fredkin-basis synthesis

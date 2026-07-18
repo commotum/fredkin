@@ -13,6 +13,7 @@ the explicit clean Fredkin realization of one exchange.
 namespace ConservativeLogic
 
 open Equiv MulAction Set Subgroup
+open Completeness.Adjacent
 
 /-- Full-state transpositions arising from one true/false coordinate exchange. -/
 private def conservativeEdgeSwaps (width : Nat) :
