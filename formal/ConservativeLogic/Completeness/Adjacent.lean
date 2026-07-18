@@ -809,4 +809,110 @@ private theorem finalDataSwap_edgeData {m : Nat} (head : BitState m)
       · intro impossible
         exact Fin.elim0 impossible
 
+private theorem exists_wiring_to_final {m : Nat} (first second : Fin (m + 2))
+    (distinct : first ≠ second) :
+    ∃ wiring : WirePerm (m + 2),
+      wiring first = Fin.natAdd m (0 : Fin 2) ∧
+        wiring second = Fin.natAdd m (1 : Fin 2) := by
+  classical
+  let source : Bool → Fin (m + 2) := fun bit => if bit then second else first
+  let target : Bool → Fin (m + 2) := fun bit =>
+    if bit then Fin.natAdd m (1 : Fin 2) else Fin.natAdd m (0 : Fin 2)
+  have sourceInjective : Function.Injective source := by
+    intro left right equality
+    cases left <;> cases right <;> simp [source] at equality ⊢
+    · exact (distinct equality).elim
+    · exact (distinct equality.symm).elim
+  have targetDistinct :
+      Fin.natAdd m (0 : Fin 2) ≠ Fin.natAdd m (1 : Fin 2) := by
+    intro equality
+    have values := congrArg Fin.val equality
+    simp at values
+  have targetInjective : Function.Injective target := by
+    intro left right equality
+    cases left <;> cases right <;> simp [target] at equality ⊢
+  obtain ⟨wiring, wiringSpec⟩ := Equiv.Perm.exists_extending_pair
+    source target sourceInjective targetInjective
+  refine ⟨wiring, ?_, ?_⟩
+  · simpa [source, target] using wiringSpec false
+  · simpa [source, target] using wiringSpec true
+
+private theorem normalized_edgeData {m : Nat} (state : BitState (m + 2))
+    (first second : Fin (m + 2)) (wiring : WirePerm (m + 2))
+    (firstValue : state first = false) (secondValue : state second = true)
+    (routeFirst : wiring first = Fin.natAdd m (0 : Fin 2))
+    (routeSecond : wiring second = Fin.natAdd m (1 : Fin 2)) :
+    WirePerm.onState wiring state =
+      edgeData (BitState.split m 2 (WirePerm.onState wiring state)).1
+        false true := by
+  let normalized := WirePerm.onState wiring state
+  let head := (BitState.split m 2 normalized).1
+  let targets := (BitState.split m 2 normalized).2
+  have targets_eq : targets = pair false true := by
+    funext index
+    refine Fin.cases ?_ ?_ index
+    · change normalized (Fin.natAdd m (0 : Fin 2)) = false
+      rw [← routeFirst]
+      exact (WirePerm.onState_apply_image wiring state first).trans firstValue
+    · intro tail
+      refine Fin.cases ?_ ?_ tail
+      · change normalized (Fin.natAdd m (Fin.succ (0 : Fin 1))) = true
+        rw [show (Fin.succ (0 : Fin 1) : Fin 2) = 1 by rfl]
+        rw [← routeSecond]
+        exact (WirePerm.onState_apply_image wiring state second).trans secondValue
+      · intro impossible
+        exact Fin.elim0 impossible
+  change normalized = edgeData head false true
+  unfold edgeData
+  rw [← targets_eq]
+  exact (BitState.append_split normalized).symm
+
+private theorem swap_trans_wiring {m : Nat} (first second : Fin (m + 2))
+    (wiring : WirePerm (m + 2))
+    (routeFirst : wiring first = Fin.natAdd m (0 : Fin 2))
+    (routeSecond : wiring second = Fin.natAdd m (1 : Fin 2)) :
+    (Equiv.swap first second).trans wiring =
+      wiring.trans (finalDataSwap m) := by
+  have conjugated := Equiv.symm_trans_swap_trans first second wiring
+  rw [routeFirst, routeSecond] at conjugated
+  apply Equiv.ext
+  intro index
+  have pointwise := congrArg
+    (fun permutation : WirePerm (m + 2) => permutation (wiring index))
+    conjugated
+  simpa only [Equiv.trans_apply, Equiv.symm_apply_apply, finalDataSwap]
+    using pointwise
+
+private theorem normalized_swapped_edgeData {m : Nat}
+    (state : BitState (m + 2)) (first second : Fin (m + 2))
+    (wiring : WirePerm (m + 2))
+    (firstValue : state first = false) (secondValue : state second = true)
+    (routeFirst : wiring first = Fin.natAdd m (0 : Fin 2))
+    (routeSecond : wiring second = Fin.natAdd m (1 : Fin 2)) :
+    WirePerm.onState wiring
+        (WirePerm.onState (Equiv.swap first second) state) =
+      edgeData (BitState.split m 2 (WirePerm.onState wiring state)).1
+        true false := by
+  have normalized := normalized_edgeData state first second wiring
+    firstValue secondValue routeFirst routeSecond
+  calc
+    WirePerm.onState wiring
+        (WirePerm.onState (Equiv.swap first second) state) =
+      WirePerm.onState ((Equiv.swap first second).trans wiring) state := by
+        rw [WirePerm.onState_comp]
+        rfl
+    _ = WirePerm.onState (wiring.trans (finalDataSwap m)) state := by
+      rw [swap_trans_wiring first second wiring routeFirst routeSecond]
+    _ = WirePerm.onState (finalDataSwap m)
+        (WirePerm.onState wiring state) := by
+      rw [WirePerm.onState_comp]
+      rfl
+    _ = WirePerm.onState (finalDataSwap m)
+        (edgeData (BitState.split m 2
+          (WirePerm.onState wiring state)).1 false true) := by
+      rw [normalized]
+    _ = edgeData (BitState.split m 2
+          (WirePerm.onState wiring state)).1 true false :=
+      finalDataSwap_edgeData _ false true
+
 end ConservativeLogic

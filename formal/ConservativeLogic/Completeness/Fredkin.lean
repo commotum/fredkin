@@ -149,6 +149,35 @@ theorem fredkinStructural_of_hasLatency_zero {width : Nat}
 
 end Circuit
 
+/-! ## Derived common-convention Fredkin gate -/
+
+/--
+The usual one-controlled Fredkin gate, expressed globally as the paper's
+zero-controlled gate followed by an explicit structural data-wire swap.
+-/
+def oneControlledFredkin : Circuit 3 :=
+  .seq .fredkin (.permute PaperFredkin.dataSwap)
+
+/-- Exact common-convention truth table: true swaps and false passes through. -/
+@[simp]
+theorem oneControlledFredkin_spec (control first second : Bool) :
+    Circuit.eval oneControlledFredkin (PaperFredkin.state control first second) =
+      PaperFredkin.state control
+        (if control = true then second else first)
+        (if control = true then first else second) := by
+  cases control <;> cases first <;> cases second <;> decide
+
+theorem oneControlledFredkin_structural :
+    Circuit.FredkinStructural oneControlledFredkin := by
+  simp [oneControlledFredkin]
+
+theorem oneControlledFredkin_hasLatency_zero :
+    Circuit.HasLatency oneControlledFredkin 0 := by
+  intro input output actual path
+  have timed := Circuit.HasLatency.seq Circuit.hasLatency_fredkin
+    (Circuit.hasLatency_permute PaperFredkin.dataSwap) path
+  simpa using timed
+
 /--
 A circuit realization with one explicit ancillary prefix returned exactly.
 The data block follows the ancillary block at both boundaries.

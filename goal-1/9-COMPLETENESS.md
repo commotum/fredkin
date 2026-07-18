@@ -100,46 +100,54 @@ must not be presented as Fredkin synthesis.
 
 ### Fixed-basis completeness
 
-Prove a general theorem named `fredkin_complete_conservative`. Its exact public
-quantifiers will be:
+Prove a general theorem named `fredkin_complete_conservative` for arbitrary
+data width `n` and `gate : Conservative n`.  Its witness is a
+`CleanFredkinRealization gate.toEquiv`, whose public fields expose:
 
-- arbitrary data width `n` and arbitrary `gate : Conservative n`;
-- a concrete ancillary width, currently targeted as `2*n + 7` by the checked
-  marker construction;
-- one explicitly defined initialized ancillary state containing every zero and
-  one constant;
-- existence of `circuit : Circuit (n + (2*n + 7))`;
-- full initialized-state equality
+- a concrete finite `ancillaWidth` selected by the proof;
+- one exact `ancillaInit : BitState ancillaWidth`, including every zero and one
+  constant;
+- `circuit : Circuit (ancillaWidth + n)`;
+- the complete initialized-state equation
 
-  `eval circuit (data ++ clean) = gate(data) ++ clean`;
+  `eval circuit (clean ++ data) = clean ++ gate(data)`;
 
-- exact restoration of every ancillary wire and therefore no garbage output;
-- a syntax certificate excluding `unitWire` and allowing only paper Fredkin,
-  identity, serial/tensor composition, and structural `WirePerm`;
+- bit-for-bit restoration of every ancillary wire and hence no garbage;
+- a recursive syntax certificate excluding `unitWire` and allowing only paper
+  Fredkin, identity, serial/tensor composition, and structural `WirePerm`;
 - a zero-latency certificate for that corrected feed-forward syntax.
 
-The planned independent construction isolates same-weight state
-transpositions:
+The checked construction isolates one Johnson-graph edge, rather than assuming
+an external Fredkin-completeness theorem:
 
-1. A pattern-marker circuit computes prefix equality into explicit dual-rail
-   pairs, toggles a named marker pair, and uncomputes every prefix pair.
-2. Each prefix step is three actual routed Fredkin gates. Separate initialized
-   helper `0` and helper `1` wires implement either a true or false literal
-   without a hidden NOT gate.
-3. Two marker pairs distinguish the two states of a transposition. A
-   coordinate permutation carrying one equal-weight state to the other is
-   decomposed into swaps, each made conditional by a one-controlled Fredkin.
-4. Crossed pattern checks clear both markers after the data states exchange.
-5. Every finite weight-layer permutation decomposes into transpositions, and
-   the layer circuits compose to the supplied conservative equivalence.
+1. For `n = m + 2`, an explicit conventional `patternMatch` source circuit
+   recognizes the first `m` data bits.  Its true and false literal branches are
+   separate syntax, and the existing compiler makes all source constants and
+   garbage explicit.
+2. Existing compute-copy-uncompute turns that predicate into a returned
+   dual-rail marker.  One real paper Fredkin conditionally exchanges the last
+   two data bits, and the predicate computation is inverted exactly.
+3. This canonical macro swaps only `(pattern,0,1)` and `(pattern,1,0)`.  Its
+   ancillary width is `sourceWidth(patternMatch pattern) + 2 <= 3*m + 3`, its
+   complete width is at most `4*m + 5`, and its exact Fredkin count is proved.
+4. A structural wire conjugation routes any true/false coordinate exchange to
+   the final pair.  This changes no value-dependent resource and is explicitly
+   the library's admitted reindexing convention.
+5. Equal-weight states form a connected Johnson graph.  The subgroup of clean
+   realizable state permutations contains every edge transposition, so the
+   finite permutation-group closure theorem supplies every conservative
+   permutation.  Clean composition concatenates independently returned
+   ancillary blocks.
 
 The common one-controlled Fredkin convention will not be smuggled in. It is
 implemented as the paper's zero-controlled Fredkin followed by the explicit
 data-wire swap; the theorem therefore remains about the repository basis.
 
-If proof development changes the `2*n + 7` bound, this report and the master
-plan must be corrected before the theorem is published. No optimality claim is
-attached to this linear construction.
+This route proves existence of a concrete finite clean block but does not expose
+a useful uniform closed-form bound for the final group-closure witness: the
+subgroup proof may concatenate blocks for multiple transpositions.  The earlier
+direct `2*n + 7` marker design remains a checked design sketch, not the theorem
+installed in Lean.  No optimality claim is made.
 
 ### False no-ancilla reading
 
@@ -179,8 +187,10 @@ that Figure 25 itself supplied a small circuit.
 - “No garbage” means the complete ancillary register is returned bit for bit.
 - The returned scratch is visible in the theorem even though Figure 26 omits
   it from the drawing.
-- The linear bound is an exact bound for this construction, not a least-space,
-  least-time, gate-count, or physical line-count theorem.
+- The canonical edge macro has explicit linear local bounds.  The final
+  completeness theorem exposes its selected finite ancillary width but makes
+  no global linear, least-space, least-time, gate-count, or physical line-count
+  claim.
 - The Margolus all-zero source/workspace conversion remains unresolved unless
   an independent proof is reconstructed.
 - The paper's `exp(m)` and proportional-to-`m` endpoint assertions remain
@@ -204,9 +214,13 @@ DirectlyRealizable
 direct_realization_iff
 
 Circuit.FredkinStructural
+CleanFredkinRealization
+CleanFredkinRealizable
 oneControlledFredkin
-completenessScratchWidth
-completenessScratch
+patternMatch
+adjacentTranspositionCircuit
+adjacentTranspositionClean
+Conservative.weightLayer_exchange_connected
 fredkin_complete_conservative
 figure25_fredkin_complete
 
@@ -254,4 +268,3 @@ Scan new public and audit files for placeholders, accidental broad imports,
 generic semantic-gate constructors, hidden fan-out language, unsupported
 physical claims, and stale Stage 9 markers. Inspect the final diff and confirm
 that unrelated synchronized changes were not overwritten.
-
