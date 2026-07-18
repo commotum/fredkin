@@ -36,6 +36,7 @@ target.  This file must not be imported by `ConservativeLogic`,
 #print axioms ConservativeLogic.Realization.Primitive.fredkin_realizes_fanout
 #print axioms ConservativeLogic.Simulation.SourceCircuit.compile_realizes
 #print axioms ConservativeLogic.Simulation.SourceCircuit.compile_fredkinCount
+#print axioms ConservativeLogic.Simulation.Demultiplexer.demux_realizes
 #print axioms
   ConservativeLogic.Simulation.Demultiplexer.demuxCircuit_not_meetsPaperCombinationalTiming
 
@@ -57,7 +58,9 @@ target.  This file must not be imported by `ConservativeLogic`,
 
 #print axioms ConservativeLogic.Sequential.Machine.trace_unique
 #print axioms ConservativeLogic.Sequential.ConservativeMachine.run_prefix_weight_balance
+#print axioms ConservativeLogic.Sequential.ConservativeMachine.retrodictList_executeList
 #print axioms ConservativeLogic.Sequential.ConservativeMachine.closedOrbit_weight
+#print axioms ConservativeLogic.Sequential.DelayCell.unitWire_not_instantaneous
 #print axioms ConservativeLogic.Sequential.Figure8.characteristic
 #print axioms ConservativeLogic.Sequential.SerialAdder.no_conservative_machine
 #print axioms ConservativeLogic.Sequential.Figure11.paper_recurrence

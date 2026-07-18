@@ -68,8 +68,8 @@ Representative theorem families include `hammingWeight_append` and
 `Sequential.ConservativeMachine` trace/flux/closure results; and the opt-in
 `Billiard.Interaction.equiv`, legal scattering, sampled-clearance, and
 `Billiard.Figure14.output_refines_collision` results.  The canonical map gives
-the fully qualified declarations and records every corrected, disproved, open,
-or out-of-model paper claim.
+the fully qualified declarations and records every proved, corrected,
+disproved, open, or out-of-model paper claim.
 
 Stages 1 through 12 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block

@@ -1,4 +1,5 @@
 import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Fintype.Sum
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -144,6 +145,12 @@ theorem castState_injective {m n : Nat} (width : m = n) :
     Function.Injective (castState width) := by
   cases width
   exact Function.injective_id
+
+/-- There are exactly `2 ^ n` width-`n` Boolean states. -/
+@[simp]
+theorem card_bitState (n : Nat) : Fintype.card (BitState n) = 2 ^ n := by
+  rw [Fintype.card_pi_const]
+  rfl
 
 end Realization
 

@@ -12,16 +12,18 @@ In progress on 2026-07-18 from clean synchronized baseline `1047322`.
   `ConservativeLogic.Billiard`.
 - `ConservativeLogic.API` is an import-only finite surface.  Neither it nor the
   public root imports an `Audit`, `Sequential`, or `Billiard` module.
-- Eleven non-public audit leaves already exercise the representation probe and
-  Stages 2--11.  They contain exhaustive fixed examples, guarded negative
-  checks, general theorem applications, and stage-specific `#print axioms`
-  commands, but there is no aggregate main-result audit.
+- Eleven stage-specific non-public audit leaves exercise the representation
+  probe and Stages 2--11.  They retain exhaustive fixed examples, guarded
+  negative checks, general theorem applications, and stage-specific
+  `#print axioms` commands.  Stage 12 adds the separate aggregate
+  `ConservativeLogic.Audit.Axioms` leaf.
 - The README gives reproduction commands and a narrative of the finite,
   sequential, and sampled-billiard layers.  The authoritative paper claim map,
   correction log, declaration outline, and open boundaries remain in
   `goal-1/0-plan.md`.
-- There is no small consumer leaf demonstrating the stable finite import as a
-  user would see it.  Examples currently live inside diagnostic stage audits.
+- `ConservativeLogic.Examples` now demonstrates compilation, complete
+  compute-copy-uncompute, and clean completeness while importing only the
+  stable finite root.
 - The Lake default target is the finite root.  Explicit builds are therefore
   required for the sequential and billiard umbrellas, their audits, and any
   final audit/example leaves added here.
@@ -40,10 +42,11 @@ In progress on 2026-07-18 from clean synchronized baseline `1047322`.
 - The aggregate axiom audit should select every major theorem family while
   retaining the exhaustive details in the existing stage audits; copying all
   prior examples into one high-fanout file would add no coverage.
-- No new mathematical abstraction is expected.  Any missing theorem found by
-  the correspondence review must be either a genuine narrow gap in the stated
-  objective or an explicit unresolved paper claim, not an invitation to infer
-  unsupported physical or resource semantics.
+- The correspondence review found two genuine narrow gaps:
+  `zeroCount`/`WeightPreserving.zeroCount` expose the paper's derived `N₀`, and
+  `Circuit.wireOfLength` with its evaluation and latency theorems handles every
+  finite abstract wire length.  Neither addition expands the spatial or
+  physical model.
 
 ## Big Picture Objective
 
@@ -74,18 +77,24 @@ corrected theorem, checked obstruction, or explicit unresolved boundary.
 
 ## Build Structure
 
-Planned low-fanout additions:
+Implemented low-fanout additions and ownership repairs:
 
 ```text
 ConservativeLogic/Examples.lean       finite public-root consumer examples
 ConservativeLogic/Audit/Axioms.lean   aggregate main-result axiom inspection
+ConservativeLogic/Circuit/Structural.lean generic transport semantics/block routing
+ConservativeLogic/Circuit/Resources.lean syntax-only Fredkin counting
+ConservativeLogic/Ancilla/Register.lean circuit-independent result-register states
 goal-1/12-AUDIT.md                    final evidence and unresolved inventory
 ```
 
-The examples leaf will import `ConservativeLogic`; the axiom leaf may import
-the finite, sequential, and billiard umbrellas because it is diagnostic and
-must remain outside every public import graph.  Exact additions remain subject
-to the independent audit findings.
+The examples leaf imports only `ConservativeLogic`.  The diagnostic axiom leaf
+explicitly imports the finite, sequential, and billiard umbrellas and remains
+outside every public import graph.  Generic `Circuit.cast`, structural block
+routing, Fredkin counting, and result-register states were moved below the
+compiler/uncompute layers without changing their stable public names.
+`Completeness.Adjacent` now contains the specialized local-synthesis helpers;
+generic `CleanFredkinRealization.wireConjugate` is owned with its witness type.
 
 Focused and adjacent builds:
 

@@ -23,12 +23,6 @@ network, or claim timing, physical routing, entropy, or energy results.
 
 namespace ConservativeLogic.Realization
 
-/-- There are exactly `2 ^ n` width-`n` Boolean states. -/
-@[simp]
-theorem card_bitState (n : Nat) : Fintype.card (BitState n) = 2 ^ n := by
-  rw [Fintype.card_pi_const]
-  rfl
-
 /--
 An exhaustive clean-scratch realization layout.
 

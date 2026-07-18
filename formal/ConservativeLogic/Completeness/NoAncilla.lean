@@ -1,5 +1,5 @@
 import Mathlib.GroupTheory.Perm.Sign
-import ConservativeLogic.Realization.Core
+import ConservativeLogic.Circuit.Semantics
 
 /-!
 # A width-four no-ancilla obstruction
