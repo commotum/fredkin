@@ -184,7 +184,10 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
   have taggedBack : (fourDecompose a b c d).symm tagged = input := by
     simp [tagged]
   rcases tagged with ((index | index) | (index | index))
-  · simp [fourDecompose] at taggedBack
+  · have input_eq :
+        Fin.castAdd (c + d) (Fin.castAdd b index) = input := by
+      simpa [fourDecompose] using taggedBack
+    clear taggedBack
     subst input
     have route :
         Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
@@ -195,7 +198,10 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
       simp [middleSwapWiring, fourDecompose, fourCompose]
     rw [route]
     simp
-  · simp [fourDecompose] at taggedBack
+  · have input_eq :
+        Fin.castAdd (c + d) (Fin.natAdd a index) = input := by
+      simpa [fourDecompose] using taggedBack
+    clear taggedBack
     subst input
     have route :
         Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
@@ -206,7 +212,10 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
       simp [middleSwapWiring, fourDecompose, fourCompose]
     rw [route]
     simp
-  · simp [fourDecompose] at taggedBack
+  · have input_eq :
+        Fin.natAdd (a + b) (Fin.castAdd d index) = input := by
+      simpa [fourDecompose] using taggedBack
+    clear taggedBack
     subst input
     have route :
         Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm
@@ -217,7 +226,10 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
       simp [middleSwapWiring, fourDecompose, fourCompose]
     rw [route]
     simp
-  · simp [fourDecompose] at taggedBack
+  · have input_eq :
+        Fin.natAdd (a + b) (Fin.natAdd c index) = input := by
+      simpa [fourDecompose] using taggedBack
+    clear taggedBack
     subst input
     have route :
         Fin.cast (by ac_rfl : (a + c) + (b + d) = (a + b) + (c + d)).symm

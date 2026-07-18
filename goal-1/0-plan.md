@@ -395,7 +395,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 5; later names remain provisional:
+Checked low-to-high layout through Stage 6; later names remain provisional:
 
 ```text
 ConservativeLogic/
@@ -411,6 +411,10 @@ ConservativeLogic/
   Realization/Core.lean     -- exhaustive source/clean-scratch/result/garbage interface
   Realization/Primitive.lean -- exact routed Section 3 Fredkin realizations
   Audit/Realization.lean    -- non-public Stage 5 boundary and axiom audit
+  Simulation/Source.lean    -- explicit unequal-arity finite source grammar
+  Simulation/Fredkin.lean   -- exact-resource constructive target compiler
+  Simulation/Demultiplexer.lean -- checked Figure 7 value/timing reconstruction
+  Audit/Simulation.lean     -- non-public Stage 6 boundary and axiom audit
   Circuit/Inverse.lean
   Ancilla/Uncompute.lean
   Universality/Fredkin.lean
@@ -491,6 +495,24 @@ placeholders to refine during stage work.
   selected results, and garbage; the last is additionally backed by
   `fredkinFanoutCircuit_isReversible` and
   `fredkinFanoutCircuit_weightPreserving` for the complete width-three map.
+- `Simulation.SourceCircuit`, `SourceCircuit.eval`, and
+  `SourceCircuit.logicGateCount`: the closed finite feed-forward source syntax,
+  with visible constants, discard, nonlinear gates, FAN-OUT, permutation,
+  serial composition, and disjoint tensor.
+- `SourceCircuit.source_garbage_balance`, `sourceState`, `garbage`, and
+  `simulationLayout`: exact recursively computed zero-scratch resources and
+  complete boundary data.
+- `SourceCircuit.compile` and `SourceCircuit.compile_realizes`: total
+  Fredkin-plus-structural-reindexing compilation and its general complete-state
+  simulation theorem.
+- `Circuit.fredkinCount`, `SourceCircuit.compile_fredkinCount`, and
+  `SourceCircuit.compile_hasLatency_zero`: exact gate accounting and the
+  compiler's qualified zero-unit-wire path theorem.
+- `Demultiplexer.demux_realizes`, `demux_fredkinCount`,
+  `demuxCircuit_unitWireCount`, and `argument_to_result_path`: complete Figure
+  7 values/resources and selected delay-two path witnesses;
+  `demuxCircuit_not_meetsPaperCombinationalTiming` records the stronger global
+  timing failure.
 - `Circuit.inverse_eval`: evaluation of an inverse feed-forward circuit is the
   inverse equivalence.
 - `copyPair_spec`: in the paper's exact gate-port order, initialized `(1,0)`
