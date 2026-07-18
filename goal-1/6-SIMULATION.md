@@ -36,13 +36,17 @@
 
 - Use an explicitly indexed conventional source grammar
   `SourceCircuit inputWidth outputWidth`. Its primitive syntax should include a
-  Boolean constant, explicit discard, AND, OR, NOT, explicit FAN-OUT,
+  fixed block constant `BitState k : 0 → k`, explicit block discard `k → 0`,
+  AND, OR, NOT, explicit FAN-OUT,
   bijective structural permutation, exact serial composition, and disjoint
   tensor. There is no generic function constructor. `tensor c c` receives two
   disjoint input blocks; reusing one input requires a `fanout` node.
 - Include constant and discard nodes rather than assuming Cartesian structural
   rules. Translation turns a source constant into an explicitly initialized
   target source wire, and turns a source discard into explicit target garbage.
+  Width-indexed blocks are only a finite shorthand for tensoring one-wire
+  nodes: the constant payload is fixed data, not an argument-dependent function
+  or arbitrary semantic gate.
 - Exclude source delays, feedback, registers, traces, streams, and state. A
   delay node must not be represented by source identity, and no Stage 6 theorem
   may claim the paper's sequential universality, slowdown, or time-multiplexing
@@ -74,6 +78,20 @@
   order `A₁A₀`, sink order `(A₁,A₀)`, and the checked distinction
   between its latency-two argument/result interface and nonuniform complete
   boundary timing.
+
+The checked complete Figure 7 initialized slice is
+
+```text
+(0,0,0,A₀,A₁,X) ↦ (Y₀,Y₁,Y₂,Y₃,A₁,A₀)
+```
+
+where `Y₀ = ¬A₀ ∧ ¬A₁ ∧ X`, `Y₁ = A₀ ∧ ¬A₁ ∧ X`,
+`Y₂ = ¬A₀ ∧ A₁ ∧ X`, and `Y₃ = A₀ ∧ A₁ ∧ X`.  This
+ordering yields the eight complete regressions
+`000↦0000|00`, `001↦1000|00`, `010↦0000|10`,
+`011↦0010|10`, `100↦0000|01`, `101↦0100|01`,
+`110↦0000|11`, and `111↦0001|11` when rows are written as
+`A₀A₁X ↦ Y₀Y₁Y₂Y₃ | A₁A₀`.
 
 ## Big Picture Objective
 

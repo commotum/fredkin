@@ -171,6 +171,18 @@ private theorem castState_apply {leftWidth rightWidth : Nat}
   cases width
   rfl
 
+private theorem cast_self {α : Sort _} (proof : α = α) (value : α) :
+    cast proof value = value := by
+  have proof_eq : proof = rfl := Subsingleton.elim _ _
+  rw [proof_eq]
+  rfl
+
+private theorem fin_val_cast {leftWidth rightWidth : Nat}
+    (proof : Fin leftWidth = Fin rightWidth) (index : Fin leftWidth) :
+    (cast proof index).val = index.val := by
+  cases proof
+  rfl
+
 /-- The active middle-block permutation has the stated four-block action. -/
 theorem middleSwapWiring_on_append {a b c d : Nat}
     (as : BitState a) (bs : BitState b) (cs : BitState c) (ds : BitState d) :
@@ -194,7 +206,9 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
           Fin.castAdd (b + d) (Fin.castAdd c index) := by
       apply Fin.ext
       simp [middleSwapWiring, fourDecompose, fourCompose]
-      simp only [← Fin.cast_eq_cast, Fin.val_cast]
+      generalize_proofs h
+      rw [fin_val_cast h]
+      rfl
     rw [route]
     simp
   · simp [fourDecompose] at taggedBack
@@ -206,7 +220,9 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
           Fin.natAdd (a + c) (Fin.castAdd d index) := by
       apply Fin.ext
       simp [middleSwapWiring, fourDecompose, fourCompose]
-      simp only [← Fin.cast_eq_cast, Fin.val_cast]
+      generalize_proofs h
+      rw [fin_val_cast h]
+      rfl
     rw [route]
     simp
   · simp [fourDecompose] at taggedBack
@@ -218,7 +234,9 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
           Fin.castAdd (b + d) (Fin.natAdd a index) := by
       apply Fin.ext
       simp [middleSwapWiring, fourDecompose, fourCompose]
-      simp only [← Fin.cast_eq_cast, Fin.val_cast]
+      generalize_proofs h
+      rw [fin_val_cast h]
+      rfl
     rw [route]
     simp
   · simp [fourDecompose] at taggedBack
@@ -230,7 +248,9 @@ theorem middleSwapWiring_on_append {a b c d : Nat}
           Fin.natAdd (a + c) (Fin.natAdd b index) := by
       apply Fin.ext
       simp [middleSwapWiring, fourDecompose, fourCompose]
-      simp only [← Fin.cast_eq_cast, Fin.val_cast]
+      generalize_proofs h
+      rw [fin_val_cast h]
+      rfl
     rw [route]
     simp
 
