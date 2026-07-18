@@ -40,11 +40,13 @@ identity-on-values semantics with separate one-step delay metadata, and the
 paper-convention Fredkin gate. It also exports a balanced feed-forward circuit
 grammar with only identity, unit wire, Fredkin, explicit bijective structural
 reindexing, exact-width serial composition, and disjoint tensor composition.
-Circuit evaluation is a conservative equivalence, and a separate static
-`PathDelay` relation certifies when every existing boundary path has one common
-unit-wire latency. Structural permutations are zero-delay meta-level port
-reindexings, not synthesized routing circuits. The grammar is not claimed to
-be the paper's feedback-capable directed-graph model, and the timing layer is
+Circuit evaluation is a conservative equivalence. A separate static
+`PathDelay` relation records individual routes, while `HasLatency` and
+`MeetsPaperCombinationalTiming` certify one common unit-wire latency across
+every existing boundary path. Structural permutations are zero-delay
+meta-level port reindexings, not synthesized routing circuits. The grammar is
+not claimed to be the paper's feedback-capable directed-graph model, and the
+timing layer is
 not a tick, trace, transition, stream, or physical-routing semantics. Explicit
 constants, garbage, and initialized auxiliary wires enter next through the
 Stage 5 realization interface. The focused audit commands are explicit because

@@ -249,7 +249,7 @@ The eventual goal is complete only when all of the following hold:
 
 | Paper location | Reconstructed formal target | Planned stage | Current disposition |
 |---|---|---:|---|
-| §2.2, P4–P6 | Separate delayed identity, reversible maps, and one-to-one composition | 2–5, 10 | Formalize the discrete content separately; the paper's physical motivations are not consequences of these definitions |
+| §2.2, P4–P6 | Separate delayed identity, reversible maps, and one-to-one composition | 2–5, 10 | Stages 2–4 separate static equivalences, unit-wire delay metadata, and an indexed grammar whose serial/tensor constructors consume ports one-to-one. The paper's physical motivations are not consequences of these definitions |
 | §2.2, P7 | The abstract model should have at least one additive conserved quantity | — | Generic physical/mathematical motivation only; P7 itself does not select Hamming weight |
 | §§2.3–2.5 | In the Boolean model, `N₁`/Hamming weight is additive across wire portions and preserved by unit wires, gates, and closed transitions | 2–4, 10 | Stage 2 proves static block additivity; Stage 3 proves primitive static preservation; Stage 4 proves `Circuit.eval_weightPreserving` for serial/tensor circuit evaluation. Closed trajectories remain a Stage 10 obligation |
 | §2.2, P8 | Local-Euclidean/layout constraint on circuit connectivity | 11 or — | The paper explicitly does not develop P8; require an actual geometry model or keep the claim out of scope |
@@ -346,8 +346,8 @@ ConservativeLogic/
 
 Keep core definitions below proof-heavy universality and audit leaves. The
 optional sequential and billiard modules must not become dependencies of the
-finite combinational API. Use `fredkin-1982/BUILD-PLAN.md` for incremental build
-discipline once Lean code exists.
+finite combinational API. Continue using `fredkin-1982/BUILD-PLAN.md` for
+incremental build discipline.
 
 ## Proposed Theorem Outline
 
