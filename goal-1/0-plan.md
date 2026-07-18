@@ -385,15 +385,34 @@ Lean results as the work proceeds.
   does not import this layer.  The post-clean default build again passes 1,003
   jobs; the explicitly requested sequential umbrella and audit then pass 722
   jobs with only standard Lean/mathlib axioms.
+- Stage 11 is complete from baseline `898bfe5`.  It adds the separate opt-in
+  `ConservativeLogic.Billiard` umbrella with exact constrained interaction and
+  switch interfaces, a selected admitted collision-site involution,
+  independent-site scattering, directed sampled routes, and a four-tick
+  Figure 14 trace.  The finite and sequential APIs do not import it.  The
+  uncontended clean default build passed 995 jobs and the explicit post-clean
+  billiard/sequential umbrellas and audits passed 730 jobs.  Continuous global
+  hard-ball mechanics, arbitrary mirror delay, the bridge, Figures 17--18, and
+  compositional physical layout remain unresolved.
+- Stage 12 begins from clean synchronized commit `1047322`.  The finite root,
+  sequential umbrella, billiard umbrella, and eleven audit leaves (the
+  guardrail probe plus Stages 2--11) build separately.  There is not yet a
+  final public-consumer examples leaf, an aggregate main-result axiom audit, or
+  a Stage 12 evidence report.
 
-### Assumptions to Test, Not Yet Facts
+### Remaining Assumptions and Open Obligations
 
 - The paper's claim that an all-zero scratchpad loses no generality and its
   stated linear lower/upper scratch bounds require reconstruction from other
   sources or fresh proofs.
-- A billiard-ball formalization is practical only if collision states,
-  simultaneous events, mirrors, routing clearance, and discrete-time evolution
-  can be specified without smuggling in continuous-mechanics assumptions.
+- A general sequential compiler still requires a literal source semantics,
+  delay normalization, a schedule/simulation relation, and per-tick resource
+  accounting; the checked examples do not imply that construction.
+- Stage 11 established that a narrow sampled billiard abstraction is practical
+  while also checking why occupancy alone is not global dynamics.  A stronger
+  physical refinement still requires continuous event rules, directed
+  hardware, between-sample clearance, and compositional routing data absent
+  from the paper.
 
 ## Success Metrics and Verification Requirements
 
@@ -1324,6 +1343,10 @@ model and prove refinement of selected collision networks to conservative gates.
 - Isolated module builds, full build, scans, and diff check pass.
 
 ### 12-AUDIT
+
+**Status:** In progress (2026-07-18), from clean synchronized baseline
+`1047322`.  Repository-wide paper/correction, API/import, and adversarial audit
+passes are underway before the final examples and axiom leaves are fixed.
 
 #### Big Picture Objective
 
