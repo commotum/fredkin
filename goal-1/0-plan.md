@@ -247,12 +247,15 @@ Lean results as the work proceeds.
   and external constant/garbage reservoirs only informally. A finite
   feed-forward translation cannot establish those stateful or resource claims;
   they remain obligations for an explicit sequential semantics in Stage 10.
-- Figure 7 is a no-feedback 1-to-4 demultiplexer whose selected result routes
-  data `X` according to address `(A₀,A₁)` and whose sink outputs echo the
-  address. The paper nevertheless calls it formally sequential because of its
-  wires, and states equal delay only from the argument to the result, not from
-  every external source to every sink required by its later global
-  combinational criterion.
+- Figure 7 is a six-wire initialized-slice network with three zero sources and
+  arguments `(A₀,A₁,X)`. Its gates are
+  `F(A₁,X,0)`, `F(A₀,0,A₁∧X)`, and
+  `F(A₀,0,¬A₁∧X)`, yielding
+  `(Y₀,Y₁,Y₂,Y₃)` selected by the binary address `A₁A₀` and
+  sink `(A₁,A₀)`. The seven closed-triangle unit wires give latency two
+  from every argument to every result, but other complete-boundary paths have
+  delays zero, one, or two. Thus the formally sequential drawing does not meet
+  the later global every-input/every-output combinational criterion.
 
 ### Assumptions to Test, Not Yet Facts
 

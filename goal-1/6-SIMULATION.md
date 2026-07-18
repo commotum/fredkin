@@ -24,10 +24,13 @@
   only a corrected finite feed-forward fragment; the sequential claim remains
   Stage 10.
 - Figure 7 is a three-Fredkin, three-zero-source 1-to-4 demultiplexer with
-  external arguments `(A₀,A₁,X)`, four selected outputs, and two sink
-  outputs that echo the address. The paper calls the drawing formally
-  sequential and states equal delay only from argument to result, not the
-  later global every-input/every-output timing criterion.
+  external arguments `(A₀,A₁,X)`, binary-indexed selected outputs
+  `(Y₀,Y₁,Y₂,Y₃)`, and sink `(A₁,A₀)`. Its gates are
+  `F(A₁,X,0)`, `F(A₀,0,A₁∧X)`, and
+  `F(A₀,0,¬A₁∧X)`. The seven closed-triangle unit wires give
+  latency two from arguments to results, but complete-boundary path delays
+  vary, so the paper correctly calls the drawing formally sequential and does
+  not establish its later global combinational criterion.
 
 ## Updated Assumptions
 
@@ -67,9 +70,10 @@
   `Circuit.HasLatency ... 0` theorem. This is only the Stage 4 abstract path
   metric and not a routed-wire or sequential timing result.
 - Reconstruct Figure 7 independently as an exact complete six-wire
-  realization, not merely as a result-only truth table. Verify from the figure
-  the output index convention and address-sink order before fixing the public
-  statement.
+  realization, not merely as a result-only truth table. Use binary address
+  order `A₁A₀`, sink order `(A₁,A₀)`, and the checked distinction
+  between its latency-two argument/result interface and nonuniform complete
+  boundary timing.
 
 ## Big Picture Objective
 
