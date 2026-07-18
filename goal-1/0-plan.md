@@ -97,10 +97,21 @@ Lean results as the work proceeds.
 
 ### Checked Paper Facts
 
-- The paper defines a unit wire as a one-step delayed identity bit.
+- The paper's unit-wire table relates input `xᵗ` to equal-valued output
+  `yᵗ⁺¹`; Figure 1 equivalently writes `yᵗ = xᵗ⁻¹`. Its aligned port-value map
+  is identity, but the timed primitive has delay one, two forward unit wires
+  have delay two, and the paper does not call that timed primitive an
+  involution. Its separate `t ↦ -t` inverse claim needs oriented time semantics.
 - Its Fredkin table maps `(u, x1, x2)` to `(u, x2, x1)` when `u = 0` and to
   `(u, x1, x2)` when `u = 1`. Thus the printed control convention is
   zero-controlled swapping.
+- The paper's Fredkin ports are ordered `(u,x₁,x₂) → (v,y₁,y₂)`, with `v=u`;
+  its eight rows are `000→000`, `001→010`, `010→001`, `011→011`,
+  `100→100`, `101→101`, `110→110`, and `111→111`. Section 2.5 treats gates as
+  instantaneous combinational elements and wires as delay elements.
+- Section 2.4 calls Fredkin nonlinear but supplies no algebraic definition.
+  Stage 3 must label any coordinatewise-XOR/`F₂` interpretation as a precise
+  reconstruction rather than a quoted definition or physical conclusion.
 - A conservative gate is described as an invertible Boolean function that
   preserves the number of ones. The paper explicitly notes that reversibility
   and conservation are independent.
