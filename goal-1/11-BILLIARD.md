@@ -2,9 +2,13 @@
 
 ## Status
 
-In progress on 2026-07-18 from clean synchronized baseline `898bfe5`.
-Section 6, footnotes 6--7, and the original images of Figures 12--18 have been
-read together.  No Lean implementation has yet been accepted as a result.
+Complete on 2026-07-18 from clean synchronized baseline `898bfe5`.
+Section 6, footnotes 6--7, and the original images of Figures 12--18 were read
+together.  The constrained interfaces, selected local collision, independent
+scattering layer, sampled geometry, Figure 14 trace, adversarial obstructions,
+opt-in boundary, scans, axiom audit, and uncontended clean rebuild pass.
+Figures 15, 17, and 18 and continuous/global mechanics remain explicitly
+unresolved rather than reconstructed from missing data.
 
 ## Current Facts
 
@@ -85,7 +89,8 @@ than filling them in by convention.
    three-ball boundary.
 4. Add `Billiard/Geometry.lean` with integer grid points, four directed diagonal
    velocities, certified finite routes, horizontal/vertical mirror reflection,
-   a finite delay detour, sampled clearance, and time-indexed route conflict.
+   a same-endpoint-position finite detour with its boundary-direction mismatch
+   explicit, sampled clearance, and time-indexed route conflict.
    Check a simultaneous crossing conflict, a one-tick sample-clearance failure,
    and a two-tick schedule meeting the sampled threshold.
 5. Add `Billiard/Figure14.lean` with four explicit directed routes, the active
@@ -211,4 +216,118 @@ boundary if the stage implementation is accepted.
 
 ## Stage Results
 
-Pending implementation and verification.
+### Exact unequal-width interfaces
+
+`Interaction.encode` implements the paper's ordered
+`(p,q) -> (pq,!p q,p !q,pq)` table.  `Interaction.ValidOutput` is its exact
+range, and `Interaction.equiv : BitState 2 ≃ ValidOutput` gives the selected
+inverse `p=A or C`, `q=A or B` only on that subtype.  The subtype has cardinality
+four; the raw four-rail type has cardinality sixteen and cannot be equivalent
+to `BitState 2`.  `encode_weightPreserving` preserves present-ball count while
+`encode_vacancies` proves that the unequal boundary adds two vacant rails.
+
+`Switch.equiv` supplies the analogous exact result for
+`(c,x) -> (c,cx,!c x)`.  Its valid subtype has four states within an eight-state
+raw space, its constrained inverse recovers `(c,u or v)`, ball count is
+preserved, and one vacant rail is added.  The four switch rows and two canonical
+invalid branch states are audited.  `Interaction.not_with_true_source` keeps
+the complete four-rail output and names the occupied `q=true` source; no mirror
+or implicit reservoir supplies a free constant.
+
+### Selected collision and legal simultaneous layer
+
+`Collision.map` exchanges the straight pair `0110` and deflected pair `1001`
+and fixes every other raw four-channel mask.  This total map is an involutive
+`Conservative 4`, but its behavior outside `AllowedLocal` is explicitly only
+an algebraic completion.  `AllowedState` admits zero/single balls and the two
+selected pair phases; `allowedEquiv` is the executable local abstraction.
+The initialized straight slice `(0,q,p,0)` is admitted and
+`Collision.map_embed` proves its complete output equals `Interaction.encode`.
+The same raw `0110` is deliberately distinguished by phase: legal before
+scattering, invalid as a constrained interaction output.
+
+`ScatteringLayer.Configuration sites` is a product of independently owned
+admitted sites.  Its pointwise step is deterministic and involutive, preserves
+the finite total ball count, handles zero sites, and has commuting distinct-site
+updates.  This does not schedule shared particles or targets.  The named
+three-ball mask is rejected, and `tripleCandidates_conflict` proves that two
+candidate collision pairs sharing one particle violate the explicit source
+support condition.
+
+### Sampled geometry and Figure 14
+
+`Grid.Route` stores positions and directions in a rotated integer lattice and
+proves one principal-direction step at every tick.  Axis-mirror reflection is
+an involutive direction permutation.  `mirrorTurn` checks one fixed turn.  The
+six-step detour has the short route's endpoint positions and four additional
+ticks; all five turn sites are distinct and every turn matches its fixed mirror.
+Its boundary directions differ from the short route, so it is not claimed as a
+drop-in directed-wire delay or as the paper's arbitrary-delay theorem.
+
+Timed crossing uses separate spatial intersection from scheduling.  Naked
+simultaneous crossing conflicts.  A one-tick stagger avoids identical sampled
+centers but fails the radius-derived squared-distance threshold two; a two-tick
+stagger meets that sampled threshold and is sample-conflict-free.  Neither
+theorem covers swept volumes or continuous clearance.
+
+Figure 14 uses four explicit routes with input points `P,Q` on one rotated
+sample line and `A,B,C,D` on another.  `frame` is a selected scheduled trace,
+not execution of a global mechanics.  Every active route has exactly four unit
+steps; every integral frame retains the exact input ball count and satisfies
+sampled squared-distance threshold two.  On input `11`, contact distance two
+occurs uniquely at tick two and the directions change from southeast/northeast
+to northeast/southeast.  `frame_four` retains the complete labeled final frame,
+and `output_refines_collision` proves its observation is exactly the collision
+map and constrained interaction table for all four inputs.
+
+### Checked obstructions and exclusions
+
+- `Interaction.no_raw_equiv` and `Switch.no_raw_equiv` reject unconstrained
+  unequal-width inverse claims.
+- `collision_not_unionPreserving` proves the two-ball collision is not the
+  union of independent singleton trajectories; `no_wirePerm_collision` rules
+  out replacing it with a structural wire permutation.
+- `illegalThreeBallMask_not_allowed` and `tripleCandidates_conflict` prevent
+  order-dependent or priority-selected multi-event behavior from entering the
+  legal abstraction.
+- The short route/detour pair proves that endpoint positions alone do not
+  determine latency, while the boundary-direction theorem prevents calling
+  that witness an interchangeable directed delay.
+- The crossing examples distinguish equal-center exclusion from sampled
+  radius clearance rather than labeling every timed crossing trivial.
+- The opt-in umbrella is absent from the finite and sequential APIs.  No
+  Figure 15 bridge, Figure 17 switch trace, Figure 18 Fredkin trace, whole-layout
+  compiler, P8 packing theorem, continuous hard-ball/mirror refinement,
+  physical time reversal, energy, dissipation, or thermodynamic conclusion is
+  installed.
+
+### Verification evidence
+
+- Focused builds of `Billiard.Interface`, `Billiard.Collision`,
+  `Billiard.Discrete`, `Billiard.Geometry`, and `Billiard.Figure14` passed.
+  The opt-in umbrella and adversarial audit passed all 717 jobs before cleaning.
+- A cached ordinary default build passed 995 jobs and did not import a billiard
+  leaf.  After `lake clean`, an initial build overlapped read-only reviewer
+  builds and hit missing generated mathlib artifacts; once those concurrent
+  processes stopped, the uncontended rerun passed all 995 jobs.  The explicit
+  post-clean billiard/sequential umbrellas and both audits then passed all 730
+  jobs.
+- `ConservativeLogic/Audit/completeness_groups.py` retained the exact prior
+  widths-one-through-four group results.
+- The audit checks all four interaction rows, all four switch rows, inverse
+  round trips, valid cardinalities, raw cardinality no-go results, vacancy
+  deltas, both collision directions, zero/independent sites, commutation,
+  shared-particle conflict, non-union/non-permutation behavior, every mirror
+  turn, distinct fixed turn sites, endpoint/direction/latency distinctions,
+  simultaneous/one-tick/two-tick crossings, all four Figure 14 outputs, every
+  frame's ball count and sampled clearance, unique contact time, and scheduled
+  right-angle direction change.
+- Central `#print axioms` reports only standard Lean/mathlib `propext`,
+  `Classical.choice`, and `Quot.sound` where applicable.  No project `axiom`,
+  `sorry`, `admit`, `unsafe`, `native_decide`, `Lean.ofReduceBool`, priority
+  fold, or classical event choice occurs in the Stage 11 Lean sources.
+- Reverse-import, raw-interface, physical-claim, proof-hole, and fallback scans;
+  the complete baseline diff; independent paper/architecture/adversarial
+  reviews; and `git diff --check` pass.  The reviews found the original
+  repeated-site mirror detour and one-tick clearance overclaim; both were
+  corrected and rechecked before completion.

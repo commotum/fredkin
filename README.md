@@ -181,7 +181,9 @@ initialized `(0,q,p,0)` slice refines the complete interaction output.
 Finite products of admitted collision sites provide deterministic,
 involutive, count-preserving simultaneous scattering only for independent
 owned channels.  Directed routes use a rotated integer lattice, with explicit
-sampled mirror turns, a four-tick detour, and global-time crossover predicates.
+sampled mirror turns, a same-endpoint-position detour adding four ticks, and
+global-time crossover predicates.  The detour has different boundary
+directions and is therefore not a general drop-in wire-delay gadget.
 The naked crossing conflicts when simultaneous.  A one-tick stagger avoids an
 equal sampled center but fails the radius-derived squared-distance threshold;
 a two-tick stagger satisfies that sampled threshold.  Figure 14 has a complete

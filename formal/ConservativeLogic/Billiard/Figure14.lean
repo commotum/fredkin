@@ -192,6 +192,12 @@ theorem sampled_clearance (p q : Bool) (time : Fin (latency + 1)) :
 theorem contact_sample :
     Point.squaredDistance (pDeflected.position 2) (qDeflected.position 2) = 2 := rfl
 
+/-- The two-ball trace meets the sampled contact threshold only at tick two. -/
+theorem contact_sample_iff (time : Fin (latency + 1)) :
+    Point.squaredDistance (pDeflected.position time) (qDeflected.position time) = 2 ↔
+      time = 2 := by
+  fin_cases time <;> decide
+
 /-- Direction pattern of the selected right-angle scattering event. -/
 def HasRightAngleTurnAtTwo (upper lower : Route latency) : Prop :=
   upper.direction 1 = .southeast ∧ lower.direction 1 = .northeast ∧

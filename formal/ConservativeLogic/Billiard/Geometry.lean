@@ -11,7 +11,7 @@ The coordinates and routes are a discrete reconstruction: they do not define
 continuous hard-ball motion, swept-volume clearance, elastic impact, or
 specular mechanics.
 
-Routes retain direction as well as occupancy.  Timed uses make the paper's
+Routes retain direction as well as sampled position.  Timed uses make the paper's
 "trivial crossover" obligation explicit: two spatially crossing routes are
 safe only after proving that their balls never occupy the crossing at the same
 global sample time.
@@ -154,6 +154,16 @@ theorem fourTickDetour_same_endpoints :
 
 /-- The selected detour adds exactly four sampled ticks. -/
 theorem fourTickDetour_extra_latency : 6 = 2 + 4 := rfl
+
+/--
+The same-point detour does not retain the short route's boundary directions,
+so it is not by itself an interchangeable directed-wire delay gadget.
+-/
+theorem fourTickDetour_boundaryDirections :
+    shortRoute.direction 0 = .northeast ∧ shortRoute.direction 1 = .southeast ∧
+      fourTickDetour.direction 0 = .northwest ∧
+        fourTickDetour.direction 5 = .southwest := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
 
 /-- Fixed sampled mirror orientation at each of the detour's five direction changes. -/
 def fourTickDetourMirrors : Fin 5 → Mirror

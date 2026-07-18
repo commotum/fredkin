@@ -70,6 +70,12 @@ example : Collision.map Collision.straightPair = Collision.deflectedPair :=
 example : Collision.map Collision.deflectedPair = Collision.straightPair :=
   Collision.map_deflectedPair
 
+example : Collision.straightPair = Interaction.invalidBothSingles := rfl
+
+/-- `0110` is legal before scattering but invalid as a post-interaction rail tuple. -/
+example : ¬ Interaction.IsValidOutput Collision.straightPair :=
+  Interaction.invalidBothSingles_not_valid
+
 example (state : Collision.AllowedState) :
     Collision.allowedEquiv.symm (Collision.allowedEquiv state) = state :=
   Collision.allowedEquiv.symm_apply_apply state
@@ -164,6 +170,12 @@ example : (Grid.fourTickDetour.start, Grid.fourTickDetour.finish) =
     (Grid.shortRoute.start, Grid.shortRoute.finish) :=
   Grid.fourTickDetour_same_endpoints
 
+example : Grid.shortRoute.direction 0 = .northeast ∧
+    Grid.shortRoute.direction 1 = .southeast ∧
+      Grid.fourTickDetour.direction 0 = .northwest ∧
+        Grid.fourTickDetour.direction 5 = .southwest :=
+  Grid.fourTickDetour_boundaryDirections
+
 example (turn : Fin 5) :
     (Grid.fourTickDetourMirrors turn).reflect
         (Grid.fourTickDetour.direction turn.castSucc) =
@@ -231,6 +243,12 @@ example (p q : Bool) (time : Fin (Figure14.latency + 1)) :
 example : Grid.Point.squaredDistance
     (Figure14.pDeflected.position 2) (Figure14.qDeflected.position 2) = 2 :=
   Figure14.contact_sample
+
+example (time : Fin (Figure14.latency + 1)) :
+    Grid.Point.squaredDistance
+        (Figure14.pDeflected.position time) (Figure14.qDeflected.position time) = 2 ↔
+      time = 2 :=
+  Figure14.contact_sample_iff time
 
 example (p q : Bool) :
     Figure14.HasRightAngleTurnAtTwo (Figure14.pRoute q) (Figure14.qRoute p) ↔
