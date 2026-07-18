@@ -21,7 +21,7 @@ namespace ConservativeLogic
 /--
 A balanced feed-forward conservative-circuit expression on `n` boundary wires.
 
-The only value-processing gate in this fixed Stage 4 basis is the paper
+The only value-processing gate in this fixed basis is the paper
 Fredkin gate. `unitWire` and `identity` remain distinct syntax because the
 former carries one unit of path delay while the latter is structural and
 instantaneous.
@@ -39,5 +39,13 @@ inductive Circuit : Nat → Type where
   | seq {n : Nat} (first second : Circuit n) : Circuit n
   /-- Parallel composition on ordered, disjoint left and right wire blocks. -/
   | tensor {m n : Nat} (left : Circuit m) (right : Circuit n) : Circuit (m + n)
+
+/--
+A one-bit wire of any discrete length, built by serially composing exactly that
+many unit-wire constructors.  Length zero is the structural identity.
+-/
+def Circuit.wireOfLength : Nat → Circuit 1
+  | 0 => .identity 1
+  | length + 1 => .seq (wireOfLength length) .unitWire
 
 end ConservativeLogic

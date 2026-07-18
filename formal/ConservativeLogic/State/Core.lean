@@ -21,10 +21,22 @@ abbrev BitState (n : Nat) := Fin n → Bool
 def hammingWeight {n : Nat} (x : BitState n) : Nat :=
   (Finset.univ.filter fun i => x i = true).card
 
+/--
+The number of false-valued wires in a fixed-width Boolean state.  This is the
+paper's derived `N₀ = N - N₁`, not a second independent conserved quantity.
+-/
+def zeroCount {n : Nat} (x : BitState n) : Nat :=
+  n - hammingWeight x
+
 /-- Every width-zero Boolean state has Hamming weight zero. -/
 @[simp]
 theorem hammingWeight_zero (x : BitState 0) : hammingWeight x = 0 := by
   simp [hammingWeight]
+
+/-- A width-zero state also has no false-valued wires. -/
+@[simp]
+theorem zeroCount_zero (x : BitState 0) : zeroCount x = 0 := by
+  simp [zeroCount]
 
 namespace BitState
 

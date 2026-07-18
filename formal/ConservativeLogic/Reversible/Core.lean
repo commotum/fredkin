@@ -54,6 +54,15 @@ theorem comp {l m n : Nat} {first : BitState l → BitState m}
   intro x
   exact (hsecond (first x)).trans (hfirst x)
 
+/--
+At a fixed width, preserving `N₁` also preserves the derived false-wire count
+`N₀ = width - N₁`.  Unequal-width maps intentionally have no such conclusion.
+-/
+theorem zeroCount {n : Nat} {f : BitState n → BitState n}
+    (preserves : WeightPreserving f) (state : BitState n) :
+    ConservativeLogic.zeroCount (f state) = ConservativeLogic.zeroCount state := by
+  simp only [ConservativeLogic.zeroCount, preserves state]
+
 end WeightPreserving
 
 /-- A reversible width-`n` Boolean map with an explicitly available inverse. -/

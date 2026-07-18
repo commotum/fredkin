@@ -6,7 +6,7 @@ import ConservativeLogic.Gate.Fredkin
 /-!
 # Static semantics of balanced feed-forward circuits
 
-Evaluation forgets timing and maps every Stage 4 grammar term to its exact
+Evaluation forgets timing and maps every balanced grammar term to its exact
 finite conservative boundary-value map. The value-processing basis is fixed,
 while explicit arbitrary bijective port reindexing remains a structural
 allowance rather than a synthesized gate. Tensor evaluation splits the input
@@ -105,13 +105,13 @@ theorem eval_identity {n : Nat} (input : BitState n) :
     eval (.identity n) input = input :=
   rfl
 
-/-- The circuit unit-wire primitive reuses the Stage 3 unit-wire value map. -/
+/-- The circuit unit-wire primitive reuses the primitive unit-wire value map. -/
 @[simp]
 theorem eval_unitWire (input : BitState 1) :
     eval .unitWire input = UnitWire.value input :=
   rfl
 
-/-- The circuit Fredkin primitive reuses the exact Stage 3 paper map. -/
+/-- The circuit Fredkin primitive reuses the exact paper-convention map. -/
 @[simp]
 theorem eval_fredkin (input : BitState 3) :
     eval .fredkin input = PaperFredkin.map input :=
@@ -145,6 +145,15 @@ theorem eval_tensor_append {m n : Nat} (left : Circuit m) (right : Circuit n)
     eval (.tensor left right) (BitState.append leftInput rightInput) =
       BitState.append (eval left leftInput) (eval right rightInput) := by
   simp [eval_tensor]
+
+/-- Every composed wire length carries the same Boolean value. -/
+@[simp]
+theorem eval_wireOfLength (length : Nat) (input : BitState 1) :
+    eval (wireOfLength length) input = input := by
+  induction length with
+  | zero => rfl
+  | succ length inductionHypothesis =>
+      simpa [wireOfLength, eval_seq, eval_unitWire] using inductionHypothesis
 
 /-- Every admitted circuit evaluates to a bijection. -/
 theorem eval_isReversible {n : Nat} (circuit : Circuit n) :

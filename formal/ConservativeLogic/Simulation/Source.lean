@@ -4,7 +4,7 @@ import ConservativeLogic.Reversible.Core
 # Explicit finite feed-forward source circuits
 
 This module defines the conventional, generally irreversible source language
-used by the finite Stage 6 replacement theorem.  Constants, discard, and
+used by the finite source-language replacement theorem.  Constants, discard, and
 FAN-OUT are syntax: they cannot be introduced implicitly by the structural
 rules.  Serial composition has matching intermediate widths and tensor gives
 its two branches disjoint input blocks.

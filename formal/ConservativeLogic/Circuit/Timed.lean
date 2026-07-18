@@ -55,7 +55,7 @@ namespace PathDelay
 theorem identity {n : Nat} (i : Fin n) : PathDelay (.identity n) i i 0 :=
   ⟨rfl, rfl⟩
 
-/-- The unit-wire path carries exactly the Stage 3 delay metadata. -/
+/-- The unit-wire path carries exactly the primitive's delay metadata. -/
 theorem unitWire :
     PathDelay .unitWire (0 : Fin 1) (0 : Fin 1) UnitWire.delay :=
   rfl
@@ -122,7 +122,7 @@ theorem hasLatency_identity (n : Nat) : HasLatency (.identity n) 0 := by
   intro input output actual path
   exact path.2
 
-/-- The unit wire has exactly its Stage 3 latency metadata. -/
+/-- The unit wire has exactly its declared latency metadata. -/
 theorem hasLatency_unitWire : HasLatency .unitWire UnitWire.delay := by
   intro input output actual path
   exact path
@@ -151,6 +151,15 @@ theorem HasLatency.seq {n firstLatency secondLatency : Nat}
   intro input output actual path
   rcases path with ⟨middle, actualFirst, actualSecond, firstPath, secondPath, rfl⟩
   exact congrArg₂ Nat.add (hfirst firstPath) (hsecond secondPath)
+
+/-- A composed length-`length` wire has exactly `length` unit-wire delays. -/
+theorem wireOfLength_hasLatency (length : Nat) :
+    HasLatency (wireOfLength length) length := by
+  induction length with
+  | zero => simpa [wireOfLength] using hasLatency_identity 1
+  | succ length inductionHypothesis =>
+      simpa [wireOfLength] using
+        HasLatency.seq inductionHypothesis hasLatency_unitWire_one
 
 /-- Tensor has a uniform latency when both disjoint blocks have that latency. -/
 theorem HasLatency.tensor {m n latency : Nat} {left : Circuit m} {right : Circuit n}
