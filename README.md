@@ -31,10 +31,11 @@ lake build ConservativeLogic.Audit.Fredkin
 lake build ConservativeLogic.Audit.Circuit
 lake build ConservativeLogic.Audit.Realization
 lake build ConservativeLogic.Audit.Simulation
+lake build ConservativeLogic.Audit.Inverse
 lake build
 ```
 
-Stages 1 through 6 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 7 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, separate reversibility and weight-preservation predicates, bundled
 reversible/conservative maps, conservative wire permutations, the unit wire's
@@ -79,7 +80,20 @@ wires. It constructs a delay-two route for every distinguished
 argument/result pair and proves that every grammar-induced route between those
 ports has delay two. A zero-delay source/result counterroute then proves that
 the full six-wire boundary does not satisfy the later global equal-latency
-criterion. Inverse circuits, garbage recycling, feedback, traces, stream
-simulation, and physical conclusions remain later or out of scope. The
-focused audit commands are explicit because diagnostic leaves are
+criterion.
+
+Stage 7 adds a total structural inverse for every balanced `Circuit`. It leaves
+identity, unit wire, and the paper Fredkin constructor unchanged, inverts
+active structural permutations, reverses serial order, and preserves tensor
+block order. `inverse_eval` identifies the complete static boundary map with
+`Conservative.inverse`; double inversion and both semantic cancellation
+directions are proved. `PathDelay.inverse` and `pathDelay_inverse_iff` reverse
+route endpoints without changing unit-wire count, so common-latency
+certificates are preserved. A latency-`L` forward/inverse round trip has
+latency `L + L`; the unit-wire round trip evaluates to identity but has latency
+two. These are feed-forward expression theorems, not inversion of Figure 19's
+feedback graph, oriented `t ↦ -t` execution, or physical time-reversal
+invariance. Compute-copy-uncompute, garbage recycling, feedback, traces,
+stream simulation, and physical conclusions remain later or out of scope.
+The focused audit commands are explicit because diagnostic leaves are
 intentionally not imported by the public root.

@@ -298,6 +298,20 @@ Lean results as the work proceeds.
   inverse path retains the same nonnegative unit-wire count while exchanging
   its endpoints; this is not a `t ↦ -t` execution theorem or physical
   time-reversal invariance.
+- `Circuit.inverse` now covers all six balanced feed-forward constructors. It
+  keeps identity, unit wire, and paper Fredkin syntax; uses `wiring.symm` for an
+  active structural permutation; reverses serial order; and retains tensor
+  block order. `inverse_inverse` is a structural theorem, not a synthesized
+  semantic circuit.
+- `Circuit.inverse_eval` identifies evaluation of that term with
+  `Conservative.inverse (Circuit.eval circuit)` for every `Circuit n`.
+  `eval_inverse_eval` and `eval_eval_inverse` prove both complete-state static
+  cancellation directions without projecting or discarding a port.
+- `Circuit.PathDelay.inverse` and `pathDelay_inverse_iff` prove exact endpoint
+  reversal with unchanged delay. The latency/timing preservation theorems are
+  biconditionals, while `HasLatency.seq_inverse` and `inverse_seq` prove the
+  honest `L + L` round-trip latency. `UniformLatencyCircuit.inverse` remains a
+  certificate constructor only.
 
 ### Assumptions to Test, Not Yet Facts
 
@@ -353,11 +367,11 @@ The eventual goal is complete only when all of the following hold:
 | §2.2, P7 | The abstract model should have at least one additive conserved quantity | — | Generic physical/mathematical motivation only; P7 itself does not select Hamming weight |
 | §§2.3–2.5 | In the Boolean model, `N₁`/Hamming weight is additive across wire portions and preserved by unit wires, gates, and closed transitions | 2–4, 10 | Stage 2 proves static block additivity; Stage 3 proves primitive static preservation; Stage 4 proves `Circuit.eval_weightPreserving` for serial/tensor circuit evaluation. Closed trajectories remain a Stage 10 obligation |
 | §2.2, P8 | Local-Euclidean/layout constraint on circuit connectivity | 11 or — | The paper explicitly does not develop P8; require an actual geometry model or keep the claim out of scope |
-| §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4 | `UnitWire.value_apply`, `value_isReversible`, and `value_weightPreserving` prove the aligned identity-on-values claim; `PathDelay.unitWire_one` and the serial path rule now compose its one-step metadata statically. Oriented reversal and execution semantics remain later obligations |
+| §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4, 7 | `UnitWire.value_apply`, `value_isReversible`, and `value_weightPreserving` prove the aligned identity-on-values claim; `PathDelay.unitWire_one` composes its one-step metadata, and `PathDelay.inverse` exchanges static route endpoints while retaining that delay. Oriented `t ↦ -t` execution and physical time reversal remain unproved |
 | §2.4, Table (2) | Paper-convention Fredkin semantics, involution, bijection, weight preservation | 3 | `PaperFredkin.table` fixes the port order and convention; all eight rows are independently audited; `map_involutive`, `equiv`, `map_isReversible`, `map_weightPreserving`, and `conservative` prove the separate static properties |
 | §2.4 | Fredkin is nonlinear under an explicitly selected coordinatewise-XOR/`F₂` notion | 3 | `XorLinear` states the selected reconstruction; the `PaperFredkin.map_xor_counterexample_*` equations and `map_not_xorLinear` prove a concrete failure of additivity, without attributing that definition to the paper |
 | §2.5, Fig. 3 | Literal directed-graph open/closed transition semantics, feedback, memory, balanced external ports, and closed-system weight conservation | 10 | The paper's graph model is not feed-forward; it needs explicit state and feedback semantics |
-| §§2.5, 7.1 | Acyclic/equal-latency combinational fragment and one-to-one composition | 4, 7 | `Circuit` is a corrected one-to-one feed-forward grammar; `PathDelay`, `HasLatency`, and `MeetsPaperCombinationalTiming` formalize the equal-unit-wire-path clause. No graph correspondence, feedback semantics, or physical routing result is claimed |
+| §§2.5, 7.1 | Acyclic/equal-latency combinational fragment and one-to-one composition | 4, 7 | `Circuit` is a corrected one-to-one feed-forward grammar; `PathDelay`, `HasLatency`, and `MeetsPaperCombinationalTiming` formalize the equal-unit-wire-path clause. `Circuit.pathDelay_inverse_iff` and `meetsPaperCombinationalTiming_inverse_iff` prove exact reversal/preservation for that grammar only. No graph correspondence, feedback semantics, or physical routing result is claimed |
 | §2.5 | Reversibility and conservation are independent | 2 | Proved semantically for ordinary Boolean endomaps by `Independence.reversible_not_weightPreserving` and `Independence.weightPreserving_not_reversible`; this does not assert a literal circuit realization |
 | §3, Fig. 5 | Realization partitions source/argument and result/sink, fixes constants independently of the argument, and permits argument-dependent garbage | 5 | `Layout` and `Realizes` give a stronger explicit five-block specialization: fixed source and returned-clean scratch, universal argument, selected result, explicit argument-indexed garbage, and equality of the complete boundary state |
 | §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | `fredkin_realizes_and`, `fredkin_realizes_or`, `fredkin_realizes_not`, and `fredkin_realizes_fanout` prove the exact complete tuples using named active port permutations; FAN-OUT is constrained by source `(0,1)` and retains `¬a` as garbage |
@@ -372,7 +386,7 @@ The eventual goal is complete only when all of the following hold:
 | §6.3 | Interaction-gate AND/NOT realization plus universality with constants and valid routing/timing | 11 | Logical realization and geometric implementability are separate |
 | §6 introduction and §6.4 | Any conservative-logic circuit has a billiard-ball realization | 11 | Strong whole-circuit refinement claim; primitive truth tables alone do not prove routing, clearance, or timing composition |
 | §6.4, Figs. 16–18 | The switch `(c,x) ↦ (c,cx,¬c x)` is an equivalence onto four valid three-rail states, and collision layouts refine switch/Fredkin semantics | 11 | Switch inverse is constrained; Fig. 18 omits steering/timing mirrors and unit wires while explicitly classifying bridge versus trivial crossovers |
-| §7.1 | Reversing gates and wires yields a semantic inverse for combinational networks | 7 | Stage 7 targets the checked feed-forward expression fragment: exact semantic inversion for every balanced term, exact endpoint-reversed path correspondence, and preservation of the common-latency predicate. The paper's full directed-graph reversal, including feedback, remains Stage 10 |
+| §7.1 | Reversing gates and wires yields a semantic inverse for combinational networks | 7 | Proved for the corrected feed-forward grammar by `Circuit.inverse_eval`, `Circuit.pathDelay_inverse_iff`, and `Circuit.meetsPaperCombinationalTiming_inverse_iff`. The full directed-graph reversal shown in Figure 19, including feedback, remains outside this theorem and requires Stage 10 semantics |
 | §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | Exact copy gadget and partitions must be proved |
 | §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Separate restoration semantics from scratch/garbage size and complexity bounds; the latter need a cost model |
 | §7.1, Fig. 24(b) | Scratch constants can all be zero without loss of generality | 9 | Attributed but unproved in paper |
@@ -391,7 +405,7 @@ disposition.
 | ID | Issue | Required disposition |
 |---|---|---|
 | CL-001 | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | Resolved for the Stage 3 default by the explicit `PaperFredkin` namespace, public coordinate laws, `PaperFredkin.table`, and all eight audited rows. No one-controlled alternate is exposed; any future alternate still requires a separately named control-negation conjugacy theorem. |
-| CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Advanced through Stage 6: `UnitWire.value` and `UnitWire.delay` separate value identity from one-step metadata, and `PathDelay` composes that metadata statically. Stage 7 must reverse path endpoints while retaining the same nonnegative delay and must record that a forward/inverse pair has doubled latency. Oriented execution, `t ↦ -t`, and physical time-reversal symmetry remain later obligations. |
+| CL-002 | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Advanced through Stage 7: `Circuit.PathDelay.inverse` reverses route endpoints while retaining the same nonnegative delay, and `HasLatency.seq_inverse` records `L + L` rather than delay cancellation. `inverse_unitWire` is explicitly only the static grammar proxy. Oriented execution, `t ↦ -t`, and physical time-reversal symmetry remain later obligations. |
 | CL-003 | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | Resolved for the semantic predicate claim in Stage 2 by one-bit negation and two-bit Boolean sorting. The latter is documented only as an ordinary endomap, not a conservative-logic gate or literal circuit realization. |
 | CL-004 | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | Resolved for the one-bit Stage 5 example: `fredkin_realizes_fanout` is a width-three circuit with fixed source `(0,1)`, selected result `(a,a)`, and explicit garbage `¬a`; `fredkinFanoutCircuit_isReversible` and `fredkinFanoutCircuit_weightPreserving` concern the complete map. Guarded failures reject a source-free unequal-width copier and an equal-width reversible interpretation of the selected target. |
 | CL-005 | Figure 7 states equal delay only from argument to result, whereas §7.1 defines a combinational network using equal delay from any input to any output. | Resolved at the precise Stage 6 scope. The checked reconstruction has seven unit wires; `argument_to_result_path` supplies a delay-two route for each distinguished argument/result pair and `argument_to_result_path_delay_two` proves uniqueness of that delay for every such path. A third-source-to-`Y₀` path has delay zero, so `demuxCircuit_not_meetsPaperCombinationalTiming` proves the full term fails the later global criterion. |
@@ -399,14 +413,14 @@ disposition.
 | CL-007 | The interaction and switch gates use constrained, unequal-width rail encodings. They preserve balls/ones but not the number of zero-valued physical rails and are exceptions to the ordinary balanced-port gate type. | Model each valid-state subtype explicitly; never claim `Bool² ≃ Bool⁴`, `Bool² ≃ Bool³`, or an ordinary equal-width conservative-gate instance. Qualify port-balance claims accordingly. |
 | CL-008 | Figure 18 explicitly omits steering/timing mirrors and unit wires, but identifies bridge crossovers and calls the others trivial; clearance and simultaneous collision scheduling are additional formalization obligations rather than quoted omissions. | Model the stated omissions, crossover cases, clearance, and event scheduling explicitly in a discrete geometry semantics. |
 | CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; with Table (2)'s `(u,x1,x2)` order, `(x1,x2)=(1,0)` yields `(y1,y2)=(a,not a)`. | Advanced in Stage 5: `notFanoutInputWiring` explicitly maps canonical `(0,1,a)` to physical `(a,1,0)`, and the one-bit complete equation returns `(a,a,¬a)`. The multi-bit §7 copy layer and chosen `2n`-wire result encoding remain Stage 8 obligations. |
-| CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Advanced at the interface level in Stage 5: `Realizes` distinguishes consumed source, identically returned scratch, selected result, and explicit garbage. No uncomputation or garbage-recycling construction is claimed before Stages 7–8. |
+| CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Advanced through Stage 7: `Realizes` distinguishes the five interface blocks and `Circuit.inverse_eval` supplies complete target-circuit inversion. No spy/copy layer, compute-copy-uncompute composition, restoration theorem, or garbage-recycling result is claimed before Stage 8. |
 | CL-011 | All-zero scratch sufficiency is attributed to Margolus without proof. | Reconstruct a proof, cite a verifiable source, or leave the stronger version unresolved. |
 | CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model. | Define a circuit family and asymptotic measure before formalizing them. |
 | CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to Silver, but ancilla and wiring conventions are unclear; §2.5 also tacitly includes unit wires and identity gates in every realizability basis. | Prove the strongest accurate variant and document required ancillas/permutations and whether unit wires/identity are free basis elements. |
 | CL-014 | Figure 25 specifies `F0` only on initialized inputs `(x,0ⁿ,1ⁿ)`; total invertibility and conservation do not follow “by definition,” and arbitrary-gate existence would not imply fixed-basis synthesis. | Prove the slice map injective and weight preserving, extend it independently within each finite Hamming layer to a total permutation, document that the completion is noncanonical, and keep semantic gatehood separate from Fredkin synthesis. |
 | CL-015 | Claims about infinite blank tape/environment supplying constants and garbage space are not finite-circuit theorems. | Exclude or formalize in a separately scoped infinite model. |
 | CL-016 | Physical reversibility, entropy, and zero-dissipation conclusions do not follow from finite bijections alone. | Keep them non-theorem commentary unless physical state and dynamics are formalized. |
-| CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Stages 4 and 6 consistently document both source and target as corrected feed-forward expression grammars. Stage 7 must likewise prove expression inversion only: Figure 19 itself includes feedback, so no graph-reversal or open-transducer theorem follows. Feedback semantics, physical routing, and synthesis of permutations remain open. |
+| CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Stages 4, 6, and 7 consistently use corrected feed-forward expression grammars. `Circuit.inverse` and its exact path theorem cover those terms only; Figure 19 itself includes feedback, so no graph-reversal or open-transducer theorem follows. Feedback semantics, physical routing, and synthesis of permutations remain open. |
 | CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Resolved for one explicit reconstruction by `BitState.xor`, `BitState.falseState`, `XorLinear`, the named `PaperFredkin.map_xor_counterexample_*` equations, and `PaperFredkin.map_not_xorLinear`. This is not presented as the paper's missing definition or as physical nonlinearity. |
 | CL-019 | Figure 8 is asserted to realize a `J-K̄` flip-flop, but the paper gives no transition equation, initialization condition, or trace specification. | Reconstruct and verify an exact sequential specification from the diagram, or leave the example explicitly unresolved. |
 
@@ -420,7 +434,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 6; later names remain provisional:
+Checked low-to-high layout through Stage 7; later names remain provisional:
 
 ```text
 ConservativeLogic/
@@ -433,6 +447,8 @@ ConservativeLogic/
   Circuit/Semantics.lean    -- evaluation and preservation theorems
   Circuit/Timed.lean        -- delays/equal-latency feed-forward networks
   Audit/Circuit.lean        -- non-public Stage 4 regressions and axiom audit
+  Circuit/Inverse.lean      -- structural inverse, static correctness, reversed paths
+  Audit/Inverse.lean        -- non-public Stage 7 regressions and axiom audit
   Realization/Core.lean     -- exhaustive source/clean-scratch/result/garbage interface
   Realization/Primitive.lean -- exact routed Section 3 Fredkin realizations
   Audit/Realization.lean    -- non-public Stage 5 boundary and axiom audit
@@ -540,8 +556,23 @@ placeholders to refine during stage work.
   interfaces has that delay, while
   `demuxCircuit_not_meetsPaperCombinationalTiming` records the stronger global
   timing failure.
-- `Circuit.inverse_eval`: evaluation of an inverse feed-forward circuit is the
-  inverse equivalence.
+- `Circuit.inverse`, its six constructor reduction laws, `inverse_inverse`, and
+  `inverse_involutive`: total width-preserving structural inversion of the
+  balanced feed-forward grammar.
+- `Circuit.inverse_eval`, `eval_inverse_eval`, and `eval_eval_inverse`:
+  equality with the inverse complete conservative equivalence plus both static
+  cancellation directions.
+- `Circuit.PathDelay.inverse` and `pathDelay_inverse_iff`: exact route endpoint
+  reversal with the same nonnegative unit-wire count.
+- `Circuit.HasLatency.inverse`, `hasLatency_inverse_iff`,
+  `MeetsPaperCombinationalTiming.inverse`, and
+  `meetsPaperCombinationalTiming_inverse_iff`: common-latency preservation in
+  both directions.
+- `Circuit.HasLatency.seq_inverse` and `inverse_seq`: forward/inverse static
+  cancellation retains round-trip latency `L + L`; it is not a zero-delay
+  syntactic identity.
+- `Circuit.UniformLatencyCircuit.inverse`: a proof-certificate constructor,
+  not backward execution semantics.
 - `copyPair_spec`: in the paper's exact gate-port order, initialized `(1,0)`
   data targets become `(a, not a)` while the control/through wire retains `a`;
   relate this explicitly to the result register's chosen layout.
@@ -554,9 +585,6 @@ placeholders to refine during stage work.
   permutations exposed.
 - `direct_realization_iff`: characterize direct same-register realizability,
   separately from fixed-Fredkin-basis synthesis.
-- Stage 7 placeholder: syntactic inversion preserves `HasLatency` (and hence
-  `MeetsPaperCombinationalTiming`) without turning
-  `UniformLatencyCircuit` into an execution semantics.
 - Optional `Billiard.step_reversible` and `interactionGate_refines_collision`:
   discrete model results only after collision well-definedness is proved.
 

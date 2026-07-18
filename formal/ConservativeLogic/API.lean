@@ -38,9 +38,12 @@ the full initialized-slice equation with exact Fredkin count. The separate
 Figure 7 reconstruction includes all three zero sources, address-echo garbage,
 seven unit wires, existence and exact delay two for every distinguished
 argument/result path, and a proof that the complete boundary does not have one
-global latency. It does not construct
-inverse circuits, garbage recycling, graph/feedback semantics, or sequential
-simulation.
+global latency. The API additionally exports structural inversion of the
+balanced feed-forward grammar, equality of inverse evaluation with the inverse
+conservative equivalence, exact endpoint-reversing path correspondence,
+common-latency preservation, and latency-additive forward/inverse composition.
+It does not define a feedback-graph inverse, oriented wire execution, ticks,
+traces, sequential simulation, garbage recycling, or physical time reversal.
 -/
 
 namespace ConservativeLogic
