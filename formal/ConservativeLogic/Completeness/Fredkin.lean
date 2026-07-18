@@ -196,6 +196,18 @@ structure CleanFredkinRealization {width : Nat} (gate : Reversible width) where
 def CleanFredkinRealizable {width : Nat} (gate : Reversible width) : Prop :=
   Nonempty (CleanFredkinRealization gate)
 
+/-- Exact restoration lets total circuit conservation cancel the clean prefix. -/
+theorem CleanFredkinRealizable.weightPreserving {width : Nat}
+    {gate : Reversible width} (clean : CleanFredkinRealizable gate) :
+    WeightPreserving gate := by
+  rcases clean with ⟨realization⟩
+  intro state
+  have conservation := Circuit.eval_weightPreserving realization.circuit
+    (BitState.append realization.ancillaInit state)
+  rw [realization.realizes] at conservation
+  simp only [hammingWeight_append] at conservation
+  omega
+
 namespace CleanFredkinRealization
 
 /-- The identity permutation needs no ancillary wires. -/

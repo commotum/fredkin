@@ -215,7 +215,9 @@ private theorem gateLayer_spec {w : Nat} (main : BitState w)
   rw [regroup_gate_input main predicate (!predicate) first second]
   rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
     Circuit.eval_identity, Circuit.eval_fredkin, PaperFredkin.table]
-  cases predicate <;> simp
+  cases predicate <;>
+    simp only [Bool.not_false, Bool.not_true, Bool.false_eq_true,
+      ↓reduceIte, Nat.reduceAdd]
   · rw [regroup_gate_input main false true first second]
   · rw [regroup_gate_input main true false second first]
 
@@ -820,9 +822,13 @@ private theorem exists_wiring_to_final {m : Nat} (first second : Fin (m + 2))
     if bit then Fin.natAdd m (1 : Fin 2) else Fin.natAdd m (0 : Fin 2)
   have sourceInjective : Function.Injective source := by
     intro left right equality
-    cases left <;> cases right <;> simp [source] at equality ⊢
-    · exact (distinct equality).elim
-    · exact (distinct equality.symm).elim
+    cases left <;> cases right
+    · rfl
+    · dsimp only [source, Bool.false_eq_true, ↓reduceIte] at equality
+      exact (distinct equality).elim
+    · dsimp only [source, Bool.true_eq_false, ↓reduceIte] at equality
+      exact (distinct equality.symm).elim
+    · rfl
   have targetDistinct :
       Fin.natAdd m (0 : Fin 2) ≠ Fin.natAdd m (1 : Fin 2) := by
     intro equality
@@ -910,9 +916,84 @@ private theorem normalized_swapped_edgeData {m : Nat}
     _ = WirePerm.onState (finalDataSwap m)
         (edgeData (BitState.split m 2
           (WirePerm.onState wiring state)).1 false true) := by
-      rw [normalized]
+      exact congrArg (WirePerm.onState (finalDataSwap m)) normalized
     _ = edgeData (BitState.split m 2
           (WirePerm.onState wiring state)).1 true false :=
       finalDataSwap_edgeData _ false true
+
+private theorem singleExchangeClean_ordered {m : Nat}
+    (state : BitState (m + 2)) (first second : Fin (m + 2))
+    (distinct : first ≠ second)
+    (firstValue : state first = false) (secondValue : state second = true) :
+    CleanFredkinRealizable
+      (Equiv.swap state
+        (WirePerm.onState (Equiv.swap first second) state)) := by
+  classical
+  obtain ⟨wiring, routeFirst, routeSecond⟩ :=
+    exists_wiring_to_final first second distinct
+  let normalized := WirePerm.onState wiring state
+  let pattern := (BitState.split m 2 normalized).1
+  have normalizedState :
+      WirePerm.onState wiring state = edgeData pattern false true := by
+    simpa only [pattern, normalized] using
+      normalized_edgeData state first second wiring firstValue secondValue
+        routeFirst routeSecond
+  have normalizedSwap :
+      WirePerm.onState wiring
+          (WirePerm.onState (Equiv.swap first second) state) =
+        edgeData pattern true false := by
+    simpa only [pattern, normalized] using
+      normalized_swapped_edgeData state first second wiring firstValue secondValue
+        routeFirst routeSecond
+  have endpointFirst :
+      (WirePerm.onState wiring).symm (edgeData pattern false true) = state := by
+    rw [← normalizedState]
+    exact Equiv.symm_apply_apply _ _
+  have endpointSecond :
+      (WirePerm.onState wiring).symm (edgeData pattern true false) =
+        WirePerm.onState (Equiv.swap first second) state := by
+    rw [← normalizedSwap]
+    exact Equiv.symm_apply_apply _ _
+  have gateEq :
+      ((WirePerm.onState wiring).trans
+          (Equiv.swap (edgeData pattern false true)
+            (edgeData pattern true false))).trans
+          (WirePerm.onState wiring).symm =
+        Equiv.swap state
+          (WirePerm.onState (Equiv.swap first second) state) := by
+    rw [Equiv.trans_swap_trans_symm, endpointFirst, endpointSecond]
+  rw [← gateEq]
+  obtain ⟨canonical⟩ := adjacentTranspositionClean pattern
+  exact ⟨canonical.wireConjugate wiring⟩
+
+/--
+Swapping two oppositely valued coordinates of one word produces a cleanly
+realizable transposition of that word with the resulting word.
+-/
+theorem singleExchangeClean {n : Nat} (x y : BitState n) (i j : Fin n)
+    (distinct : i ≠ j) (different : x i ≠ x j)
+    (exchange : y = WirePerm.onState (Equiv.swap i j) x) :
+    CleanFredkinRealizable (Equiv.swap x y) := by
+  classical
+  subst y
+  have valueDistinct : i.val ≠ j.val := by
+    intro equality
+    exact distinct (Fin.ext equality)
+  have widthAtLeastTwo : 2 ≤ n := by
+    rcases lt_or_gt_of_ne valueDistinct with order | order
+    · omega
+    · omega
+  obtain ⟨m, widthEq⟩ := Nat.exists_eq_add_of_le widthAtLeastTwo
+  have widthEq' : n = m + 2 := by omega
+  clear widthEq
+  subst n
+  cases firstValue : x i <;> cases secondValue : x j
+  · exact (different (firstValue.trans secondValue.symm)).elim
+  · exact singleExchangeClean_ordered x i j distinct firstValue secondValue
+  · have realization := singleExchangeClean_ordered x j i distinct.symm
+      secondValue firstValue
+    rw [Equiv.swap_comm j i] at realization
+    exact realization
+  · exact (different (firstValue.trans secondValue.symm)).elim
 
 end ConservativeLogic
