@@ -287,9 +287,10 @@ synchronized baseline `e65f939`; Stage 7 was not started.
   AND, OR, NOT, and constrained FAN-OUT realizations; constants become fixed
   source wires and discard becomes named garbage.
 - `Circuit.fredkinCount` and `compile_fredkinCount` prove the exact one-for-one
-  logic-gate cost of this construction. `compile_hasLatency_zero` states only
-  that the abstract compiled term contains no unit wire; it does not claim
-  gate depth, physical routing, delay normalization, or sequential slowdown.
+  logic-gate cost of this construction. `compile_hasLatency_zero` proves every
+  grammar-induced path has unit-wire latency zero; the compiler construction
+  itself emits no `unitWire` constructor. Neither fact claims gate depth,
+  physical routing, delay normalization, or sequential slowdown.
 - `ConservativeLogic.API` and the public root re-export the three stable Stage
   6 leaves. `ConservativeLogic.Audit.Simulation` remains diagnostic-only.
 

@@ -63,7 +63,7 @@ unrestricted copy gate.
 Stage 6 adds an indexed conventional source language with explicit fixed block
 constants, discard, AND, OR, NOT, FAN-OUT, bijective port permutation, serial
 composition, and disjoint tensor. A total structural compiler translates every
-such finite acyclic term to the existing target grammar. Its theorem states
+such finite acyclic term to the existing target grammar. Its theorems state
 the exact fixed source, complete argument-dependent garbage, zero scratch, full
 initialized-slice equality, exact Fredkin count, and abstract latency zero.
 Serial composition carries earlier garbage unchanged; tensor uses proved
