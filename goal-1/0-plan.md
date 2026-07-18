@@ -418,11 +418,11 @@ The eventual goal is complete only when all of the following hold:
 | §7.1 | Reversing gates and wires yields a semantic inverse for combinational networks | 7 | Proved for the corrected feed-forward grammar by `Circuit.inverse_eval`, `Circuit.pathDelay_inverse_iff`, and `Circuit.meetsPaperCombinationalTiming_inverse_iff`. The full directed-graph reversal shown in Figure 19, including feedback, remains outside this theorem and requires Stage 10 semantics |
 | §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | `copyPair_spec` explicitly routes canonical `(a,0,1)` to physical `(a,1,0)`, `copyRegister_spec` proves `(y,0ⁿ,1ⁿ) ↦ (y,y,¬y)`, and `compute_copy_uncompute_spec` restores the complete packed scratch/source/argument state from any supplied `Realizes` witness. The result register is exactly `2n` wires and no transient midpoint garbage remains |
 | §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Stage 8 proves the exact finite restoration transformation and Fredkin count `2·count(circuit)+resultWidth`. It intentionally returns the argument and a documented result/complement register. Scratch-size, line-count optimality, and asymptotic complexity claims still require Stage 9 cost definitions |
-| §7.1, Fig. 24(b) | Scratch constants can all be zero without loss of generality | 9 | Attributed but unproved in paper |
+| §7.1, Fig. 24(b) | The paper's restored `c` source/workspace can start all zero without loss of generality | 9 | Attributed to Margolus but unproved and uncited precisely in the paper. In the library layout, paper `c` is the consumed `source` later restored by compute-copy-uncompute; the separate already-returned `scratch` field is a stronger interface |
 | §7.2, Fig. 25 | For any `f`, the initialized-slice map `(x,0ⁿ,1ⁿ) ↦ (x,f x,¬f x)` extends to a total conservative permutation | 5, 9 | Stage 5 proves necessary initialized-slice injectivity, fiber-capacity, and weight constraints for any supplied realization. The finite weight-layer extension, its noncanonical choices, and fixed-basis synthesis remain Stage 9/CL-014 obligations |
-| §7.2 | Arbitrary computation needs scratch for a fixed primitive set; claimed size tradeoffs | 9 | Quantifiers and complexity model unclear |
-| §7.3, Fig. 26 | Direct same-register semantic realization is characterized by invertibility plus conservation | 9 | Keep this arbitrary-gate statement separate from fixed-basis synthesis |
-| §§2.5, 7.3 | Every invertible conservative finite function, and its iterates, are Fredkin-realizable without garbage | 9 | Central, but wire-permutation/ancilla scope is ambiguous; the paper tacitly includes unit wires and identity gates in realizability claims |
+| §7.2 | Worst-case synthesis of arbitrary `f` from a fixed bounded primitive basis may require scratch; claimed endpoint size/time tradeoffs | 9 | Special functions can need no scratch. The asserted `exp(m)` sufficient and proportional-to-`m` least-usable endpoints omit family quantifiers, constants, output-width dependence, initialization/return conventions, and a formal cost model |
+| §7.3, Fig. 26 | A direct same-register map `f : BitState m → BitState m` is semantically realizable by one arbitrary conservative primitive iff it is invertible and conservative | 9 | Figure 26c has the hidden same-width hypothesis `m = n`. Keep this definition-level arbitrary-gate statement separate from fixed-basis synthesis |
+| §§2.5, 7.3 | Every invertible conservative finite function, and each fixed finite iterate, is Fredkin-realizable without visible garbage | 9 | The proof is not reproduced. §7.3 says B. Silver while the acknowledgments say D. Silver and give no bibliography entry. Figure 26 omits scratch only "for clarity," so the claim is not safely ancilla-free. Unit wires and identity are tacitly included; arbitrary free `WirePerm` routing is not stated and must be exposed separately |
 | §7.3 | Closed general-purpose computers have NAND-comparable gate complexity | 10 | External thesis/complexity model required; not core |
 | Abstract and physical passages in §§1–2, 5–10 | Zero dissipation, entropy, energy, noise, topology, and physical-realizability conclusions | — | Documentation only absent explicit physical state, dynamics, and thermodynamic models |
 
@@ -443,9 +443,9 @@ disposition.
 | CL-008 | Figure 18 explicitly omits steering/timing mirrors and unit wires, but identifies bridge crossovers and calls the others trivial; clearance and simultaneous collision scheduling are additional formalization obligations rather than quoted omissions. | Model the stated omissions, crossover cases, clearance, and event scheduling explicitly in a discrete geometry semantics. |
 | CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; Figure 22's drawn top-to-bottom `(0,1) → (a,not a)` data order conflicts with Table (2)'s zero-controlled swap. | Resolved for the Stage 8 reconstruction: `copyPairInputWiring = PaperFredkin.dataSwap`, `copyPair_physical_spec` checks `(a,1,0)`, and `copyPair_spec` checks canonical `(a,0,1) ↦ (a,a,¬a)`. `copyRegister_spec` lifts the corrected order to disjoint all-width spies, including width zero. |
 | CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Resolved for a supplied finite `Realizes` witness by `compute_copy_uncompute_spec`: the exact packed scratch, source, and argument are returned, the named transient garbage is uncomputed, and the separate ancillary register contains `(target,bitwiseNot target)`. This does not mean absence of ancillary or argument-dependent output wires. |
-| CL-011 | All-zero scratch sufficiency is attributed to Margolus without proof. | Reconstruct a proof, cite a verifiable source, or leave the stronger version unresolved. |
-| CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model. | Define a circuit family and asymptotic measure before formalizing them. |
-| CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to Silver, but ancilla and wiring conventions are unclear; §2.5 also tacitly includes unit wires and identity gates in every realizability basis. | Prove the strongest accurate variant and document required ancillas/permutations and whether unit wires/identity are free basis elements. |
+| CL-011 | All-zero workspace sufficiency is attributed to Margolus without proof. The paper's Figure 24 scratchpad is the `c` source consumed into `g` and later restored, not the library's separate already-returned `scratch` block. | Reconstruct a conversion for the consumed source/workspace, cite a verifiable source, or leave the stronger version unresolved. State whether width, count, and delay are preserved. |
+| CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model: `exp(m)` sufficiency at a least-time extreme and least usable Fredkin scratch proportional to `m`. | Any theorem must define circuit families, scratch/line and time measures, constants, output-width dependence, basis, initialization, and restoration. Otherwise retain the original endpoints as unresolved. |
+| CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to B. Silver in §7.3 but D. Silver in the acknowledgments, with no proof or bibliography entry. Ancilla and routing conventions are unclear; Figure 26 explicitly omits scratch for clarity, and §2.5 tacitly includes unit wires and identity. | Prove a corrected fixed-basis theorem with exact returned ancillas and explicitly free structural permutations. Separately refute the false no-ancilla reading and do not call `WirePerm` physical Fredkin synthesis. Record the B./D. attribution discrepancy as unresolved from the paper. |
 | CL-014 | Figure 25 specifies `F0` only on initialized inputs `(x,0ⁿ,1ⁿ)`; total invertibility and conservation do not follow “by definition,” and arbitrary-gate existence would not imply fixed-basis synthesis. | Prove the slice map injective and weight preserving, extend it independently within each finite Hamming layer to a total permutation, document that the completion is noncanonical, and keep semantic gatehood separate from Fredkin synthesis. |
 | CL-015 | Claims about infinite blank tape/environment supplying constants and garbage space are not finite-circuit theorems. | Exclude or formalize in a separately scoped infinite model. |
 | CL-016 | Physical reversibility, entropy, and zero-dissipation conclusions do not follow from finite bijections alone. | Keep them non-theorem commentary unless physical state and dynamics are formalized. |
@@ -922,6 +922,32 @@ complete ancilla accounting and restoration guarantees.
 - Focused/full builds, scans, axiom audit, and diff check pass.
 
 ### 9-COMPLETENESS
+
+**Status:** In progress (2026-07-17), from clean synchronized baseline
+`5b28ef8`. The paper text and Figures 24--26 have been re-audited visually.
+The implementation contract and adversarial matrix are being recorded in
+`goal-1/9-COMPLETENESS.md` before public declarations are added.
+
+Current checked facts shaping the contract:
+
+- Figure 25 gives only the initialized slice
+  `(x,0^n,1^n) ↦ (x,f x,¬f x)`. Its finite total completion is noncanonical
+  and must be chosen independently inside each Hamming layer.
+- Figure 26c silently requires the same input/output width. Its arbitrary-gate
+  sufficiency is definition-level, whereas the Fredkin-only statement is an
+  unproved Silver attribution with unresolved returned-scratch and routing
+  conventions.
+- Exhaustive generator calculations at widths one through six give the full
+  conservative group through width three, then indices `2`, `4`, and `8` at
+  widths four, five, and six. Width four is therefore the minimal false
+  no-ancilla reading.
+- The minimal obstruction can be proved structurally: every `Circuit 4`, even
+  with arbitrary structural `WirePerm 4`, has global permutation sign `+1`,
+  while the conservative transposition `1100 ↔ 1010` has sign `-1`.
+- The positive theorem will use an explicit returned clean workspace and will
+  say "paper Fredkin plus structural reindexing." Structural permutations are
+  zero-delay syntax in this library, not claimed to be synthesized physical
+  Fredkin routing.
 
 #### Big Picture Objective
 
