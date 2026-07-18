@@ -181,6 +181,13 @@ Lean results as the work proceeds.
   build succeeds with 778 jobs. There is no `Ancilla/Uncompute.lean`,
   `Audit/Uncompute.lean`, multi-bit spy layer, or complete
   compute-copy-uncompute theorem at this baseline.
+- Stage 8 now adds `Ancilla.Uncompute` and its API-only non-public audit. The
+  public construction uses one explicitly routed paper Fredkin per result bit,
+  proves the complete compute-copy-uncompute boundary from a supplied
+  `Realizes` witness, restores the exact scratch/source/argument state, exposes
+  `(target,bitwiseNot target)`, and proves global reversibility, conservation,
+  exact Fredkin count, and the qualified zero-latency case. The audit retains a
+  positive-unit-wire counterexample with delay-two and delay-zero paths.
 
 ### Checked Paper Facts
 
@@ -409,8 +416,8 @@ The eventual goal is complete only when all of the following hold:
 | §6 introduction and §6.4 | Any conservative-logic circuit has a billiard-ball realization | 11 | Strong whole-circuit refinement claim; primitive truth tables alone do not prove routing, clearance, or timing composition |
 | §6.4, Figs. 16–18 | The switch `(c,x) ↦ (c,cx,¬c x)` is an equivalence onto four valid three-rail states, and collision layouts refine switch/Fredkin semantics | 11 | Switch inverse is constrained; Fig. 18 omits steering/timing mirrors and unit wires while explicitly classifying bridge versus trivial crossovers |
 | §7.1 | Reversing gates and wires yields a semantic inverse for combinational networks | 7 | Proved for the corrected feed-forward grammar by `Circuit.inverse_eval`, `Circuit.pathDelay_inverse_iff`, and `Circuit.meetsPaperCombinationalTiming_inverse_iff`. The full directed-graph reversal shown in Figure 19, including feedback, remains outside this theorem and requires Stage 10 semantics |
-| §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | Exact copy gadget and partitions must be proved |
-| §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Separate restoration semantics from scratch/garbage size and complexity bounds; the latter need a cost model |
+| §7.1, Figs. 22–24 | Compute-copy-uncompute returns argument and scratch and emits `(y, not y)` | 8 | `copyPair_spec` explicitly routes canonical `(a,0,1)` to physical `(a,1,0)`, `copyRegister_spec` proves `(y,0ⁿ,1ⁿ) ↦ (y,y,¬y)`, and `compute_copy_uncompute_spec` restores the complete packed scratch/source/argument state from any supplied `Realizes` witness. The result register is exactly `2n` wires and no transient midpoint garbage remains |
+| §7 introduction, §§7.1–7.2 | Garbage can be reduced to a returned copy of the argument, with claimed line-count and circuit-complexity consequences | 8, 9 | Stage 8 proves the exact finite restoration transformation and Fredkin count `2·count(circuit)+resultWidth`. It intentionally returns the argument and a documented result/complement register. Scratch-size, line-count optimality, and asymptotic complexity claims still require Stage 9 cost definitions |
 | §7.1, Fig. 24(b) | Scratch constants can all be zero without loss of generality | 9 | Attributed but unproved in paper |
 | §7.2, Fig. 25 | For any `f`, the initialized-slice map `(x,0ⁿ,1ⁿ) ↦ (x,f x,¬f x)` extends to a total conservative permutation | 5, 9 | Stage 5 proves necessary initialized-slice injectivity, fiber-capacity, and weight constraints for any supplied realization. The finite weight-layer extension, its noncanonical choices, and fixed-basis synthesis remain Stage 9/CL-014 obligations |
 | §7.2 | Arbitrary computation needs scratch for a fixed primitive set; claimed size tradeoffs | 9 | Quantifiers and complexity model unclear |
@@ -434,8 +441,8 @@ disposition.
 | CL-006 | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Resolved only for the finite feed-forward fragment by the explicit `SourceCircuit` compiler and full-state `compile_realizes` theorem. Source delay, feedback, transition/initialization semantics, slowdown, scheduling, streams, and time-multiplexing remain Stage 10 obligations and are not inferred. |
 | CL-007 | The interaction and switch gates use constrained, unequal-width rail encodings. They preserve balls/ones but not the number of zero-valued physical rails and are exceptions to the ordinary balanced-port gate type. | Model each valid-state subtype explicitly; never claim `Bool² ≃ Bool⁴`, `Bool² ≃ Bool³`, or an ordinary equal-width conservative-gate instance. Qualify port-balance claims accordingly. |
 | CL-008 | Figure 18 explicitly omits steering/timing mirrors and unit wires, but identifies bridge crossovers and calls the others trivial; clearance and simultaneous collision scheduling are additional formalization obligations rather than quoted omissions. | Model the stated omissions, crossover cases, clearance, and event scheduling explicitly in a discrete geometry semantics. |
-| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; Figure 22's drawn top-to-bottom `(0,1) → (a,not a)` data order conflicts with Table (2)'s zero-controlled swap. | Advanced through the Stage 8 contract: `notFanoutInputWiring` already checks physical `(a,1,0)`, while the multi-bit reconstruction must explicitly route canonical `(a,0,1)` to those physical ports before returning `(a,a,¬a)`. No literal-port reading of Figure 22 is accepted without that permutation. |
-| CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Advanced through Stage 7: `Realizes` distinguishes the five interface blocks and `Circuit.inverse_eval` supplies complete target-circuit inversion. No spy/copy layer, compute-copy-uncompute composition, restoration theorem, or garbage-recycling result is claimed before Stage 8. |
+| CL-009 | The spy/copy gadget needs one `0` and one `1` per copied result bit and emits both value and complement; Figure 22's drawn top-to-bottom `(0,1) → (a,not a)` data order conflicts with Table (2)'s zero-controlled swap. | Resolved for the Stage 8 reconstruction: `copyPairInputWiring = PaperFredkin.dataSwap`, `copyPair_physical_spec` checks `(a,1,0)`, and `copyPair_spec` checks canonical `(a,0,1) ↦ (a,a,¬a)`. `copyRegister_spec` lifts the corrected order to disjoint all-width spies, including width zero. |
+| CL-010 | “Garbageless” still returns the original argument and uses/restores scratch. | Resolved for a supplied finite `Realizes` witness by `compute_copy_uncompute_spec`: the exact packed scratch, source, and argument are returned, the named transient garbage is uncomputed, and the separate ancillary register contains `(target,bitwiseNot target)`. This does not mean absence of ancillary or argument-dependent output wires. |
 | CL-011 | All-zero scratch sufficiency is attributed to Margolus without proof. | Reconstruct a proof, cite a verifiable source, or leave the stronger version unresolved. |
 | CL-012 | Scratchpad size claims use informal proportionality and an unstated cost model. | Define a circuit family and asymptotic measure before formalizing them. |
 | CL-013 | “Any invertible conservative function” is Fredkin-realizable, attributed to Silver, but ancilla and wiring conventions are unclear; §2.5 also tacitly includes unit wires and identity gates in every realizability basis. | Prove the strongest accurate variant and document required ancillas/permutations and whether unit wires/identity are free basis elements. |
@@ -445,7 +452,7 @@ disposition.
 | CL-017 | A serial/tensor/permutation syntax is not literally the paper's directed-graph circuit model, which includes feedback and open transducers with memory; structural wire renaming is also not automatically a physical wire/permutation circuit with delay. | Stages 4, 6, and 7 consistently use corrected feed-forward expression grammars. `Circuit.inverse` and its exact path theorem cover those terms only; Figure 19 itself includes feedback, so no graph-reversal or open-transducer theorem follows. Feedback semantics, physical routing, and synthesis of permutations remain open. |
 | CL-018 | The paper calls Fredkin nonlinear without naming the algebraic structure. | Resolved for one explicit reconstruction by `BitState.xor`, `BitState.falseState`, `XorLinear`, the named `PaperFredkin.map_xor_counterexample_*` equations, and `PaperFredkin.map_not_xorLinear`. This is not presented as the paper's missing definition or as physical nonlinearity. |
 | CL-019 | Figure 8 is asserted to realize a `J-K̄` flip-flop, but the paper gives no transition equation, initialization condition, or trace specification. | Reconstruct and verify an exact sequential specification from the diagram, or leave the example explicitly unresolved. |
-| CL-020 | Figures 20–23 assume a combinational forward network but do not specify delay balancing for the enlarged boundary after adding result-register constants and spy outputs. | Prove the complete compute-copy-uncompute equation statically. Claim the paper's global equal-path timing only for a proved zero-latency or explicitly padded construction, and retain a positive-latency counterexample for the unpadded generic circuit. |
+| CL-020 | Figures 20–23 assume a combinational forward network but do not specify delay balancing for the enlarged boundary after adding result-register constants and spy outputs. | Resolved with a corrected split result: `compute_copy_uncompute_spec` is unconditional and static, while `computeCopyUncompute_hasLatency_zero` requires a zero-latency supplied circuit. The non-public `unitWireUncompute_not_meetsPaperCombinationalTiming` exhibits delay-two and delay-zero paths through the actual unpadded builder. No positive-latency or padding theorem is claimed. |
 
 ## Dependency Notes and Module Direction
 
@@ -457,7 +464,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 7; later names remain provisional:
+Checked low-to-high layout through Stage 8; later names remain provisional:
 
 ```text
 ConservativeLogic/
@@ -479,7 +486,8 @@ ConservativeLogic/
   Simulation/Fredkin.lean   -- exact-resource constructive target compiler
   Simulation/Demultiplexer.lean -- checked Figure 7 value/timing reconstruction
   Audit/Simulation.lean     -- non-public Stage 6 boundary and axiom audit
-  Ancilla/Uncompute.lean
+  Ancilla/Uncompute.lean    -- explicit spy registers and compute-copy-uncompute
+  Audit/Uncompute.lean      -- non-public Stage 8 boundaries, timing, and axiom audit
   Universality/Fredkin.lean
   Sequential/Core.lean      -- separate transition/feedback semantics
   Billiard/Discrete.lean    -- optional, late, isolated from the verified core
@@ -595,13 +603,27 @@ placeholders to refine during stage work.
   is not a zero-delay syntactic identity.
 - `Circuit.UniformLatencyCircuit.inverse`: a proof-certificate constructor,
   not backward execution semantics.
-- `copyPair_spec`: in the paper's exact gate-port order, initialized `(1,0)`
-  data targets become `(a, not a)` while the control/through wire retains `a`;
-  relate this explicitly to the result register's chosen layout.
-- `compute_copy_uncompute_spec`: argument and scratch return unchanged, with
-  the result block encoding `(f x, bitwiseNot (f x))`.
-- `compute_copy_uncompute_conservative`: the full construction preserves total
-  Hamming weight.
+- `copyPair_physical_spec` and `copyPair_spec`: physical `(a,1,0)` and
+  explicitly routed canonical `(a,0,1)` both yield `(a,a,not a)` in the
+  documented output order.
+- `copyRegister_spec`, `hammingWeight_resultRegisterInput`, and
+  `hammingWeight_resultRegisterOutput`: disjoint all-width spying maps
+  `(x,0ⁿ,1ⁿ)` to `(x,x,¬x)` and keeps the two-half register weight exactly `n`.
+- `copyResult_spec` and `compute_copy_uncompute_spec`: the selected midpoint
+  result is copied without losing scratch or garbage, then structural inversion
+  restores the exact packed scratch/source/argument block and removes the
+  transient midpoint garbage.
+- `compute_copy_uncompute_isReversible` and
+  `compute_copy_uncompute_conservative`: the complete circuit is globally
+  reversible and Hamming-weight preserving, separately from its initialized
+  functional slice.
+- `copyRegisterCircuit_fredkinCount`, `copyResultCircuit_fredkinCount`, and
+  `computeCopyUncompute_fredkinCount`: exact one-spy-per-result-bit and
+  forward-plus-inverse syntax accounting.
+- `computeCopyUncompute_hasLatency_zero`: the unpadded builder preserves a
+  proved zero-latency certificate only; the audit's
+  `unitWireUncompute_not_meetsPaperCombinationalTiming` refutes an unsupported
+  positive-latency generalization.
 - `fredkin_complete_conservative`: a carefully scoped synthesis theorem for
   finite weight-preserving permutations, with all clean ancillas and wire
   permutations exposed.
