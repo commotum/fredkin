@@ -3,14 +3,15 @@ import ConservativeLogic.API
 /-!
 # Stage 4 balanced-circuit audit
 
-This diagnostic module checks arity rejection, fixed-basis primitive agreement,
+This diagnostic module checks arity rejection, fixed value-processing basis
+agreement,
 ordered tensor and serial semantics, active structural permutation direction,
 the absence of implicit same-width copying, and the distinction between
 feed-forward syntax and the paper's global equal-unit-wire-path condition. It
 is intentionally not re-exported by the public API.
 -/
 
-namespace ConservativeLogic.Audit.Circuits
+namespace ConservativeLogic.Audit.Circuit
 
 private def emptyState : BitState 0 := fun i => Fin.elim0 i
 
@@ -37,7 +38,7 @@ private def nonBijectiveReindex : Fin 2 → Fin 2 := fun _ => 0
 example : Circuit.eval (Circuit.identity 0) emptyState = emptyState := by
   rfl
 
-example : Circuit.PaperCombinational (Circuit.identity 0) :=
+example : Circuit.MeetsPaperCombinationalTiming (Circuit.identity 0) :=
   ⟨0, Circuit.hasLatency_identity 0⟩
 
 private def emptyWiring : WirePerm 0 := Equiv.refl _
@@ -133,8 +134,8 @@ theorem unequalParallel_eval_identity (input : BitState 2) :
       (BitState.split 1 1 input).2 = input
   exact BitState.append_split (m := 1) (n := 1) input
 
-theorem unequalParallel_not_paperCombinational :
-    ¬ Circuit.PaperCombinational unequalParallel := by
+theorem unequalParallel_not_meetsPaperCombinationalTiming :
+    ¬ Circuit.MeetsPaperCombinationalTiming unequalParallel := by
   rintro ⟨latency, uniform⟩
   have leftPath : Circuit.PathDelay unequalParallel
       (Fin.castAdd 1 (0 : Fin 1)) (Fin.castAdd 1 (0 : Fin 1)) 1 :=
@@ -154,9 +155,9 @@ theorem parallelUnitWires_hasLatency : Circuit.HasLatency parallelUnitWires 1 :=
   Circuit.HasLatency.tensor Circuit.hasLatency_unitWire_one
     Circuit.hasLatency_unitWire_one
 
-theorem parallelUnitWires_paperCombinational :
-    Circuit.PaperCombinational parallelUnitWires :=
-  parallelUnitWires_hasLatency.paperCombinational
+theorem parallelUnitWires_meetsPaperCombinationalTiming :
+    Circuit.MeetsPaperCombinationalTiming parallelUnitWires :=
+  Circuit.HasLatency.meetsPaperCombinationalTiming parallelUnitWires_hasLatency
 
 /-- Complementary branch delays compensate to one uniform total step. -/
 def compensatedParallel : Circuit 2 :=
@@ -170,16 +171,16 @@ theorem compensatedParallel_hasLatency :
     Circuit.hasLatency_unitWire_one (Circuit.hasLatency_identity 1)
     (Circuit.hasLatency_identity 1) Circuit.hasLatency_unitWire_one rfl rfl
 
-theorem compensatedParallel_paperCombinational :
-    Circuit.PaperCombinational compensatedParallel :=
-  compensatedParallel_hasLatency.paperCombinational
+theorem compensatedParallel_meetsPaperCombinationalTiming :
+    Circuit.MeetsPaperCombinationalTiming compensatedParallel :=
+  Circuit.HasLatency.meetsPaperCombinationalTiming compensatedParallel_hasLatency
 
 /-- Unequal arrivals remain unequal through the instantaneous Fredkin gate. -/
 def unequalIntoFredkin : Circuit 3 :=
   Circuit.seq (Circuit.tensor Circuit.unitWire (Circuit.identity 2)) Circuit.fredkin
 
-theorem unequalIntoFredkin_not_paperCombinational :
-    ¬ Circuit.PaperCombinational unequalIntoFredkin := by
+theorem unequalIntoFredkin_not_meetsPaperCombinationalTiming :
+    ¬ Circuit.MeetsPaperCombinationalTiming unequalIntoFredkin := by
   rintro ⟨latency, uniform⟩
   have delayedPath : Circuit.PathDelay unequalIntoFredkin
       (Fin.castAdd 2 (0 : Fin 1)) (0 : Fin 3) 1 :=
@@ -213,13 +214,21 @@ theorem unequalIntoFredkin_not_paperCombinational :
 #check Circuit.eval
 #check Circuit.PathDelay
 #check Circuit.HasLatency
-#check Circuit.PaperCombinational
-#check Circuit.TimedCircuit
+#check Circuit.MeetsPaperCombinationalTiming
+#check Circuit.UniformLatencyCircuit
+#check Circuit.UniformLatencyCircuit.identity
+#check Circuit.UniformLatencyCircuit.unitWire
+#check Circuit.UniformLatencyCircuit.fredkin
+#check Circuit.UniformLatencyCircuit.permute
+#check Circuit.UniformLatencyCircuit.seq
+#check Circuit.UniformLatencyCircuit.tensor
 
 #print Circuit
 
+#print axioms Reversible.tensor_apply
 #print axioms Reversible.tensor_apply_append
 #print axioms Conservative.tensor
+#print axioms Conservative.tensor_apply
 #print axioms Conservative.tensor_apply_append
 #print axioms Circuit.eval_identity
 #print axioms Circuit.eval_unitWire
@@ -237,14 +246,16 @@ theorem unequalIntoFredkin_not_paperCombinational :
 #print axioms Circuit.hasLatency_unitWire_one
 #print axioms Circuit.hasLatency_fredkin
 #print axioms Circuit.hasLatency_permute
-#print axioms Circuit.HasLatency.paperCombinational
+#print axioms Circuit.HasLatency.meetsPaperCombinationalTiming
 #print axioms Circuit.HasLatency.seq
 #print axioms Circuit.HasLatency.tensor
 #print axioms Circuit.HasLatency.compensatedTensorSeq
-#print axioms unequalParallel_not_paperCombinational
+#print axioms Circuit.UniformLatencyCircuit.seq
+#print axioms Circuit.UniformLatencyCircuit.tensor
+#print axioms unequalParallel_not_meetsPaperCombinationalTiming
 #print axioms parallelUnitWires_hasLatency
 #print axioms compensatedParallel_hasLatency
-#print axioms unequalIntoFredkin_not_paperCombinational
+#print axioms unequalIntoFredkin_not_meetsPaperCombinationalTiming
 #print axioms eval_ne_copyFirst
 
-end ConservativeLogic.Audit.Circuits
+end ConservativeLogic.Audit.Circuit

@@ -27,7 +27,7 @@ former carries one unit of path delay while the latter is structural and
 instantaneous.
 -/
 inductive Circuit : Nat → Type where
-  /-- Structural identity on `n` ports; instantaneous in the static timing layer. -/
+  /-- Structural identity on `n` ports; assigned zero delay by the path-counting layer. -/
   | identity (n : Nat) : Circuit n
   /-- The paper's one-bit unit wire, carrying one unit of delay. -/
   | unitWire : Circuit 1

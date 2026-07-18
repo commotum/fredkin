@@ -6,8 +6,10 @@ import Mathlib.Logic.Equiv.Prod
 /-!
 # Static semantics of balanced feed-forward circuits
 
-Evaluation forgets timing and maps every fixed-basis circuit to its exact
-finite conservative boundary-value map. Tensor evaluation splits the input
+Evaluation forgets timing and maps every Stage 4 grammar term to its exact
+finite conservative boundary-value map. The value-processing basis is fixed,
+while explicit arbitrary bijective port reindexing remains a structural
+allowance rather than a synthesized gate. Tensor evaluation splits the input
 into ordered, disjoint blocks and rejoins the separately evaluated outputs; it
 does not copy either block.
 
@@ -149,7 +151,7 @@ theorem eval_isReversible {n : Nat} (circuit : Circuit n) :
     IsReversible (eval circuit) :=
   (eval circuit).isReversible
 
-/-- Every admitted circuit separately preserves total Hamming weight. -/
+/-- Every admitted circuit's static boundary-value map preserves Hamming weight. -/
 theorem eval_weightPreserving {n : Nat} (circuit : Circuit n) :
     WeightPreserving (eval circuit) :=
   (eval circuit).weight_preserving

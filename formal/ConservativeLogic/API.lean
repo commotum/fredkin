@@ -18,10 +18,10 @@ primitive value semantics. It re-exports Boolean states, static reversibility
 and conservation predicates, their bundled forms, wire permutations, the
 semantic independence witnesses, the unit-wire value/delay distinction, and
 the paper-convention Fredkin gate with its selected XOR-nonlinearity result.
-It also exports the balanced fixed-basis feed-forward circuit grammar, static
-conservative evaluation, and external-path latency certificates. Structural
-permutations are explicit reindexing allowances, and the timing surface does
-not define traces, feedback, or sequential execution.
+It also exports the balanced feed-forward circuit grammar with a fixed
+value-processing basis plus explicit structural reindexing, static conservative
+evaluation, and uniform-path-latency certificates. The certificate surface
+does not define ticks, traces, feedback, or sequential execution.
 -/
 
 namespace ConservativeLogic

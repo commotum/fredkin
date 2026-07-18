@@ -12,20 +12,22 @@ block. The resulting predicate captures the equal-unit-wire-path condition in
 
 This is not a tick, trace, stream, transition, feedback, or oriented
 time-reversal semantics. Every `Circuit` term is feed-forward by construction,
-but only a term satisfying `PaperCombinational` meets the paper's additional
-global equal-path-latency condition.
+but only a term satisfying `MeetsPaperCombinationalTiming` meets the paper's
+additional global equal-path-latency condition.
 -/
 
 namespace ConservativeLogic.Circuit
 
 /--
-`PathDelay circuit input output delay` means that one directed topological path
-from `input` to `output` traverses exactly `delay` explicit unit wires.
+`PathDelay circuit input output delay` means that one grammar-induced directed
+boundary route from `input` to `output` traverses exactly `delay` explicit unit
+wires.
 
 For the instantaneous Fredkin node, every input port has a zero-wire path to
-every output port. This records graph connectivity, not Boolean functional
-dependence. The relation is structurally recursive so tensor's `m + n` index
-can be eliminated without dependent-inductive transport.
+every output port. This is the chosen primitive-node connectivity convention,
+not Boolean functional dependence or a proved graph correspondence. The
+relation is structurally recursive so tensor's `m + n` index can be eliminated
+without dependent-inductive transport.
 -/
 def PathDelay : {n : Nat} → Circuit n → Fin n → Fin n → Nat → Prop
   | _, .identity _, input, output, delay => input = output ∧ delay = 0
@@ -62,7 +64,7 @@ theorem unitWire :
 theorem unitWire_one : PathDelay .unitWire (0 : Fin 1) (0 : Fin 1) 1 := by
   simpa using unitWire
 
-/-- Every topological path through the instantaneous Fredkin node has delay zero. -/
+/-- Every grammar-induced route through the instantaneous Fredkin node has delay zero. -/
 theorem fredkin (input output : Fin 3) : PathDelay .fredkin input output 0 :=
   rfl
 
@@ -100,16 +102,19 @@ def HasLatency {n : Nat} (circuit : Circuit n) (latency : Nat) : Prop :=
   ∀ {input output actual}, PathDelay circuit input output actual → actual = latency
 
 /--
-The paper's combinational timing criterion on this already-feed-forward syntax:
-there is one latency shared by every existing external boundary path. At width
-zero, latency zero is a canonical witness, but uniqueness is not claimed.
+The equal-path part of the paper's combinational timing criterion on this
+already-feed-forward syntax: there is one latency shared by every existing
+external boundary path. This does not assert that the term is a literal paper
+graph. At width zero, latency zero is a canonical witness, but uniqueness is
+not claimed.
 -/
-def PaperCombinational {n : Nat} (circuit : Circuit n) : Prop :=
+def MeetsPaperCombinationalTiming {n : Nat} (circuit : Circuit n) : Prop :=
   ∃ latency, HasLatency circuit latency
 
-/-- A concrete uniform-latency certificate implies the paper-combinational predicate. -/
-theorem HasLatency.paperCombinational {n latency : Nat} {circuit : Circuit n}
-    (uniform : HasLatency circuit latency) : PaperCombinational circuit :=
+/-- A uniform-latency certificate implies the selected paper timing criterion. -/
+theorem HasLatency.meetsPaperCombinationalTiming
+    {n latency : Nat} {circuit : Circuit n}
+    (uniform : HasLatency circuit latency) : MeetsPaperCombinationalTiming circuit :=
   ⟨latency, uniform⟩
 
 /-- Structural identity has uniform latency zero, including at width zero. -/
@@ -202,42 +207,44 @@ theorem HasLatency.compensatedTensorSeq
     · exact (congrArg₂ Nat.add (hRightFirst rightFirstPath)
         (hRightSecond rightSecondPath)).trans hRightTotal
 
-/-- A circuit paired with a static proof of one uniform boundary-path latency. -/
-structure TimedCircuit (n latency : Nat) where
+/-- A circuit paired only with a static proof of one uniform boundary-path latency. -/
+structure UniformLatencyCircuit (n latency : Nat) where
   toCircuit : Circuit n
   hasLatency : HasLatency toCircuit latency
 
-namespace TimedCircuit
+namespace UniformLatencyCircuit
 
 /-- Certified zero-delay structural identity. -/
-def identity (n : Nat) : TimedCircuit n 0 :=
+def identity (n : Nat) : UniformLatencyCircuit n 0 :=
   ⟨.identity n, hasLatency_identity n⟩
 
 /-- Certified delay-one unit wire. -/
-def unitWire : TimedCircuit 1 UnitWire.delay :=
+def unitWire : UniformLatencyCircuit 1 UnitWire.delay :=
   ⟨.unitWire, hasLatency_unitWire⟩
 
 /-- Certified instantaneous Fredkin gate. -/
-def fredkin : TimedCircuit 3 0 :=
+def fredkin : UniformLatencyCircuit 3 0 :=
   ⟨.fredkin, hasLatency_fredkin⟩
 
 /-- Certified zero-delay structural port reindexing. -/
-def permute {n : Nat} (wiring : WirePerm n) : TimedCircuit n 0 :=
+def permute {n : Nat} (wiring : WirePerm n) : UniformLatencyCircuit n 0 :=
   ⟨.permute wiring, hasLatency_permute wiring⟩
 
 /-- Serial composition of timing certificates adds latencies. -/
 def seq {n firstLatency secondLatency : Nat}
-    (first : TimedCircuit n firstLatency) (second : TimedCircuit n secondLatency) :
-    TimedCircuit n (firstLatency + secondLatency) :=
+    (first : UniformLatencyCircuit n firstLatency)
+    (second : UniformLatencyCircuit n secondLatency) :
+    UniformLatencyCircuit n (firstLatency + secondLatency) :=
   ⟨.seq first.toCircuit second.toCircuit,
     HasLatency.seq first.hasLatency second.hasLatency⟩
 
 /-- Parallel timing certificates compose when both blocks have equal latency. -/
-def tensor {m n latency : Nat} (left : TimedCircuit m latency)
-    (right : TimedCircuit n latency) : TimedCircuit (m + n) latency :=
+def tensor {m n latency : Nat} (left : UniformLatencyCircuit m latency)
+    (right : UniformLatencyCircuit n latency) :
+    UniformLatencyCircuit (m + n) latency :=
   ⟨.tensor left.toCircuit right.toCircuit,
     HasLatency.tensor left.hasLatency right.hasLatency⟩
 
-end TimedCircuit
+end UniformLatencyCircuit
 
 end ConservativeLogic.Circuit

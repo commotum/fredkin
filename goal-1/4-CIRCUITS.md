@@ -45,9 +45,10 @@
   exact delay one, Fredkin/identity/structural permutation contribute zero,
   serial paths add, and tensor paths remain in disjoint blocks. This is timing
   metadata only, not tick, trace, transition, stream, or feedback semantics.
-- Define the paper-combinational predicate by existence of one latency shared
-  by every existing boundary path. At width zero this is vacuously true; use
-  zero as the canonical exhibited latency without claiming latency uniqueness.
+- Define the selected paper combinational-timing criterion by existence of one
+  latency shared by every existing boundary path. At width zero this is
+  vacuously true; use zero as the canonical exhibited latency without claiming
+  latency uniqueness or literal graph correspondence.
 - A scalar maximum depth is insufficient, and requiring every syntax subtree
   to be balanced is too strong. The whole circuit
   `(unit ⊗ id); (id ⊗ unit)` must be accepted at latency one even though each
@@ -105,13 +106,15 @@ routing result.
   ```text
   Circuit.PathDelay c input output delay
   Circuit.HasLatency c delay
-  Circuit.PaperCombinational c
+  Circuit.MeetsPaperCombinationalTiming c
+  Circuit.UniformLatencyCircuit n delay
   ```
 
   plus base path rules, serial addition, tensor left/right embeddings, general
   latency closure for identity/unit/Fredkin/permutation/serial/equal-latency
-  tensor, and a blockwise serial/tensor theorem strong enough to certify
-  compensated paths.
+  tensor, a blockwise serial/tensor theorem strong enough to certify
+  compensated paths, and certificate-only constructors for the uniform-latency
+  wrapper. The wrapper is not a timed execution semantics.
 - Extend `ConservativeLogic.API` and the root with the three stable leaves.
   Diagnostics must not be publicly imported.
 - Add `ConservativeLogic.Audit.Circuit` with guarded failures for mismatched
@@ -123,7 +126,7 @@ routing result.
   - structural identity and unit wire have the same value map but latencies
     zero and one respectively;
   - `unit ⊗ unit` has latency one;
-  - acyclic `unit ⊗ id` is not paper-combinational;
+  - acyclic `unit ⊗ id` does not meet the paper's equal-path timing criterion;
   - `(unit ⊗ id); (id ⊗ unit)` has latency one;
   - unequal arrivals followed by instantaneous Fredkin remain nonuniform.
 - Update `README.md`, `goal-1/0-plan.md`, and this report only with results
@@ -185,8 +188,9 @@ duplicate Fredkin/unit implementations; future-stage declarations; bounded
   structural identity, and structural permutation contribute no wire delay.
   The timing layer has no execution clock or oriented time reversal.
 - Combinational boundary: every syntax term is feed-forward, but only terms
-  satisfying the global all-existing-path latency predicate are called
-  paper-combinational. Figure 7 is not certified without its full source/sink
+  satisfying `MeetsPaperCombinationalTiming` are certified against the global
+  all-existing-path latency clause. That name does not classify the term as a
+  literal paper graph. Figure 7 is not certified without its full source/sink
   path evidence.
 - Stage boundary: do not add inverse syntax, realization partitions,
   constants, garbage, scratch, ancillas, sequential state, billiard geometry,
