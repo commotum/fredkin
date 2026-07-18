@@ -124,36 +124,162 @@ private def emptyState : BitState 0 := fun index => Fin.elim0 index
   funext index
   refine Fin.addCases ?_ (fun impossible => Fin.elim0 impossible) index
   intro inner
-  simp
+  exact BitState.append_castAdd state emptyState inner
+
+private theorem hasLatency_castCircuit {leftWidth rightWidth : Nat}
+    (width : leftWidth = rightWidth) {circuit : Circuit leftWidth}
+    (timed : Circuit.HasLatency circuit 0) :
+    Circuit.HasLatency (Simulation.castCircuit width circuit) 0 := by
+  cases width
+  exact timed
+
+private theorem hasLatency_seq_zero {width : Nat} {first second : Circuit width}
+    (firstTimed : Circuit.HasLatency first 0)
+    (secondTimed : Circuit.HasLatency second 0) :
+    Circuit.HasLatency (.seq first second) 0 := by
+  intro input output actual path
+  have equality := Circuit.HasLatency.seq firstTimed secondTimed path
+  simpa using equality
+
+private theorem castState_apply {leftWidth rightWidth : Nat}
+    (width : leftWidth = rightWidth) (state : BitState leftWidth)
+    (index : Fin rightWidth) :
+    Realization.castState width state index =
+      state (Fin.cast width.symm index) := by
+  cases width
+  rfl
+
+private theorem castState_append_assoc_symm {a b c : Nat}
+    (first : BitState a) (second : BitState b) (third : BitState c) :
+    Realization.castState (Nat.add_assoc a b c).symm
+        (BitState.append first (BitState.append second third)) =
+      BitState.append (BitState.append first second) third := by
+  funext index
+  refine Fin.addCases ?_ ?_ index
+  · intro firstSecond
+    refine Fin.addCases ?_ ?_ firstSecond
+    · intro firstIndex
+      rw [castState_apply]
+      rw [show Fin.cast (Nat.add_assoc a b c)
+            (Fin.castAdd c (Fin.castAdd b firstIndex)) =
+          Fin.castAdd (b + c) firstIndex by
+        apply Fin.ext
+        rfl]
+      simp
+    · intro secondIndex
+      rw [castState_apply]
+      rw [show Fin.cast (Nat.add_assoc a b c)
+            (Fin.castAdd c (Fin.natAdd a secondIndex)) =
+          Fin.natAdd a (Fin.castAdd c secondIndex) by
+        apply Fin.ext
+        rfl]
+      simp
+  · intro thirdIndex
+    rw [castState_apply]
+    rw [show Fin.cast (Nat.add_assoc a b c)
+          (Fin.natAdd (a + b) thirdIndex) =
+        Fin.natAdd a (Fin.natAdd b thirdIndex) by
+      apply Fin.ext
+      simp [Nat.add_assoc]]
+    simp
+
+private def threeDecompose (a b c : Nat) :
+    Fin ((a + b) + c) ≃ (Fin a ⊕ Fin b) ⊕ Fin c :=
+  finSumFinEquiv.symm |>.trans
+    (Equiv.sumCongr finSumFinEquiv.symm (Equiv.refl _))
+
+private def threeCompose (a b c : Nat) :
+    (Fin a ⊕ Fin b) ⊕ Fin c ≃ Fin ((a + b) + c) :=
+  (Equiv.sumCongr finSumFinEquiv (Equiv.refl _)).trans finSumFinEquiv
+
+/-- Actively exchange the last two of three adjacent wire blocks. -/
+private def middleThreeWiring (a b c : Nat) : WirePerm ((a + b) + c) :=
+  (threeDecompose a b c).trans <|
+    (Equiv.sumAssoc (Fin a) (Fin b) (Fin c)).trans <|
+    (Equiv.sumCongr (Equiv.refl (Fin a))
+      (Equiv.sumComm (Fin b) (Fin c))).trans <|
+    (Equiv.sumAssoc (Fin a) (Fin c) (Fin b)).symm.trans <|
+    (threeCompose a c b).trans <|
+    finCongr (by ac_rfl : (a + c) + b = (a + b) + c)
+
+private theorem middleThreeWiring_on_append {a b c : Nat}
+    (as : BitState a) (bs : BitState b) (cs : BitState c) :
+    WirePerm.onState (middleThreeWiring a b c)
+        (BitState.append (BitState.append as bs) cs) =
+      Realization.castState (by ac_rfl : (a + c) + b = (a + b) + c)
+        (BitState.append (BitState.append as cs) bs) := by
+  funext output
+  obtain ⟨input, rfl⟩ := (middleThreeWiring a b c).surjective output
+  rw [WirePerm.onState_apply_image, castState_apply]
+  let tagged := threeDecompose a b c input
+  have taggedBack : (threeDecompose a b c).symm tagged = input := by
+    simp [tagged]
+  rcases tagged with ((index | index) | index)
+  · have input_eq :
+        Fin.castAdd c (Fin.castAdd b index) = input := by
+      simpa [threeDecompose] using taggedBack
+    clear taggedBack
+    subst input
+    have route :
+        Fin.cast (by ac_rfl : (a + c) + b = (a + b) + c).symm
+            (middleThreeWiring a b c
+              (Fin.castAdd c (Fin.castAdd b index))) =
+          Fin.castAdd b (Fin.castAdd c index) := by
+      apply Fin.ext
+      simp [middleThreeWiring, threeDecompose, threeCompose]
+    rw [route]
+    simp
+  · have input_eq :
+        Fin.castAdd c (Fin.natAdd a index) = input := by
+      simpa [threeDecompose] using taggedBack
+    clear taggedBack
+    subst input
+    have route :
+        Fin.cast (by ac_rfl : (a + c) + b = (a + b) + c).symm
+            (middleThreeWiring a b c
+              (Fin.castAdd c (Fin.natAdd a index))) =
+          Fin.natAdd (a + c) index := by
+      apply Fin.ext
+      simp [middleThreeWiring, threeDecompose, threeCompose]
+    rw [route]
+    simp
+  · have input_eq : Fin.natAdd (a + b) index = input := by
+      simpa [threeDecompose] using taggedBack
+    clear taggedBack
+    subst input
+    have route :
+        Fin.cast (by ac_rfl : (a + c) + b = (a + b) + c).symm
+            (middleThreeWiring a b c (Fin.natAdd (a + b) index)) =
+          Fin.castAdd b (Fin.natAdd a index) := by
+      apply Fin.ext
+      simp [middleThreeWiring, threeDecompose, threeCompose]
+    rw [route]
+    simp
 
 private def firstRoute (firstAncilla secondAncilla width : Nat) :
-    Circuit ((firstAncilla + secondAncilla) + (width + 0)) :=
-  .permute
-    (Simulation.middleSwapWiring firstAncilla secondAncilla width 0)
+    Circuit ((firstAncilla + secondAncilla) + width) :=
+  .permute (middleThreeWiring firstAncilla secondAncilla width)
 
 private theorem firstRoute_spec {firstAncilla secondAncilla width : Nat}
     (firstInit : BitState firstAncilla)
     (secondInit : BitState secondAncilla) (state : BitState width) :
     Circuit.eval (firstRoute firstAncilla secondAncilla width)
-        (BitState.append (BitState.append firstInit secondInit)
-          (BitState.append state emptyState)) =
+        (BitState.append (BitState.append firstInit secondInit) state) =
       Realization.castState
         (by ac_rfl :
-          (firstAncilla + width) + (secondAncilla + 0) =
-            (firstAncilla + secondAncilla) + (width + 0))
-        (BitState.append (BitState.append firstInit state)
-          (BitState.append secondInit emptyState)) := by
-  exact Simulation.middleSwapWiring_on_append
-    firstInit secondInit state emptyState
+          (firstAncilla + width) + secondAncilla =
+            (firstAncilla + secondAncilla) + width)
+        (BitState.append (BitState.append firstInit state) secondInit) := by
+  exact middleThreeWiring_on_append firstInit secondInit state
 
 private def firstLayer {width : Nat} {firstGate : Reversible width}
     (first : CleanFredkinRealization firstGate) (secondAncilla : Nat) :
-    Circuit ((first.ancillaWidth + secondAncilla) + (width + 0)) :=
+    Circuit ((first.ancillaWidth + secondAncilla) + width) :=
   Simulation.castCircuit
     (by ac_rfl :
-      (first.ancillaWidth + width) + (secondAncilla + 0) =
-        (first.ancillaWidth + secondAncilla) + (width + 0))
-    (.tensor first.circuit (.identity (secondAncilla + 0)))
+      (first.ancillaWidth + width) + secondAncilla =
+        (first.ancillaWidth + secondAncilla) + width)
+    (.tensor first.circuit (.identity secondAncilla))
 
 private theorem firstLayer_spec {width secondAncilla : Nat}
     {firstGate : Reversible width}
@@ -163,11 +289,11 @@ private theorem firstLayer_spec {width secondAncilla : Nat}
         (Circuit.eval
           (firstRoute first.ancillaWidth secondAncilla width)
           (BitState.append (BitState.append first.ancillaInit secondInit)
-            (BitState.append state emptyState))) =
+            state)) =
       Circuit.eval
         (firstRoute first.ancillaWidth secondAncilla width)
         (BitState.append (BitState.append first.ancillaInit secondInit)
-          (BitState.append (firstGate state) emptyState)) := by
+          (firstGate state)) := by
   rw [firstRoute_spec]
   rw [firstLayer, Simulation.eval_castCircuit, Circuit.eval_tensor_append,
     first.realizes, Circuit.eval_identity]
@@ -175,11 +301,11 @@ private theorem firstLayer_spec {width secondAncilla : Nat}
 
 private def secondLayer {width : Nat} {secondGate : Reversible width}
     (firstAncilla : Nat) (second : CleanFredkinRealization secondGate) :
-    Circuit ((firstAncilla + second.ancillaWidth) + (width + 0)) :=
+    Circuit ((firstAncilla + second.ancillaWidth) + width) :=
   Simulation.castCircuit
     (by ac_rfl :
       firstAncilla + (second.ancillaWidth + width) =
-        (firstAncilla + second.ancillaWidth) + (width + 0))
+        (firstAncilla + second.ancillaWidth) + width)
     (.tensor (.identity firstAncilla) second.circuit)
 
 private theorem secondLayer_spec {width firstAncilla : Nat}
@@ -187,26 +313,15 @@ private theorem secondLayer_spec {width firstAncilla : Nat}
     (firstInit : BitState firstAncilla)
     (second : CleanFredkinRealization secondGate) (state : BitState width) :
     Circuit.eval (secondLayer firstAncilla second)
-        (BitState.append (BitState.append firstInit second.ancillaInit)
-          (BitState.append state emptyState)) =
+        (BitState.append (BitState.append firstInit second.ancillaInit) state) =
       BitState.append (BitState.append firstInit second.ancillaInit)
-        (BitState.append (secondGate state) emptyState) := by
+        (secondGate state) := by
   unfold secondLayer
-  rw [show
-      BitState.append (BitState.append firstInit second.ancillaInit)
-          (BitState.append state emptyState) =
-        Realization.castState
-          (by ac_rfl :
-            firstAncilla + (second.ancillaWidth + width) =
-              (firstAncilla + second.ancillaWidth) + (width + 0))
-          (BitState.append firstInit
-            (BitState.append second.ancillaInit state)) by
-      funext index
-      simp [Realization.castState]]
+  rw [← castState_append_assoc_symm firstInit second.ancillaInit state]
   rw [Simulation.eval_castCircuit, Circuit.eval_tensor_append,
     Circuit.eval_identity, second.realizes]
-  funext index
-  simp [Realization.castState]
+  exact castState_append_assoc_symm firstInit second.ancillaInit
+    (secondGate state)
 
 /--
 Serially compose two clean realizations.  Their independently initialized
@@ -235,41 +350,30 @@ def comp {width : Nat} {firstGate secondGate : Reversible width}
       Circuit.hasLatency_permute _
     have firstTimed : Circuit.HasLatency
         (firstLayer first second.ancillaWidth) 0 := by
-      apply Ancilla.hasLatency_castCircuit_zero
+      apply hasLatency_castCircuit
       exact Circuit.HasLatency.tensor first.latencyZero
         (Circuit.hasLatency_identity _)
     have secondTimed : Circuit.HasLatency
         (secondLayer first.ancillaWidth second) 0 := by
-      apply Ancilla.hasLatency_castCircuit_zero
+      apply hasLatency_castCircuit
       exact Circuit.HasLatency.tensor (Circuit.hasLatency_identity _)
         second.latencyZero
     have inverseRouteTimed : Circuit.HasLatency
         (Circuit.inverse
           (firstRoute first.ancillaWidth second.ancillaWidth width)) 0 :=
       Circuit.HasLatency.inverse routeTimed
-    have tailTimed := Circuit.HasLatency.seq inverseRouteTimed secondTimed
-    have middleTimed := Circuit.HasLatency.seq firstTimed tailTimed
-    have allTimed := Circuit.HasLatency.seq routeTimed middleTimed
-    simpa using allTimed
+    intro input output actual path
+    exact (hasLatency_seq_zero routeTimed
+      (hasLatency_seq_zero firstTimed
+        (hasLatency_seq_zero inverseRouteTimed secondTimed))) path
   realizes state := by
     change Circuit.eval _
         (BitState.append
           (BitState.append first.ancillaInit second.ancillaInit) state) = _
-    have appendEmpty (value : BitState width) :
-        BitState.append
-            (BitState.append first.ancillaInit second.ancillaInit) value =
-          BitState.append
-            (BitState.append first.ancillaInit second.ancillaInit)
-            (BitState.append value emptyState) := by
-      rw [append_emptyState]
-    rw [appendEmpty state]
     simp only [Circuit.eval_seq]
     rw [firstLayer_spec]
-    rw [← firstRoute_spec first.ancillaInit second.ancillaInit
-      (firstGate state)]
     rw [Circuit.eval_inverse_eval]
     rw [secondLayer_spec]
-    rw [← appendEmpty (secondGate (firstGate state))]
     rfl
 
 end CleanFredkinRealization
