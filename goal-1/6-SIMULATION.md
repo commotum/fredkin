@@ -265,6 +265,88 @@ lake build ConservativeLogic.Audit.Simulation
 
 ## Stage Results
 
-**Stage status: in progress.** Repository/paper facts and the preimplementation
-contract are recorded. Lean design probes and the Figure 7 port/order audit are
-next; no Stage 6 repository declaration has yet been added.
+**Stage status: complete (2026-07-17).** Stage 6 was implemented from clean
+synchronized baseline `e65f939`; Stage 7 was not started.
+
+### Implemented surface
+
+- `ConservativeLogic.Simulation.Source` defines the closed indexed
+  `SourceCircuit` grammar and its total evaluator. Fixed block constants and
+  block discard are constructors, FAN-OUT is an explicit unequal-width node,
+  and tensor inputs are disjoint. There is no arbitrary function, delay,
+  register, feedback, trace, or recursive-wire constructor.
+- `ConservativeLogic.Simulation.Fredkin` computes exact source and garbage
+  widths, the fixed source state, complete argument-dependent garbage, a
+  zero-scratch realization layout, and a target `Circuit` for every source
+  term. `source_garbage_balance` proves the width equation, and
+  `compile_realizes` proves the complete initialized-slice equation by
+  structural induction over every constructor.
+- Serial compilation retains upstream garbage unchanged while the selected
+  result alone feeds the downstream term. Tensor compilation uses explicit
+  proved four-block `WirePerm` routings. Primitive clauses reuse the Stage 5
+  AND, OR, NOT, and constrained FAN-OUT realizations; constants become fixed
+  source wires and discard becomes named garbage.
+- `Circuit.fredkinCount` and `compile_fredkinCount` prove the exact one-for-one
+  logic-gate cost of this construction. `compile_hasLatency_zero` states only
+  that the abstract compiled term contains no unit wire; it does not claim
+  gate depth, physical routing, delay normalization, or sequential slowdown.
+- `ConservativeLogic.API` and the public root re-export the three stable Stage
+  6 leaves. `ConservativeLogic.Audit.Simulation` remains diagnostic-only.
+
+### Figure 7 reconstruction
+
+- `ConservativeLogic.Simulation.Demultiplexer` reconstructs the paper drawing
+  as an actual `Circuit 6` with three Fredkins, seven unit wires, fixed source
+  `(0,0,0)`, results `(Y₀,Y₁,Y₂,Y₃)`, and address-echo garbage
+  `(A₁,A₀)`. `demux_complete` proves the parametric complete output and
+  `demux_realizes` packages the exact initialized slice; the audit checks all
+  eight rows independently.
+- `argument_to_result_path` constructs a delay-two route for every one of the
+  twelve argument/result port pairs. A compositional phase invariant proves
+  `argument_to_result_path_delay_two`: every grammar-induced route between any
+  such pair has delay exactly two, not merely one selected witness.
+- `zero_source_to_y0_path` supplies a complete-boundary path with delay zero,
+  and `demuxCircuit_not_meetsPaperCombinationalTiming` therefore proves that
+  the full six-wire term does not satisfy the later global equal-path-latency
+  criterion. This preserves the paper's narrower Figure 7 claim without
+  silently promoting the drawing to a globally combinational network.
+
+### Verification evidence
+
+- Focused builds completed `Simulation.Source` (701 jobs),
+  `Simulation.Fredkin` (770 jobs), and `Simulation.Demultiplexer` (772 jobs).
+  The final integrated demultiplexer/API/root/audit build completed 778 jobs,
+  and the default incremental build completed 777 jobs.
+- After `lake clean`, the default public build completed all 785 jobs from zero
+  artifacts. The final post-clean simulation audit completed all 776 jobs,
+  including public-surface checks and main-result axiom prints.
+- The diagnostic audit guards against implicit FAN-OUT, width-mismatched
+  sequencing, nonbijective rewiring, arbitrary semantic functions,
+  argument-dependent constants, and disguised delay/state/feedback/trace. It
+  exercises width-zero terms, all primitive semantics, serial/tensor ordering,
+  nested resource recurrences, complete compiler outputs, exact counts,
+  latency, all eight Figure 7 rows, and both its scoped and global timing
+  boundaries.
+- Independent adversarial review found no compiler semantic or resource
+  loophole: every constructor is covered, earlier garbage bypasses downstream
+  computation, tensor inputs remain disjoint, constants/discard are explicit,
+  and no hidden gate, ancilla, or choice supplies the proof. A separate timing
+  review derived the universal delay-two theorem compositionally rather than
+  by a whole-circuit case explosion.
+- Source scans found no executable `sorry`, `admit`, project `axiom`, `unsafe`,
+  `noncomputable`, `Classical.choose`, `Nonempty.some`, arbitrary finite-state
+  equivalence synthesis, semantic target injection, or future-stage
+  declaration. General compiler/resource proofs do not use bounded
+  evaluation; `decide` is confined to fixed finite permutations, truth rows,
+  paths, and guarded regressions.
+- `#print axioms` on the evaluator, width balance, routing laws, general
+  realization, exact count, zero latency, Figure 7 realization and resources,
+  both argument/result timing theorems, and the global timing countertheorem
+  reports only standard `propext`, `Classical.choice`, and `Quot.sound`, never
+  `sorryAx` or a project axiom. `git diff --check`, import-boundary inspection,
+  and complete diff review pass.
+
+The authoritative plan, paper map, correction log, public API documentation,
+and README now record precisely this finite feed-forward theorem. Inverse
+circuits remain Stage 7; uncomputation, arbitrary conservative completion, and
+stateful/sequential simulation remain their later named stages.
