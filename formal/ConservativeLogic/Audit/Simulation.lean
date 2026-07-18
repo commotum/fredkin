@@ -436,6 +436,12 @@ example (input : Fin 3) (output : Fin 4) :
     Circuit.PathDelay demuxCircuit (argumentPort input) (resultPort output) 2 :=
   argument_to_result_path input output
 
+example (input : Fin 3) (output : Fin 4) {actual : Nat}
+    (path : Circuit.PathDelay demuxCircuit
+      (argumentPort input) (resultPort output) actual) :
+    actual = 2 :=
+  argument_to_result_path_delay_two input output path
+
 example : Circuit.PathDelay demuxCircuit (2 : Fin 6) (0 : Fin 6) 0 :=
   zero_source_to_y0_path
 
@@ -485,6 +491,7 @@ example : ¬ Circuit.MeetsPaperCombinationalTiming demuxCircuit :=
 #check argumentPort
 #check resultPort
 #check argument_to_result_path
+#check argument_to_result_path_delay_two
 #check zero_source_to_y0_path
 #check demuxCircuit_not_meetsPaperCombinationalTiming
 
@@ -504,6 +511,7 @@ example : ¬ Circuit.MeetsPaperCombinationalTiming demuxCircuit :=
 #print axioms demux_fredkinCount
 #print axioms demuxCircuit_unitWireCount
 #print axioms argument_to_result_path
+#print axioms argument_to_result_path_delay_two
 #print axioms zero_source_to_y0_path
 #print axioms demuxCircuit_not_meetsPaperCombinationalTiming
 

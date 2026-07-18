@@ -344,7 +344,7 @@ private theorem RespectsPhase.fredkin (phase : Nat) :
     RespectsPhase .fredkin (fun _ ↦ phase) (fun _ ↦ phase) := by
   intro input output delay path
   change delay = 0 at path
-  omega
+  simp [path]
 
 private theorem RespectsPhase.permute {n : Nat} (wiring : WirePerm n)
     {before after : Fin n → Nat}
@@ -390,11 +390,22 @@ private theorem routedGate_respectsPhase (inputWiring outputWiring : WirePerm 6)
       Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase input =
         after (outputWiring input)) :
     RespectsPhase (routedGate inputWiring outputWiring) before after := by
-  have inputPhase := RespectsPhase.permute inputWiring inputRoute
-  have corePhase := (RespectsPhase.fredkin gatePhase).tensor
-    (RespectsPhase.identity bypassPhase)
-  have outputPhase := RespectsPhase.permute outputWiring outputRoute
-  simpa [routedGate] using inputPhase.seq (corePhase.seq outputPhase)
+  have inputPhase : RespectsPhase (.permute inputWiring) before
+      (Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase) :=
+    RespectsPhase.permute inputWiring inputRoute
+  have corePhase : RespectsPhase (.tensor .fredkin (.identity 3))
+      (Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase)
+      (Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase) :=
+    RespectsPhase.tensor (RespectsPhase.fredkin gatePhase)
+      (RespectsPhase.identity bypassPhase)
+  have outputPhase : RespectsPhase (.permute outputWiring)
+      (Fin.append (fun _ : Fin 3 ↦ gatePhase) bypassPhase) after :=
+    RespectsPhase.permute outputWiring outputRoute
+  change RespectsPhase
+    (.seq (.permute inputWiring)
+      (.seq (.tensor .fredkin (.identity 3)) (.permute outputWiring)))
+    before after
+  exact RespectsPhase.seq inputPhase (RespectsPhase.seq corePhase outputPhase)
 
 private def threeWirePhase (phase : Nat) : Fin 3 → Nat :=
   Fin.append (Fin.append (fun _ : Fin 1 ↦ phase) (fun _ : Fin 1 ↦ phase))
@@ -402,8 +413,11 @@ private def threeWirePhase (phase : Nat) : Fin 3 → Nat :=
 
 private theorem threeUnitWires_respectsPhase (phase : Nat) :
     RespectsPhase threeUnitWires (threeWirePhase phase) (threeWirePhase (phase + 1)) := by
-  have one := RespectsPhase.unitWire phase
-  simpa [threeUnitWires, threeWirePhase, Nat.add_assoc] using (one.tensor one).tensor one
+  unfold threeUnitWires threeWirePhase
+  exact RespectsPhase.tensor
+    (RespectsPhase.tensor (RespectsPhase.unitWire phase)
+      (RespectsPhase.unitWire phase))
+    (RespectsPhase.unitWire phase)
 
 private def fourWirePhase (phase : Nat) : Fin 4 → Nat :=
   Fin.append
@@ -413,9 +427,13 @@ private def fourWirePhase (phase : Nat) : Fin 4 → Nat :=
 
 private theorem fourUnitWires_respectsPhase (phase : Nat) :
     RespectsPhase fourUnitWires (fourWirePhase phase) (fourWirePhase (phase + 1)) := by
-  have one := RespectsPhase.unitWire phase
-  simpa [fourUnitWires, fourWirePhase, Nat.add_assoc] using
-    ((one.tensor one).tensor one).tensor one
+  unfold fourUnitWires fourWirePhase
+  exact RespectsPhase.tensor
+    (RespectsPhase.tensor
+      (RespectsPhase.tensor (RespectsPhase.unitWire phase)
+        (RespectsPhase.unitWire phase))
+      (RespectsPhase.unitWire phase))
+    (RespectsPhase.unitWire phase)
 
 private theorem gate1_respectsPhase :
     RespectsPhase (routedGate g1InputWiring g1OutputWiring)
@@ -435,15 +453,23 @@ private theorem delay1_respectsPhase :
     apply RespectsPhase.permute
     intro input
     fin_cases input <;> decide
-  have corePhase := (threeUnitWires_respectsPhase 0).tensor
-    (RespectsPhase.identity ![1, 2, 0])
+  have corePhase : RespectsPhase (.tensor threeUnitWires (.identity 3))
+      (Fin.append (threeWirePhase 0) ![1, 2, 0])
+      (Fin.append (threeWirePhase 1) ![1, 2, 0]) :=
+    RespectsPhase.tensor (threeUnitWires_respectsPhase 0)
+      (RespectsPhase.identity ![1, 2, 0])
   have outputPhase : RespectsPhase (.permute delay1OutputWiring)
       (Fin.append (threeWirePhase 1) ![1, 2, 0])
       ![1, 2, 1, 0, 1, 1] := by
     apply RespectsPhase.permute
     intro input
     fin_cases input <;> decide
-  simpa [routedDelay1] using inputPhase.seq (corePhase.seq outputPhase)
+  change RespectsPhase
+    (.seq (.permute delay1InputWiring)
+      (.seq (.tensor threeUnitWires (.identity 3))
+        (.permute delay1OutputWiring)))
+    ![1, 2, 0, 0, 0, 0] ![1, 2, 1, 0, 1, 1]
+  exact RespectsPhase.seq inputPhase (RespectsPhase.seq corePhase outputPhase)
 
 private theorem gate2_respectsPhase :
     RespectsPhase (routedGate g2InputWiring g2OutputWiring)
@@ -463,15 +489,23 @@ private theorem delay2_respectsPhase :
     apply RespectsPhase.permute
     intro input
     fin_cases input <;> decide
-  have corePhase := (fourUnitWires_respectsPhase 1).tensor
-    (RespectsPhase.identity ![2, 0])
+  have corePhase : RespectsPhase (.tensor fourUnitWires (.identity 2))
+      (Fin.append (fourWirePhase 1) ![2, 0])
+      (Fin.append (fourWirePhase 2) ![2, 0]) :=
+    RespectsPhase.tensor (fourUnitWires_respectsPhase 1)
+      (RespectsPhase.identity ![2, 0])
   have outputPhase : RespectsPhase (.permute delay2OutputWiring)
       (Fin.append (fourWirePhase 2) ![2, 0])
       ![2, 2, 0, 2, 2, 2] := by
     apply RespectsPhase.permute
     intro input
     fin_cases input <;> decide
-  simpa [routedDelay2] using inputPhase.seq (corePhase.seq outputPhase)
+  change RespectsPhase
+    (.seq (.permute delay2InputWiring)
+      (.seq (.tensor fourUnitWires (.identity 2))
+        (.permute delay2OutputWiring)))
+    ![2, 1, 0, 1, 1, 1] ![2, 2, 0, 2, 2, 2]
+  exact RespectsPhase.seq inputPhase (RespectsPhase.seq corePhase outputPhase)
 
 private theorem gate3_respectsPhase :
     RespectsPhase (routedGate g3InputWiring g3OutputWiring)
@@ -486,9 +520,10 @@ private theorem demuxCircuit_respectsPhase :
     RespectsPhase demuxCircuit
       ![0, 1, 2, 0, 0, 0] ![2, 2, 2, 2, 0, 2] := by
   change ∀ {_ _ _}, _ → _
-  exact gate1_respectsPhase.seq
-    (delay1_respectsPhase.seq
-      (gate2_respectsPhase.seq (delay2_respectsPhase.seq gate3_respectsPhase)))
+  exact RespectsPhase.seq gate1_respectsPhase
+    (RespectsPhase.seq delay1_respectsPhase
+      (RespectsPhase.seq gate2_respectsPhase
+        (RespectsPhase.seq delay2_respectsPhase gate3_respectsPhase)))
 
 private theorem a0Y0Path :
     Circuit.PathDelay demuxCircuit (3 : Fin 6) (0 : Fin 6) 2 := by
