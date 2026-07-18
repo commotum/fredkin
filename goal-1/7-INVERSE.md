@@ -244,6 +244,49 @@ lake build ConservativeLogic.Audit.Inverse
 
 ## Stage Results
 
-**Stage status: in progress.** Repository and paper facts, the exact public
-theorem contract, proof architecture, adversarial regression matrix, and build
-requirements are recorded. No Stage 7 Lean declaration has yet been added.
+**Stage status: complete (2026-07-17), from baseline `011b189`.** Stage 8 was
+not started.
+
+- `Circuit.inverse` is a total width-preserving structural recursion over all
+  six constructors. Identity, unit wire, and Fredkin remain unchanged; active
+  permutations use `.symm`; serial order reverses; and tensor block order is
+  retained. The six reduction laws, `inverse_inverse`, and
+  `inverse_involutive` expose those facts directly.
+- `inverse_eval` proves equality with the inverse complete `Conservative`
+  equivalence for every balanced term. `eval_inverse_eval` and
+  `eval_eval_inverse` prove both complete-state cancellation directions; the
+  structural proof keeps both tensor blocks and introduces no hidden wire,
+  fan-out, ancilla, garbage projection, semantic gate, or chosen circuit.
+- `PathDelay.inverse` reverses exact boundary endpoints while preserving the
+  same `Nat` delay. Its serial case explicitly commutes the two delay summands,
+  and tensor paths stay in their original block. The path, `HasLatency`, and
+  `MeetsPaperCombinationalTiming` biconditionals follow, as does the proof-only
+  `UniformLatencyCircuit.inverse` constructor.
+- Both round-trip timing theorems state `L + L`, never zero-delay
+  cancellation. The audited unit-wire round trip evaluates to identity, is
+  syntactically nonidentity, has an explicit delay-two path and uniform latency
+  two, and rejects latency zero. At width zero, `HasLatency` is vacuous and
+  nonunique; inversion only preserves a supplied certificate and claims no
+  latency uniqueness.
+- The diagnostic audit guards rejection of unequal-width `SourceCircuit`
+  FAN-OUT and arbitrary state functions. It checks width-zero syntax and
+  timing, a non-involutive three-cycle in both value and path directions,
+  noncommuting serial order, asymmetric and equal-width tensor block retention,
+  tensor cross-block exclusion, primitive values/timing, delayed endpoint
+  reversal, uniform positive timing, and preservation of nonuniform rejection.
+- Axiom prints contain no project axiom or proof hole. The constructor
+  reductions are axiom-free; the remaining public results use only the
+  expected Lean/mathlib foundations among `propext`, `Classical.choice`, and
+  `Quot.sound`.
+- Verification passed under Lean/mathlib `v4.32.0`: focused
+  `Circuit.Inverse` build (706 jobs), public API/root build (778 jobs), inverse
+  audit (777 jobs), cached default build (778 jobs), and an uncontended
+  `lake clean` followed by the complete default build (778 jobs) and inverse
+  audit (777 jobs). Proof-hole, project-axiom, fallback, dependency, hidden
+  resource, and future-stage scans; `git diff --check`; and complete diff
+  inspection passed. The completion checkpoint is committed and pushed with a
+  clean worktree synchronized to `origin/master`.
+- The result is deliberately scoped to the corrected balanced feed-forward
+  expression grammar. It does not invert Figure 19's feedback graph, define
+  oriented or `t ↦ -t` execution, establish physical time-reversal invariance,
+  invert unequal-width source syntax, or implement compute-copy-uncompute.

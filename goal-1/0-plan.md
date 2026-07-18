@@ -171,6 +171,12 @@ Lean results as the work proceeds.
   or `Audit/Inverse.lean` exists at the Stage 7 baseline. `Conservative.inverse`
   and `WirePerm.onState_inverse` already provide the semantic equivalence
   operations needed to state correctness without adding an arbitrary gate.
+- Stage 7 is complete from baseline `011b189`. The public root now exports the
+  total structural inverse, complete static inverse semantics, exact
+  endpoint-reversed path correspondence, common-latency preservation, and
+  latency-additive round trips. The uncontended clean default build succeeds
+  with 778 jobs; the non-public inverse audit succeeds with 777 jobs, with full
+  completion evidence recorded in `goal-1/7-INVERSE.md`.
 
 ### Checked Paper Facts
 
@@ -309,9 +315,9 @@ Lean results as the work proceeds.
   cancellation directions without projecting or discarding a port.
 - `Circuit.PathDelay.inverse` and `pathDelay_inverse_iff` prove exact endpoint
   reversal with unchanged delay. The latency/timing preservation theorems are
-  biconditionals, while `HasLatency.seq_inverse` and `inverse_seq` prove the
-  honest `L + L` round-trip latency. `UniformLatencyCircuit.inverse` remains a
-  certificate constructor only.
+  biconditionals, while `Circuit.HasLatency.seq_inverse` and
+  `Circuit.HasLatency.inverse_seq` prove the honest `L + L` round-trip latency.
+  `UniformLatencyCircuit.inverse` remains a certificate constructor only.
 
 ### Assumptions to Test, Not Yet Facts
 
@@ -567,9 +573,9 @@ placeholders to refine during stage work.
   `MeetsPaperCombinationalTiming.inverse`, and
   `meetsPaperCombinationalTiming_inverse_iff`: common-latency preservation in
   both directions.
-- `Circuit.HasLatency.seq_inverse` and `inverse_seq`: forward/inverse static
-  cancellation retains round-trip latency `L + L`; it is not a zero-delay
-  syntactic identity.
+- `Circuit.HasLatency.seq_inverse` and `Circuit.HasLatency.inverse_seq`:
+  forward/inverse static cancellation retains round-trip latency `L + L`; it
+  is not a zero-delay syntactic identity.
 - `Circuit.UniformLatencyCircuit.inverse`: a proof-certificate constructor,
   not backward execution semantics.
 - `copyPair_spec`: in the paper's exact gate-port order, initialized `(1,0)`
@@ -805,10 +811,12 @@ with constants and garbage.
 
 ### 7-INVERSE
 
-**Status:** In progress (2026-07-17), from clean synchronized baseline
-`011b189`. Checked repository and paper facts, the exact theorem contract,
-boundary tests, and required verification are recorded in
-`goal-1/7-INVERSE.md`.
+**Status:** Complete (2026-07-17). From baseline `011b189`, Stage 7 adds the
+total structural inverse, complete static inverse semantics, exact
+endpoint-reversed path correspondence, common-latency preservation, and
+latency-additive round trips for the corrected balanced feed-forward grammar.
+Verification and boundary evidence are recorded in `goal-1/7-INVERSE.md`;
+Stage 8 has not started.
 
 #### Big Picture Objective
 
