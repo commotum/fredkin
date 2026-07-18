@@ -24,8 +24,6 @@ import ConservativeLogic.Completeness.Adjacent
 import ConservativeLogic.Completeness.Synthesis
 import ConservativeLogic.Completeness.NoAncilla
 
-set_option linter.style.header false
-
 /-!
 # Public conservative-logic API
 
@@ -72,7 +70,7 @@ physical time reversal is claimed.  The separately buildable opt-in module
 `ConservativeLogic.Sequential` supplies corrected discrete registered
 semantics without becoming a dependency of this finite API.  The separate
 opt-in `ConservativeLogic.Billiard` module supplies constrained rail
-interfaces, admitted local scattering, sampled routes, and a Figure 14 trace;
+interfaces, selected legal local scattering, sampled routes, and a Figure 14 trace;
 it likewise remains outside this finite API and makes no continuous-mechanics
 claim.
 -/

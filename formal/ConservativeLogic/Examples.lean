@@ -59,9 +59,8 @@ theorem and_uncompute_spec (argument : BitState 2) :
           Realization.Primitive.noBits Realization.Primitive.andSource argument)
         (Ancilla.resultRegisterOutput
           (Realization.Primitive.andTarget argument)) := by
-  simpa only [andUncompute] using
-    (Ancilla.compute_copy_uncompute_spec
-      Realization.Primitive.fredkin_realizes_and argument)
+  exact Ancilla.compute_copy_uncompute_spec
+    Realization.Primitive.fredkin_realizes_and argument
 
 /--
 The paper-convention Fredkin permutation has a finite clean realization.  The

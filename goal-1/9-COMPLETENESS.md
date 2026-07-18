@@ -124,7 +124,8 @@ width `n` and `gate : Conservative n`.  Its witness is a
 The checked construction isolates one Johnson-graph edge, rather than assuming
 an external Fredkin-completeness theorem:
 
-1. For `n = m + 2`, an explicit conventional `patternMatch` source circuit
+1. For `n = m + 2`, an explicit conventional
+   `Completeness.Adjacent.patternMatch` source circuit
    recognizes the first `m` data bits.  Its true and false literal branches are
    separate syntax, and the existing compiler makes all source constants and
    garbage explicit.
@@ -136,7 +137,7 @@ an external Fredkin-completeness theorem:
    complete width is at most `4*m + 5`, and its exact Fredkin count is proved.
 4. A structural wire conjugation routes any true/false coordinate exchange to
    the final pair.  This changes no value-dependent resource and is explicitly
-   the library's admitted reindexing convention.
+   the library's abstract structural-reindexing convention.
 5. Equal-weight states form a connected Johnson graph.  The subgroup of clean
    realizable state permutations contains every edge transposition, so the
    finite permutation-group closure theorem supplies every conservative
@@ -228,15 +229,15 @@ CleanFredkinRealization
 CleanFredkinRealizable
 CleanFredkinRealizableFunction
 oneControlledFredkin
-patternMatch
-edgeClean_width_le
-edgeWidth_le
-adjacentTranspositionCircuit
-adjacentTranspositionCircuit_fredkinCount
-adjacentTranspositionClean
+Completeness.Adjacent.patternMatch
+Completeness.Adjacent.edgeClean_width_le
+Completeness.Adjacent.edgeWidth_le
+Completeness.Adjacent.adjacentTranspositionCircuit
+Completeness.Adjacent.adjacentTranspositionCircuit_fredkinCount
+Completeness.Adjacent.adjacentTranspositionClean
 Conservative.weightLayer_exchange_connected
 Conservative.weightLayer_hammingTwo_connected
-singleExchangeClean
+Completeness.Adjacent.singleExchangeClean
 fredkin_complete_conservative
 clean_fredkin_realizable_iff
 figure25_fredkin_complete

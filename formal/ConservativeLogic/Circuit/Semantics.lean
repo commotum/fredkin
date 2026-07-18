@@ -155,12 +155,12 @@ theorem eval_wireOfLength (length : Nat) (input : BitState 1) :
   | succ length inductionHypothesis =>
       simpa [wireOfLength, eval_seq, eval_unitWire] using inductionHypothesis
 
-/-- Every admitted circuit evaluates to a bijection. -/
+/-- Every circuit term evaluates to a bijection. -/
 theorem eval_isReversible {n : Nat} (circuit : Circuit n) :
     IsReversible (eval circuit) :=
   (eval circuit).isReversible
 
-/-- Every admitted circuit's static boundary-value map preserves Hamming weight. -/
+/-- Every circuit term's static boundary-value map preserves Hamming weight. -/
 theorem eval_weightPreserving {n : Nat} (circuit : Circuit n) :
     WeightPreserving (eval circuit) :=
   (eval circuit).weight_preserving

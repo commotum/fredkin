@@ -15,7 +15,7 @@ disjoint.  No scratch wire, arbitrary target equivalence, semantic gate,
 implicit FAN-OUT, or discard is introduced.
 
 The result is a static theorem for the explicitly generated feed-forward
-source language.  Target `WirePerm` nodes remain an admitted zero-delay
+source language.  Target `WirePerm` nodes remain a selected zero-delay
 structural reindexing resource, so this is Fredkin-plus-reindexing simulation,
 not pure physical Fredkin synthesis or a sequential-network theorem.
 -/
@@ -604,7 +604,7 @@ private def compileCore : {inputWidth outputWidth : Nat} →
         (compileCore left) (compileCore right)
 
 /--
-Compile an explicit finite source term to the Stage 4 target grammar. The
+Compile an explicit finite source term to the balanced target grammar. The
 leading transport accounts only for the canonical width-zero scratch prefix.
 -/
 def compile {inputWidth outputWidth : Nat}

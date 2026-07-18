@@ -356,11 +356,12 @@ Lean results as the work proceeds.
 - `CleanFredkinRealization` records one exact possibly mixed ancillary prefix,
   a complete circuit and initialized-state equation, exact prefix restoration,
   exclusion of `unitWire`, and zero path latency.
-- `patternMatch` and `adjacentTranspositionCircuit` construct a clean
+- `Completeness.Adjacent.patternMatch` and
+  `Completeness.Adjacent.adjacentTranspositionCircuit` construct a clean
   Johnson-graph edge transposition.  The local ancillary width is at most
   `3*m + 3`, complete width at most `4*m + 5`, and the exact paper-Fredkin
   syntax count is `4*logicGateCount + 3`.
-- `singleExchangeClean`, Hamming-layer connectivity, and finite
+- `Completeness.Adjacent.singleExchangeClean`, Hamming-layer connectivity, and finite
   permutation-group closure prove `fredkin_complete_conservative` for every
   finite conservative permutation using paper Fredkin plus free structural
   reindexing.  The proof is classical existential and installs no executable
@@ -459,17 +460,17 @@ The eventual goal is complete only when all of the following hold:
 | §2.2, P4–P6 | Separate delayed identity, reversible maps, and one-to-one composition | 2–5, 10 | Stages 2–4 separate static equivalences, unit-wire delay metadata, and an indexed grammar whose serial/tensor constructors consume ports one-to-one. The paper's physical motivations are not consequences of these definitions |
 | §2.2, P7 | The abstract model should have at least one additive conserved quantity | — | Generic physical/mathematical motivation only; P7 itself does not select Hamming weight |
 | §§2.3–2.5 | In the Boolean model, `N₁`/Hamming weight is additive across wire portions and preserved by unit wires, gates, and closed transitions | 2–4, 10 | Stages 2–4 prove static block/primitive/circuit preservation. Stage 10 corrects open execution to `ConservativeLogic.Sequential.ConservativeMachine.tick_weight_balance` and telescoping `ConservativeLogic.Sequential.ConservativeMachine.run_prefix_weight_balance`, while `ConservativeLogic.Sequential.ConservativeMachine.closedOrbit_weight` proves the complete delayed-closure `memory ++ loopRegister` state has invariant Hamming weight at every natural time |
-| §2.5 | `N₀ = N - N₁`, so zero count is conserved on a fixed-width closed circuit but is not an independent invariant | 2 | Documented derived consequence, not a separate observable in the Lean API: `BitState n` fixes `N=n`; if `N₀` is defined as the number of remaining false coordinates, its value is `n - hammingWeight state`. No independent `N₀` definition, theorem, or physical quantity is claimed |
+| §2.5 | `N₀ = N - N₁`, so zero count is conserved on a fixed-width closed circuit but is not an independent invariant | 2, 12 | `ConservativeLogic.zeroCount` is definitionally `n - hammingWeight state`, and `ConservativeLogic.WeightPreserving.zeroCount` derives its preservation for equal-width weight-preserving maps. It is a convenience view of fixed width and `N₁`, not an independent observable or physical quantity |
 | §2.2, P8 | Local-Euclidean/layout constraint on circuit connectivity | — | Out-of-model for this library. The paper explicitly does not develop P8, and Stage 11 proves no packing/connectivity bound; the sampled route examples are not a P8 geometry theorem |
 | §2.3 | Unit wire is delayed identity, reversible, and conservative | 3, 4, 7, 10 | Stages 3–7 separate aligned static identity, conservation, and one-step path metadata. Stage 10's structural-swap delay cell proves tick-zero output is explicit initialization and `output(t+1)=input(t)` by `ConservativeLogic.Sequential.DelayCell.output_succ`; `ConservativeLogic.Sequential.DelayCell.unitWire_not_instantaneous` prevents static positive-delay syntax from entering a zero-latency tick core. Physical time reversal is out-of-model (CL-002) |
-| §2.3 | Unit wires compose to wires of every fixed positive integral length, with delays adding | 4 | Built composition rule rather than a separately named iterator: each explicit finite chain uses the `ConservativeLogic.Circuit.seq` constructor, and `ConservativeLogic.Circuit.HasLatency.seq` proves that its component delays add. No generic `wireOfLength` declaration or spatial-layout theorem is installed |
+| §2.3 | Unit wires compose to wires of every fixed nonnegative integral length, with delays adding | 4, 12 | `ConservativeLogic.Circuit.wireOfLength length` builds the serial chain, `ConservativeLogic.Circuit.eval_wireOfLength` proves static identity semantics, and `ConservativeLogic.Circuit.wireOfLength_hasLatency` proves exact latency `length`. This is an abstract one-bit path term, not a spatial-layout theorem |
 | §2.4, Table (2) | Paper-convention Fredkin semantics, involution, bijection, weight preservation | 3 | `ConservativeLogic.PaperFredkin.table` fixes the port order and convention; all eight rows are independently audited; `ConservativeLogic.PaperFredkin.map_involutive`, `ConservativeLogic.PaperFredkin.equiv`, `ConservativeLogic.PaperFredkin.map_isReversible`, `ConservativeLogic.PaperFredkin.map_weightPreserving`, and `ConservativeLogic.PaperFredkin.conservative` prove the separate static properties |
 | §2.4 | Fredkin is nonlinear under an explicitly selected coordinatewise-XOR/`F₂` notion | 3 | `ConservativeLogic.XorLinear` states the selected reconstruction; `ConservativeLogic.PaperFredkin.map_xor_counterexample` and `ConservativeLogic.PaperFredkin.map_not_xorLinear` prove a concrete failure of additivity, without attributing that definition to the paper |
 | §2.5, Fig. 3 | Literal directed-graph open/closed transition semantics, feedback, memory, balanced external ports, and closed-system weight conservation | 10 | Implemented for the corrected register-separated semantic fragment: `ConservativeLogic.Sequential.ConservativeMachine` is a total `memory ++ input ↔ nextMemory ++ output` tick, and `ConservativeLogic.Sequential.ConservativeMachine.closeFeedback_step` shows the output block becomes next-tick loop state. Trace uniqueness, causality, open flux, closed conservation, and finite reversibility are proved. This is not a literal graph elaborator |
 | §§2.5, 7.1 | Acyclic/equal-latency combinational fragment and one-to-one composition | 4, 7 | `Circuit` is a corrected one-to-one feed-forward grammar; `PathDelay`, `HasLatency`, and `MeetsPaperCombinationalTiming` formalize the equal-unit-wire-path clause. `Circuit.pathDelay_inverse_iff` and `meetsPaperCombinationalTiming_inverse_iff` prove exact reversal/preservation for that grammar only. No graph correspondence, feedback semantics, or physical routing result is claimed |
 | §2.5 | Reversibility and conservation are independent | 2 | Proved semantically for ordinary Boolean endomaps by `Independence.reversible_not_weightPreserving` and `Independence.weightPreserving_not_reversible`; this does not assert a literal circuit realization |
 | §3, Fig. 5 | Realization partitions source/argument and result/sink, fixes constants independently of the argument, and permits argument-dependent garbage | 5 | `Layout` and `Realizes` give a stronger explicit five-block specialization: fixed source and returned-clean scratch, universal argument, selected result, explicit argument-indexed garbage, and equality of the complete boundary state |
-| §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | `fredkin_realizes_and`, `fredkin_realizes_or`, `fredkin_realizes_not`, and `fredkin_realizes_fanout` prove the exact complete tuples using named active port permutations; FAN-OUT is constrained by source `(0,1)` and retains `¬a` as garbage |
+| §3, Figs. 4–6 | Fredkin realizes AND, OR, NOT, and fan-out with constants/garbage | 5 | `ConservativeLogic.Realization.Primitive.fredkin_realizes_and`, `fredkin_realizes_or`, `fredkin_realizes_not`, and `fredkin_realizes_fanout` prove the exact complete tuples using named active port permutations; FAN-OUT is constrained by source `(0,1)` and retains `¬a` as garbage |
 | §3, Fig. 7 | Demultiplexer semantics include the complete output and address-echo garbage; distinguished argument-to-result routes have delay two | 4, 6 | `ConservativeLogic.Simulation.Demultiplexer.demux_realizes` checks the full six-wire initialized slice with source `000`, four binary-addressed outputs, and garbage `(A₁,A₀)`; the term has three Fredkins and seven unit wires. `ConservativeLogic.Simulation.Demultiplexer.argument_to_result_path` constructs a delay-two path for every named argument/result pair, while `ConservativeLogic.Simulation.Demultiplexer.argument_to_result_path_delay_two` proves every such grammar-induced path has delay two. `ConservativeLogic.Simulation.Demultiplexer.zero_source_to_y0_path` and `ConservativeLogic.Simulation.Demultiplexer.demuxCircuit_not_meetsPaperCombinationalTiming` prove that the full boundary is not globally equal-latency |
 | §3, Fig. 8 | Reconstruct a transition/trace specification for the asserted `J-K̄` flip-flop realization | 10 | Resolved by an actual Fredkin-plus-output-routing `Network 1 2`. `ConservativeLogic.Sequential.Figure8.tick` proves `(q,K̄,J) ↦ (if q then K̄ else J,q,if q then J else K̄)` with next state, visible `Q`, and explicit `?` garbage; initialization, `ConservativeLogic.Sequential.Figure8.characteristic`, all eight rows, and hold/set/reset/toggle behavior are checked |
 | §4 | Conventional finite combinational networks can be translated to conservative networks using constants and garbage | 6 | Proved constructively for the explicit indexed `SourceCircuit` grammar by `compile_realizes`, with exact fixed sources, complete garbage, zero scratch, exact Fredkin count, and abstract latency zero. The target basis is Fredkin plus explicit structural reindexing. This is not a graph-encoding, arbitrary-function-completeness, delay-normalization, or sequential theorem |
@@ -508,7 +509,7 @@ not an assertion that the paper's claim is false.
 | CL-001 | corrected | The paper uses zero-controlled swapping, opposite to the common modern Fredkin convention. | The Stage 3 default uses the explicit `ConservativeLogic.PaperFredkin` namespace, public coordinate laws, `ConservativeLogic.PaperFredkin.table`, and all eight audited rows. Stage 9 adds the separately named `ConservativeLogic.oneControlledFredkin`: paper Fredkin followed by an explicit data-wire swap, with its own truth-table, structural-basis, and zero-latency theorems. The paper convention remains the primitive default. |
 | CL-002 | corrected | “Inverse wire” mixes identity-on-values with reversal of time/orientation, while footnote 3 separately warns that invertibility does not imply time-reversal invariance. | Natural-time causal traces are forward-only; `ConservativeLogic.Sequential.ConservativeMachine.tickEquiv_symm_apply_tick`, `ConservativeLogic.Sequential.ConservativeMachine.retrodictList_executeList`, `ConservativeLogic.Sequential.ConservativeMachine.closedIterate_inverse_cancel`, and `ConservativeLogic.Sequential.ConservativeMachine.closedIterate_forward_cancel` recover complete retained finite boundaries. No theorem turns this into literal graph reversal, negative-time execution, infinite-stream inversion without a terminal state, or physical time-reversal symmetry. |
 | CL-003 | proved | Reversibility and bit conservation are asserted independent, with external citations but no small witness or proof in the paper. | `ConservativeLogic.Independence.reversible_not_weightPreserving` and `ConservativeLogic.Independence.weightPreserving_not_reversible` prove the semantic predicate claim by one-bit negation and two-bit Boolean sorting. The latter is only an ordinary endomap, not a conservative-logic gate or literal circuit realization. |
-| CL-004 | corrected | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | `ConservativeLogic.Realization.fredkin_realizes_fanout` is a width-three circuit with fixed source `(0,1)`, selected result `(a,a)`, and explicit garbage `¬a`; `ConservativeLogic.Realization.fredkinFanoutCircuit_isReversible` and `ConservativeLogic.Realization.fredkinFanoutCircuit_weightPreserving` concern the complete map. Guarded failures reject a source-free unequal-width copier and an equal-width reversible interpretation of the selected target. |
+| CL-004 | corrected | FAN-OUT is shown diagrammatically although arbitrary copying is not reversible. | `ConservativeLogic.Realization.Primitive.fredkin_realizes_fanout` is a width-three circuit with fixed source `(0,1)`, selected result `(a,a)`, and explicit garbage `¬a`; `ConservativeLogic.Realization.Primitive.fredkinFanoutCircuit_isReversible` and `ConservativeLogic.Realization.Primitive.fredkinFanoutCircuit_weightPreserving` concern the complete map. Guarded failures reject a source-free unequal-width copier and an equal-width reversible interpretation of the selected target. |
 | CL-005 | corrected | Figure 7 states equal delay only from argument to result, whereas §7.1 defines a combinational network using equal delay from any input to any output. | The checked reconstruction has seven unit wires; `ConservativeLogic.Simulation.Demultiplexer.argument_to_result_path` supplies a delay-two route for each distinguished argument/result pair and `ConservativeLogic.Simulation.Demultiplexer.argument_to_result_path_delay_two` proves uniqueness of that delay for every such path. A third-source-to-`Y₀` path has delay zero, so `ConservativeLogic.Simulation.Demultiplexer.demuxCircuit_not_meetsPaperCombinationalTiming` proves the full term fails the later global criterion. |
 | CL-006 | open | The §4 universality argument translates ordinary sequential circuits informally and handwaves delay normalization. A combinational translation cannot establish its stateful or resource claims. | Stage 6 proves only the finite feed-forward compiler; Stage 10 supplies explicit traces plus exact Figures 9 and 11. Figure 11 names fresh `(0,1)` at every tick and retains all garbage. No general sequential compiler, rescaling relation, factor-five schedule, delay normalization, source/drain bound, or time-multiplexing theorem is inferred. |
 | CL-007 | corrected | The interaction and switch gates use constrained, unequal-width rail encodings. They preserve balls/ones but not the number of zero-valued physical rails and are exceptions to the ordinary balanced-port gate type. | `ConservativeLogic.Billiard.Interaction.equiv` and `ConservativeLogic.Billiard.Switch.equiv` target exact four-state subtypes. `ConservativeLogic.Billiard.Interaction.encode_weightPreserving` and `ConservativeLogic.Billiard.Switch.encode_weightPreserving` are heterogeneous, while the respective `encode_vacancies` declarations prove two and one additional vacant rails. `ConservativeLogic.Billiard.Interaction.card_validOutput`, `ConservativeLogic.Billiard.Interaction.no_raw_equiv`, `ConservativeLogic.Billiard.Switch.card_validOutput`, and `ConservativeLogic.Billiard.Switch.no_raw_equiv` prevent raw `Bool² ≃ Bool⁴`/`Bool² ≃ Bool³` readings. Only `ConservativeLogic.Billiard.Collision.conservative` is an equal-width conservative map. |
@@ -540,7 +541,7 @@ imports `Mathlib.Data.Fintype.Pi`,
 `Mathlib.Logic.Equiv.Basic`, `Mathlib.Logic.Equiv.Fin.Basic`, plus
 `Mathlib.Data.BitVec` solely to audit the rejected packed alternative.
 
-Checked low-to-high layout through Stage 11:
+Checked low-to-high layout through Stage 12:
 
 ```text
 ConservativeLogic/
@@ -551,6 +552,8 @@ ConservativeLogic/
   Gate/Fredkin/Nonlinear.lean -- selected XOR interpretation and counterexample
   Circuit/Syntax.lean       -- arity-safe linear wiring and composition
   Circuit/Semantics.lean    -- evaluation and preservation theorems
+  Circuit/Structural.lean   -- generic width transport and block reindexing
+  Circuit/Resources.lean    -- syntax-level Fredkin counting
   Circuit/Timed.lean        -- delays/equal-latency feed-forward networks
   Audit/Circuit.lean        -- non-public Stage 4 regressions and axiom audit
   Circuit/Inverse.lean      -- structural inverse, static correctness, reversed paths
@@ -562,7 +565,8 @@ ConservativeLogic/
   Simulation/Fredkin.lean   -- exact-resource constructive target compiler
   Simulation/Demultiplexer.lean -- checked Figure 7 value/timing reconstruction
   Audit/Simulation.lean     -- non-public Stage 6 boundary and axiom audit
-  Ancilla/Uncompute.lean    -- explicit spy registers and compute-copy-uncompute
+  Ancilla/Register.lean     -- low-level zero/one and result-register states
+  Ancilla/Uncompute.lean    -- explicit spy circuits and compute-copy-uncompute
   Audit/Uncompute.lean      -- non-public Stage 8 boundaries, timing, and axiom audit
   Completeness/Semantic.lean -- Hamming layers and noncanonical semantic completion
   Completeness/Fredkin.lean -- clean witness, basis certificate, and composition
@@ -587,6 +591,8 @@ ConservativeLogic/
   Billiard/Figure14.lean    -- exact four-tick sampled interaction trace
   Billiard.lean             -- opt-in billiard umbrella, outside finite API
   Audit/Billiard.lean       -- Stage 11 rows, obstructions, and axiom audit
+  Examples.lean             -- finite public-root consumer examples
+  Audit/Axioms.lean         -- aggregate non-public main-result axiom audit
   API.lean                  -- thin public re-export
 ```
 
@@ -597,10 +603,13 @@ incremental build discipline.
 
 ## Proposed Theorem Outline
 
-Names from completed stages are exact declarations; later-stage names remain
-placeholders to refine during stage work.
+Names below are final declaration names; namespace prefixes are shown where
+they disambiguate ownership.
 
 - `hammingWeight_append`: weight is additive across explicit wire blocks.
+- `zeroCount` and `WeightPreserving.zeroCount`: the paper's `N₀` is the
+  derived fixed-width complement of Hamming weight and is preserved whenever
+  `N₁` is preserved on an equal-width map.
 - `Reversible.injective` / `Reversible.surjective`: finite reversible maps have
   the expected function properties.
 - `Conservative.comp` and `Conservative.inverse`: conservation is closed under
@@ -628,6 +637,9 @@ placeholders to refine during stage work.
 - `Circuit.eval_identity`, `Circuit.eval_unitWire`, `Circuit.eval_fredkin`,
   `Circuit.eval_permute`, `Circuit.eval_seq`, `Circuit.eval_tensor`, and
   `Circuit.eval_tensor_append`: exact compositional static semantics.
+- `Circuit.wireOfLength`, `Circuit.eval_wireOfLength`, and
+  `Circuit.wireOfLength_hasLatency`: arbitrary finite one-bit wire chains have
+  identity value semantics and exact integral latency.
 - `Circuit.eval_isReversible` and `Circuit.eval_weightPreserving`: the two
   general circuit properties remain separately exposed.
 - `Circuit.PathDelay`, `Circuit.HasLatency`, and
@@ -734,14 +746,16 @@ placeholders to refine during stage work.
   zero path latency.
 - `oneControlledFredkin_spec`: the separately named common convention is built
   from paper Fredkin followed by an explicit structural data-wire swap.
-- `patternMatch_spec`, `edgeClean_width_le`, `edgeWidth_le`,
-  `adjacentTranspositionCircuit_spec`,
-  `adjacentTranspositionCircuit_fredkinCount`, and
-  `adjacentTranspositionClean`: exact local Johnson-edge semantics,
+- `Completeness.Adjacent.patternMatch_spec`,
+  `Completeness.Adjacent.edgeClean_width_le`,
+  `Completeness.Adjacent.edgeWidth_le`,
+  `Completeness.Adjacent.adjacentTranspositionCircuit_spec`,
+  `Completeness.Adjacent.adjacentTranspositionCircuit_fredkinCount`, and
+  `Completeness.Adjacent.adjacentTranspositionClean`: exact local Johnson-edge semantics,
   restoration, and resource bounds.
 - `Conservative.weightLayer_exchange_connected`,
   `Conservative.weightLayer_hammingTwo_connected`, and
-  `singleExchangeClean`: layer connectivity and clean routed state exchanges.
+  `Completeness.Adjacent.singleExchangeClean`: layer connectivity and clean routed state exchanges.
 - `fredkin_complete_conservative` and `clean_fredkin_realizable_iff`: classical
   existential paper-Fredkin-plus-structural-reindexing completeness, with no
   executable synthesis algorithm or global closed-form cost claim.

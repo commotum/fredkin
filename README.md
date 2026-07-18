@@ -71,7 +71,7 @@ Representative theorem families include `hammingWeight_append` and
 the fully qualified declarations and records every corrected, disproved, open,
 or out-of-model paper claim.
 
-Stages 1 through 11 are complete under Lean/mathlib `v4.32.0`. The public import
+Stages 1 through 12 are complete under Lean/mathlib `v4.32.0`. The public import
 `ConservativeLogic` now exports finite Boolean states, Hamming weight and block
 additivity, the derived false-wire count `N₀ = width - N₁`, separate
 reversibility and weight-preservation predicates, bundled
@@ -207,10 +207,10 @@ ball-count preservation, valid cardinalities, raw-interface cardinality
 obstructions, and increases in vacant rails are checked.  A four-channel local
 collision exchanges only the straight pair `0110` and deflected pair `1001`;
 its total identity behavior on other masks is labeled an algebraic completion,
-while its admitted subtype excludes unselected multi-ball events.  The
+while its selected legal subtype excludes unselected multi-ball events.  The
 initialized `(0,q,p,0)` slice refines the complete interaction output.
 
-Finite products of admitted collision sites provide deterministic,
+Finite products of legal collision sites provide deterministic,
 involutive, count-preserving simultaneous scattering only for independent
 owned channels.  Directed routes use a rotated integer lattice, with explicit
 sampled mirror turns, a same-endpoint-position detour adding four ticks, and

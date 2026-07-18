@@ -36,7 +36,8 @@ target.  This file must not be imported by `ConservativeLogic`,
 #print axioms ConservativeLogic.Realization.Primitive.fredkin_realizes_fanout
 #print axioms ConservativeLogic.Simulation.SourceCircuit.compile_realizes
 #print axioms ConservativeLogic.Simulation.SourceCircuit.compile_fredkinCount
-#print axioms ConservativeLogic.Simulation.Demultiplexer.demuxCircuit_not_meetsPaperCombinationalTiming
+#print axioms
+  ConservativeLogic.Simulation.Demultiplexer.demuxCircuit_not_meetsPaperCombinationalTiming
 
 /-! ## Structural inversion and compute-copy-uncompute -/
 
