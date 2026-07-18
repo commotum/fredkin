@@ -1226,9 +1226,9 @@ then determine exactly which paper simulation and inverse claims extend to it.
 
 ### 11-BILLIARD
 
-**Status:** In progress (2026-07-18), from clean synchronized baseline
-`898bfe5`.  The Section 6 text, footnotes, and original Figures 12--18 have
-been re-audited.  They invoke continuous hard balls and fixed plane mirrors
+**Status:** Complete (2026-07-18), from clean synchronized baseline `898bfe5`.
+The Section 6 text, footnotes, and original Figures 12--18 were re-audited.
+They invoke continuous hard balls and fixed plane mirrors
 sampled at integral times, but do not give a total discrete global transition:
 occupancy lacks directed velocity, and multi-contact/simultaneous-event
 behavior is unspecified.  Figure 14 has enough endpoint and timing information
@@ -1260,6 +1260,43 @@ Current corrected contract:
 
 If practical, formalize the billiard-ball model as a discrete computational
 model and prove refinement of selected collision networks to conservative gates.
+
+#### Implemented Result
+
+- `Billiard.Interaction` and `Billiard.Switch` give the exact paper tables as
+  equivalences onto four-state valid-output subtypes, with selected inverses,
+  ball-count laws, vacancy deltas, and raw unequal-width cardinality
+  obstructions.  No constrained rail interface is mislabeled as an
+  equal-width `Conservative` endomap.
+- `Billiard.Collision` gives the selected `0110 <-> 1001` involution.  Its raw
+  identity fallback is only an algebraic completion; executable scattering is
+  restricted to `AllowedState`.  The initialized slice refines the interaction
+  table, while explicit tests rule out illegal three-ball events, independent
+  singleton superposition, and a structural wire-permutation explanation.
+- `Billiard.ScatteringLayer` provides deterministic, involutive,
+  count-preserving products of independently owned local sites, plus commuting
+  distinct-site updates and a shared-particle support obstruction.  It does
+  not claim a routed global mechanics.
+- `Billiard.Grid` certifies directed unit sampled routes, fixed mirror turns,
+  route timing, and integral-sample separation.  The checked examples
+  distinguish simultaneous conflict, one-tick center noncoincidence that still
+  fails radius-derived clearance, and a two-tick schedule that meets it.  The
+  finite detour preserves endpoint positions but not boundary directions, so
+  it is not installed as a general delay gadget.
+- `Billiard.Figure14` is an explicit four-tick selected scheduled trace.  All
+  input rows, frames, directions, output rails, ball counts, sampled clearance,
+  the unique contact tick, and the conditional right-angle turn are checked.
+  It is an endpoint/sampled-path refinement, not execution under continuous or
+  total global dynamics.
+- The billiard umbrella remains opt-in and outside both the finite and
+  sequential APIs.  Figures 15, 17, and 18, between-sample mechanics,
+  compositional physical layout, physical reversibility, and thermodynamics
+  remain explicit unresolved boundaries.
+- Focused/default/opt-in builds, an uncontended clean default rebuild and
+  explicit post-clean audit builds, exhaustive row checks, completeness-group
+  regression, forbidden-shortcut scans, axiom inspection, adversarial review,
+  complete baseline diff inspection, and `git diff --check` pass.  Detailed
+  evidence and repaired review findings are recorded in `11-BILLIARD.md`.
 
 #### Detailed Implementation Plan
 
