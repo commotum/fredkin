@@ -11,3 +11,4 @@ wheels/
 
 # Lean/Lake build artifacts
 .lake/
+.DS_Store
